@@ -46,6 +46,136 @@ impl Binding {
     }
 }
 
+// Bindings
+
+pub struct Bindings {
+    root_index: uint,
+    module_maps: HashMap<ast::ItemIndex, BindingsMap>,
+}
+
+enum PathResolution {
+    ResolvedToItem(ast::ItemIndex),
+    ResolvedToNothing,
+}
+
+impl Bindings {
+    pub fn new(ast: &ast::AST) -> Fallible<Bindings> {
+        let mut result = Bindings { root_index: ast.root_index(),
+                                    module_maps: HashMap::new() };
+        {
+            let mut cx = ResolutionContext { ast: ast, bindings: &mut result };
+            try!(cx.seed());
+            try!(cx.saturate());
+        }
+        Ok(result)
+    }
+
+    fn insert(&mut self, mod_id: ast::ItemIndex, id: Id, binding: BindingPtr) {
+        let module_map = self.module_maps.find_or_insert_with(mod_id, |_| HashMap::new());
+        module_map.insert(id, binding);
+    }
+
+    fn lookup<'a>(&'a self, mod_id: ast::ItemIndex, id: Id) -> Option<&'a BindingPtr> {
+        match self.module_maps.find(&mod_id) {
+            None => {
+                None
+            }
+
+            Some(module_map) => {
+                module_map.find(&id)
+            }
+        }
+    }
+
+    fn lookup_all<'a>(&'a self, mod_id: ast::ItemIndex) -> Option<&'a BindingsMap> {
+        self.module_maps.find(&mod_id)
+    }
+
+    pub fn resolve_path(&self,
+                        mod_id: ast::ItemIndex,
+                        path: &ast::PathPtr)
+                        -> Fallible<PathResolution> {
+        let mut map = HashMap::new();
+        self.resolve_path_after_checking_for_cycles(mod_id, path, &mut map)
+    }
+
+    fn resolve_path_after_checking_for_cycles(&self,
+                                              mod_id: ast::ItemIndex,
+                                              path: &ast::PathPtr,
+                                              visited: &mut HashMap<ast::PathPtr,()>)
+                                              -> Fallible<PathResolution> {
+        // Watch out for cyclic path resolution.
+        if !visited.insert((*path).clone(), ()) {
+            Err(Cycle((*path).clone()))
+        } else {
+            self.resolve_path_no_cycle_check(mod_id, path, visited)
+        }
+    }
+
+    fn resolve_path_no_cycle_check(&self,
+                                   mod_id: ast::ItemIndex,
+                                   path: &ast::PathPtr,
+                                   visited: &mut HashMap<ast::PathPtr,()>)
+                                   -> Fallible<PathResolution> {
+        match **path {
+            ast::Root(id) => self.search_bindings(true, self.root_index, id, visited),
+            ast::Self(id) => self.search_bindings(false, mod_id, id, visited),
+            ast::Subpath(ref base_path, id) => {
+                match try!(self.resolve_path_no_cycle_check(mod_id, base_path, visited)) {
+                    ResolvedToNothing => Ok(ResolvedToNothing),
+                    ResolvedToItem(item_index) => {
+                        self.search_bindings(true, item_index, id, visited)
+                    }
+                }
+            }
+        }
+    }
+
+    fn search_bindings(&self,
+                       pub_use_only: bool,
+                       mod_id: ast::ItemIndex,
+                       id: Id,
+                       visited: &mut HashMap<ast::PathPtr,()>)
+                       -> Fallible<PathResolution> {
+        match self.module_maps.find(&mod_id) {
+            None => {
+                Ok(ResolvedToNothing)
+            }
+
+            Some(module_map) => {
+                match module_map.find_copy(&id) {
+                    None => {
+                        Ok(ResolvedToNothing)
+                    }
+                    Some(r) => {
+                        match *r {
+                            ExplicitBinding(ExplicitItem(id)) => {
+                                Ok(ResolvedToItem(id))
+                            }
+                            GlobBinding(GlobUse(ast::PubUse, ref path)) |
+                            ExplicitBinding(ExplicitUse(ast::PubUse, ref path)) => {
+                                self.resolve_path_after_checking_for_cycles(mod_id, path, visited)
+                            }
+                            GlobBinding(GlobUse(ast::ImportUse, ref path)) |
+                            ExplicitBinding(ExplicitUse(ast::ImportUse, ref path)) => {
+                                if pub_use_only {
+                                    Ok(ResolvedToNothing)
+                                } else {
+                                    self.resolve_path_after_checking_for_cycles(mod_id, path, visited)
+                                }
+                            }
+                            GlobBinding(GlobAmbiguous(ref b1, ref b2)) => {
+                                Err(AmbiguousBinding(b1.clone(),
+                                                     b2.clone()))
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 //
 
 enum ResolutionError {
@@ -56,20 +186,14 @@ enum ResolutionError {
 
 type Fallible<T> = Result<T, ResolutionError>;
 
-struct ResolutionContext {
-    ast: Rc<ast::AST>,
-    bindings: HashMap<ast::ItemIndex, BindingsMap>,
-    changed: bool
+struct ResolutionContext<'a> {
+    ast: &'a ast::AST,
+    bindings: &'a mut Bindings
 }
 
-enum PathResolution {
-    ResolvedToItem(ast::ItemIndex),
-    ResolvedToNothing,
-}
-
-impl ResolutionContext {
+impl<'ast> ResolutionContext<'ast> {
     fn seed(&mut self) -> Fallible<()> {
-        let ast = self.ast.clone();
+        let ast = self.ast;
         for mod_id in range(0, self.ast.items.len()) {
             match ast.items[mod_id] {
                 ast::Struct(_) => { }
@@ -104,6 +228,7 @@ impl ResolutionContext {
                     mod_id: ast::ItemIndex,
                     m: &ast::Module)
                     -> Fallible<()> {
+        let ast = self.ast;
         for &index in m.members.iter() {
             let id = match self.ast.items[index] {
                 ast::Module(ref m) => m.id,
@@ -141,20 +266,13 @@ impl ResolutionContext {
                        id: Id,
                        new_binding: BindingPtr)
                        -> Fallible<Option<BindingPtr>> {
-        match self.bindings.find(&mod_id) {
+        match self.bindings.lookup(mod_id, id) {
             None => {
                 Ok(Some(new_binding))
             }
 
-            Some(bindings_map) => {
-                match bindings_map.find(&id) {
-                    Some(old_binding) => {
-                        combine_binding(old_binding, &new_binding)
-                    }
-                    None => {
-                        Ok(Some(new_binding))
-                    }
-                }
+            Some(old_binding) => {
+                combine_binding(old_binding, &new_binding)
             }
         }
     }
@@ -163,8 +281,7 @@ impl ResolutionContext {
                                       mod_id: ast::ItemIndex,
                                       id: Id,
                                       new_binding: BindingPtr) {
-        let bindings_map = self.bindings.find_or_insert_with(mod_id, |_| HashMap::new());
-        bindings_map.insert(id, new_binding);
+        self.bindings.insert(mod_id, id, new_binding);
     }
 
     fn saturate(&mut self) -> Fallible<()> {
@@ -211,13 +328,13 @@ impl ResolutionContext {
             // We need to (1) resolve PATH against the current state
             //            (2) identify all of its current exported bindings
             //            (3) add them to our local exporting bindings
-            match try!(self.resolve_path(mod_id, &u.path)) {
+            match try!(self.bindings.resolve_path(mod_id, &u.path)) {
                 ResolvedToNothing => { }
                 ResolvedToItem(index) => {
-                    match self.bindings.find(&index) {
+                    match self.bindings.lookup_all(index) {
                         None => { }
-                        Some(bindings_map) => {
-                            for (&id, binding) in bindings_map.iter() {
+                        Some(module_map) => {
+                            for (&id, binding) in module_map.iter() {
                                 if binding.is_export() {
                                     let path = Rc::new(ast::Subpath(u.path.clone(), id));
                                     let binding = Rc::new(GlobBinding(GlobUse(u.kind, path)));
@@ -230,94 +347,6 @@ impl ResolutionContext {
             }
         }
         Ok(())
-    }
-
-    fn resolve_path(&self,
-                    mod_id: ast::ItemIndex,
-                    path: &ast::PathPtr)
-                    -> Fallible<PathResolution> {
-        let mut map = HashMap::new();
-        self.resolve_path_after_checking_for_cycles(mod_id, path, &mut map)
-    }
-
-    fn resolve_path_after_checking_for_cycles(&self,
-                                              mod_id: ast::ItemIndex,
-                                              path: &ast::PathPtr,
-                                              visited: &mut HashMap<ast::PathPtr,()>)
-                                              -> Fallible<PathResolution> {
-        // Watch out for cyclic path resolution.
-        if !visited.insert((*path).clone(), ()) {
-            Err(Cycle((*path).clone()))
-        } else {
-            self.resolve_path_no_cycle_check(mod_id, path, visited)
-        }
-    }
-
-    fn resolve_path_no_cycle_check(&self,
-                                   mod_id: ast::ItemIndex,
-                                   path: &ast::PathPtr,
-                                   visited: &mut HashMap<ast::PathPtr,()>)
-                                   -> Fallible<PathResolution> {
-        match **path {
-            ast::Root(id) => self.search_bindings(true, self.root_index(), id, visited),
-            ast::Self(id) => self.search_bindings(false, mod_id, id, visited),
-            ast::Subpath(ref base_path, id) => {
-                match try!(self.resolve_path_no_cycle_check(mod_id, base_path, visited)) {
-                    ResolvedToNothing => Ok(ResolvedToNothing),
-                    ResolvedToItem(item_index) => {
-                        self.search_bindings(true, item_index, id, visited)
-                    }
-                }
-            }
-        }
-    }
-
-    fn search_bindings(&self,
-                       pub_use_only: bool,
-                       mod_id: ast::ItemIndex,
-                       id: Id,
-                       visited: &mut HashMap<ast::PathPtr,()>)
-                       -> Fallible<PathResolution> {
-        match self.bindings.find(&mod_id) {
-            None => {
-                Ok(ResolvedToNothing)
-            }
-
-            Some(bindings_map) => {
-                match bindings_map.find_copy(&id) {
-                    None => {
-                        Ok(ResolvedToNothing)
-                    }
-                    Some(r) => {
-                        match *r {
-                            ExplicitBinding(ExplicitItem(id)) => {
-                                Ok(ResolvedToItem(id))
-                            }
-                            GlobBinding(GlobUse(ast::PubUse, ref path)) |
-                            ExplicitBinding(ExplicitUse(ast::PubUse, ref path)) => {
-                                self.resolve_path_after_checking_for_cycles(mod_id, path, visited)
-                            }
-                            GlobBinding(GlobUse(ast::ImportUse, ref path)) |
-                            ExplicitBinding(ExplicitUse(ast::ImportUse, ref path)) => {
-                                if pub_use_only {
-                                    Ok(ResolvedToNothing)
-                                } else {
-                                    self.resolve_path_after_checking_for_cycles(mod_id, path, visited)
-                                }
-                            }
-                            GlobBinding(GlobAmbiguous(ref b1, ref b2)) => {
-                                Err(AmbiguousBinding(b1.clone(),
-                                                     b2.clone()))
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    fn root_index(&self) -> ast::ItemIndex {
-        self.ast.root_index()
     }
 }
 

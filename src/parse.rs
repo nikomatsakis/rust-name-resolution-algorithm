@@ -1,3 +1,4 @@
+use std::fmt::Show;
 use intern;
 use std::uint;
 use std::str;
@@ -195,6 +196,14 @@ pub fn Lparen<G>() -> Parser<G,()> {
 
 pub fn Rparen<G>() -> Parser<G,()> {
     Token(")", is_any)
+}
+
+pub fn Lbrace<G>() -> Parser<G,()> {
+    Token("{", is_any)
+}
+
+pub fn Rbrace<G>() -> Parser<G,()> {
+    Token("}", is_any)
 }
 
 impl<G> Parse<G,()> for Token {
@@ -735,45 +744,47 @@ pub fn parse_or_fail<G,T>(grammar: &G,
 // Tests
 
 #[cfg(test)]
-pub fn test<G,T:Describe>(grammar: G,
-                          text: &'static str,
-                          parser: &Parser<G,T>,
-                          expected: &'static str) {
+pub fn test<G,T:Show>(grammar: G,
+                      text: &'static str,
+                      parser: &Parser<G,T>,
+                      expected: &'static str) {
     let bytes = text.as_bytes();
-    let mut cx = Context::new();
-    match parse(&grammar, &mut cx, bytes, parser) {
-        Err(idx) => {
-            fail!(format!("Parse error at index {}", idx))
+    intern::install(|| {
+        match parse(&grammar, bytes, parser) {
+            Err(idx) => {
+                fail!(format!("Parse error at index {}", idx))
+            }
+            Ok(v) => {
+                let description = format!("{}", v);
+                assert_eq!(description.slice_from(0), expected);
+            }
         }
-        Ok(v) => {
-            let description = cx.mk_str(v);
-            assert_eq!(description.slice_from(0), expected);
-        }
-    }
+    })
 }
 
 #[cfg(test)]
-pub fn test_err<G,T:Describe>(grammar: G,
-                              text: &'static str,
-                              parser: &Parser<G,T>,
-                              expected: uint) {
+pub fn test_err<G,T:Show>(grammar: G,
+                          text: &'static str,
+                          parser: &Parser<G,T>,
+                          expected: uint) {
     let bytes = text.as_bytes();
-    let mut cx = Context::new();
-    match parse(&grammar, &mut cx, bytes, parser) {
-        Err(index) => {
-            assert_eq!(index, expected);
+    intern::install(|| {
+        match parse(&grammar, bytes, parser) {
+            Err(index) => {
+                assert_eq!(index, expected);
+            }
+            Ok(v) => {
+                let description = format!("{}", v);
+                fail!(format!("Parse succeeded with {}", description));
+            }
         }
-        Ok(v) => {
-            let description = cx.mk_str(v);
-            fail!(format!("Parse succeeded with {}", description));
-        }
-    }
+    })
 }
 
 #[test]
 fn idents() {
     let parser = Ident().rep(1);
-    test((), " hello    world", &parser, "[hello,world]");
+    test((), " hello    world", &parser, "[hello, world]");
     test_err((), "", &parser, 0);
     test_err((), "h 1", &parser, 1);
 }
@@ -781,47 +792,39 @@ fn idents() {
 #[test]
 fn digits() {
     let parser = Integer().rep(1);
-    test((), " 12 24   36", &parser, "[12,24,36]");
+    test((), " 12 24   36", &parser, "[12, 24, 36]");
     test_err((), "", &parser, 0);
     test_err((), "1 h", &parser, 1);
 }
 
 #[test]
 fn idents_or_digits() {
-    pub enum Choice { IsIdent(intern::Id), IsNumber(uint) }
-
-    impl Describe for Choice {
-        fn describe(&self, cx: &Context, out: &mut ~str) {
-            match *self {
-                IsIdent(i) => i.describe(cx, out),
-                IsNumber(i) => i.describe(cx, out),
-            }
-        }
-    }
+    #[deriving(Show)]
+    enum Choice { IsIdent(intern::Id), IsNumber(uint) }
 
     let parser =
         Choice(~[
             Integer().map(IsNumber),
             Ident().map(IsIdent)]).rep(1);
-    test((), " 12 24 hi  36", &parser, "[12,24,hi,36]");
+    test((), " 12 24 hi  36", &parser, "[IsNumber(12), IsNumber(24), IsIdent(hi), IsNumber(36)]");
     test_err((), "--", &parser, 0);
 }
 
 #[test]
 fn arrows() {
     let parser = Arrow().rep(1);
-    test((), "-> ->  ->", &parser, "[(),(),()]");
+    test((), "-> ->  ->", &parser, "[(), (), ()]");
 }
 
 #[test]
 fn stars() {
     let parser = Star().rep(1);
-    test((), "* *", &parser, "[(),()]");
+    test((), "* *", &parser, "[(), ()]");
 }
 
 #[test]
 fn star_arrow() {
     let parser = Star().then(Arrow().thenr(Star()).rep(1));
-    test((), "* -> * -> *", &parser, "((),[(),()])");
+    test((), "* -> * -> *", &parser, "((), [(), ()])");
 }
 

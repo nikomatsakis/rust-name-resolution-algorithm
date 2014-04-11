@@ -7,5 +7,6 @@ mod intern;
 mod nameresolution;
 mod parse;
 mod grammar;
+mod test;
 
 fn main() { }

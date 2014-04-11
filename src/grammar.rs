@@ -132,7 +132,7 @@ fn Use() -> GParser<ast::Use> {
 ///////////////////////////////////////////////////////////////////////////
 // Module
 
-fn Module() -> GParser<ast::Module> {
+pub fn Module() -> GParser<ast::Module> {
     return Ref(get);
 
     fn get<'a>(g: &'a Grammar) -> &'a GParser<ast::Module> {
@@ -143,7 +143,9 @@ fn Module() -> GParser<ast::Module> {
 fn MakeModule() -> GParser<ast::Module> {
     // mod id { use* item* }
 
-    return ModKw().thenr(Ident()).then(Use().rep(0)).then(Item().rep(0))
+    return ModKw().thenr(Ident().thenl(Lbrace()))
+        .then(Use().rep(0)).then(Item().rep(0))
+        .thenl(Rbrace())
         .map(module);
 
     fn module(((id, uses), items): ((Id, ~[ast::Use]), ~[ast::ItemIndex])) -> ast::Module {
