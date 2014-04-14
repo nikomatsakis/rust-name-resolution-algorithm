@@ -67,7 +67,7 @@ impl Path {
         match *self {
             Root(i) => i,
             Self(i) => i,
-            Subpath(ref b, _) => b.tail_id()
+            Subpath(_, i) => i,
         }
     }
 }

@@ -215,7 +215,7 @@ struct ResolutionContext<'a> {
 
 impl<'ast> ResolutionContext<'ast> {
     fn seed(&mut self) -> Fallible<()> {
-        println!("seed");
+        debug!("seed");
         let ast = self.ast;
         for mod_id in range(0, self.ast.items.len()) {
             match ast.items[mod_id] {
@@ -269,6 +269,7 @@ impl<'ast> ResolutionContext<'ast> {
                                    id: Id,
                                    new_binding: BindingPtr)
                                    -> Fallible<()> {
+        debug!("insert_binding_if_necessary: {} {}", mod_id, id);
         match try!(self.compare_binding(mod_id, id, new_binding)) {
             None => { }
             Some(new_binding) => {
