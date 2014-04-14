@@ -228,6 +228,36 @@ pub fn ambiguous_double_pub_use_glob() {
 }
 
 #[test]
+pub fn ambiguous_pub_use_and_item() {
+    /*!
+     * In this test, the module `a` both has a `pub use` and a struct
+     * with the same explicit name.
+     */
+    setup(
+        "mod root {
+            mod a {
+                pub use b :: S;
+                struct S;
+            }
+
+            mod b {
+                struct S;
+            }
+        }",
+
+        [],
+
+        |ast, paths| {
+            match Bindings::new(ast) {
+                Err(DoubleBinding(..)) => {}
+                r => {
+                    fail!("Expected ambiguity error, got: {:?}", r);
+                }
+            }
+        })
+}
+
+#[test]
 pub fn specific_use_same_as_glob_use() {
     /*!
      * In this test, we import `T` twice, but once is with a glob,
@@ -389,5 +419,90 @@ pub fn pub_use_one_another() {
             let b_T = b.resolve_path_from_root(&paths[5]).unwrap();
             assert_eq!(b_T, ResolvedToItem(1));
 
+        })
+}
+
+#[test]
+pub fn use_from_child() {
+    /*!
+     * In this test, we have two modules that both `pub use` the
+     * glob contents of the other.
+     */
+    setup(
+        "mod root {
+            mod a {
+                use self :: b :: B;
+
+                mod b {
+                    struct B;
+                }
+
+                struct A;
+            }
+        }",
+
+        ["a", "self :: B"],
+
+        |ast, paths| {
+            let b = Bindings::new(ast).unwrap();
+
+            let a_B = b.resolve_path_from(&paths[0], &paths[1]).unwrap();
+            assert_eq!(a_B, ResolvedToItem(0));
+        })
+}
+
+
+#[test]
+pub fn use_cycle() {
+    /*!
+     * In this test, we have a use that uses something which doesn't
+     * exist. The result is a cycle (from within the module, anyway).
+     */
+    setup(
+        "mod root {
+            mod a {
+                use self :: C;
+            }
+        }",
+
+        ["a", "self :: C"],
+
+        |ast, paths| {
+            let b = Bindings::new(ast).unwrap();
+
+            match b.resolve_path_from(&paths[0], &paths[1]) {
+                Err(Cycle(_)) => { }
+                r => fail!("Expected cycle: {:?}", r),
+            }
+        })
+}
+
+#[test]
+pub fn pub_use_cycle() {
+    /*!
+     * In this test, we have a `pub use` that uses something which doesn't
+     * exist. The result is a cycle.
+     */
+    setup(
+        "mod root {
+            mod a {
+                pub use self :: C;
+            }
+        }",
+
+        ["a", "self :: C", "a :: C"],
+
+        |ast, paths| {
+            let b = Bindings::new(ast).unwrap();
+
+            match b.resolve_path_from(&paths[0], &paths[1]) {
+                Err(Cycle(_)) => { }
+                r => fail!("Expected cycle: {:?}", r),
+            }
+
+            match b.resolve_path_from_root(&paths[2]) {
+                Err(Cycle(_)) => { }
+                r => fail!("Expected cycle: {:?}", r),
+            }
         })
 }
