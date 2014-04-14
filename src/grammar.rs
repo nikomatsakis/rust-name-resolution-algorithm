@@ -9,19 +9,45 @@ use std::rc::Rc;
 
 local_data_key!(the_items: ~[ast::Item])
 
-pub fn parse(f: |&Grammar| -> ast::Module) -> ~[ast::Item] {
+///////////////////////////////////////////////////////////////////////////
+// Public entry points
+
+pub fn parse_program(text: &str) -> ~[ast::Item] {
+    let text_bytes = text.as_bytes();
     local_data::set(the_items, ~[]);
     let grammar = Grammar::new();
-    let m = f(&grammar);
+    let m = match parse(&grammar, text_bytes, &Module()) {
+        Ok(m) => m,
+        Err(byte) => {
+            fail!("Unexpected parse error for Program: {} (*) {}",
+                  // assumes ascii
+                  text.slice_to(byte),
+                  text.slice_from(byte))
+        }
+    };
     let mut items = local_data::pop(the_items).unwrap();
     items.push(ast::Module(m));
     items
 }
 
+pub fn parse_path(text: &str) -> ast::PathPtr {
+    let text_bytes = text.as_bytes();
+    let grammar = Grammar::new();
+    match parse(&grammar, text_bytes, &Path()) {
+        Ok(m) => m,
+        Err(byte) => {
+            fail!("Unexpected parse error for Path: {} (*) {}",
+                  // assumes ascii
+                  text.slice_to(byte),
+                  text.slice_from(byte))
+        }
+    }
+}
+
 ///////////////////////////////////////////////////////////////////////////
 //
 
-pub struct Grammar {
+struct Grammar {
     module: GParser<ast::Module>,
 }
 
@@ -102,7 +128,7 @@ fn Use() -> GParser<ast::Use> {
 
         UseKind().then(UseKw().thenr(Path()))
             .map(use_path),
-    ]);
+    ]).thenl(Semi());
 
     fn UseKind() -> GParser<ast::UseKind> {
         PubKw().opt().map(to_use_kind)
@@ -144,7 +170,8 @@ fn MakeModule() -> GParser<ast::Module> {
     // mod id { use* item* }
 
     return ModKw().thenr(Ident().thenl(Lbrace()))
-        .then(Use().rep(0)).then(Item().rep(0))
+        .then(Use().rep(0))
+        .then(Item().rep(0))
         .thenl(Rbrace())
         .map(module);
 
@@ -159,7 +186,7 @@ fn MakeModule() -> GParser<ast::Module> {
 fn Struct() -> GParser<ast::Struct> {
     // struct Id;
 
-    return StructKw().thenr(Ident()).map(structure);
+    return StructKw().thenr(Ident()).thenl(Semi()).map(structure);
 
     fn structure(id: Id) -> ast::Struct {
         ast::Struct { id: id }

@@ -34,16 +34,9 @@ pub fn is_digit(c: char) -> bool {
     }
 }
 
-pub fn is_type_start(c: char) -> bool {
-    match c {
-        'A' .. 'Z' => true,
-        _ => false
-    }
-}
-
 pub fn is_ident_start(c: char) -> bool {
     match c {
-        'a' .. 'z' | '_' => true,
+        'A' .. 'Z' | 'a' .. 'z' | '_' => true,
         _ => false
     }
 }
@@ -263,39 +256,6 @@ impl<G> Parse<G,uint> for Integer1 {
         } else {
             Ok((i, r))
         }
-    }
-}
-
-//////////////////////////////////////////////////////////////////////////////
-
-struct TypeName1;
-
-pub fn TypeName<G>() -> Parser<G,intern::Id> {
-    obj(TypeName1)
-}
-
-impl<G> Parse<G,intern::Id> for TypeName1 {
-    fn parse(&self,
-             _: &G,
-             input: &[u8],
-             start: uint)
-             -> ParseError<(uint, intern::Id)> {
-        let mut buf = ~"";
-        let start = skip_whitespace(input, start);
-
-        if start == input.len() {
-            return Err(start);
-        }
-
-        let c0 = input[start] as char;
-        if !is_type_start(c0) {
-            return Err(start);
-        }
-
-        buf.push_char(c0);
-        let end = accumulate(&mut buf, input, start+1, is_ident_cont);
-        let id = intern::intern(buf);
-        Ok((end, id))
     }
 }
 

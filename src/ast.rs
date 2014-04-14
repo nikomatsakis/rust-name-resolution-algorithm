@@ -20,6 +20,7 @@ pub struct Module {
 
 pub type ModulePtr = Rc<Module>;
 
+#[deriving(Show)]
 pub enum UseId {
     Glob,
     Named(Id)
@@ -37,6 +38,7 @@ pub enum UseKind {
     PubUse
 }
 
+#[deriving(Show)]
 pub struct Struct {
     pub id: Id
 }

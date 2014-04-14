@@ -1,6 +1,9 @@
-#![feature(globs)]
+#![feature(globs,phase)]
 
 extern crate collections;
+
+#[phase(syntax, link)]
+extern crate log;
 
 mod ast;
 mod intern;

@@ -23,7 +23,6 @@ type ExplicitBindingPtr = Rc<ExplicitBinding>;
 #[deriving(Clone)]
 enum GlobBinding {
     GlobUse(ast::UseKind, ast::PathPtr),
-    GlobAmbiguous(GlobBindingPtr, GlobBindingPtr)
 }
 
 type GlobBindingPtr = Rc<GlobBinding>;
@@ -53,7 +52,8 @@ pub struct Bindings {
     module_maps: HashMap<ast::ItemIndex, BindingsMap>,
 }
 
-enum PathResolution {
+#[deriving(Eq,Show)]
+pub enum PathResolution {
     ResolvedToItem(ast::ItemIndex),
     ResolvedToNothing,
 }
@@ -64,7 +64,11 @@ impl Bindings {
                                     module_maps: HashMap::new() };
         {
             let mut cx = ResolutionContext { ast: ast, bindings: &mut result };
+
+            debug!("About to seed");
             try!(cx.seed());
+
+            debug!("About to saturate");
             try!(cx.saturate());
         }
         Ok(result)
@@ -97,6 +101,25 @@ impl Bindings {
                         -> Fallible<PathResolution> {
         let mut map = HashMap::new();
         self.resolve_path_after_checking_for_cycles(mod_id, path, &mut map)
+    }
+
+    pub fn resolve_path_from_root(&self,
+                                  path: &ast::PathPtr)
+                                  -> Fallible<PathResolution> {
+        self.resolve_path(self.root_index, path)
+    }
+
+    pub fn resolve_path_from(&self,
+                             mod_path: &ast::PathPtr,
+                             path: &ast::PathPtr)
+                             -> Fallible<PathResolution>
+    {
+        match try!(self.resolve_path_from_root(mod_path)) {
+            ResolvedToNothing => Ok(ResolvedToNothing),
+            ResolvedToItem(mod_id) => {
+                self.resolve_path(mod_id, path)
+            }
+        }
     }
 
     fn resolve_path_after_checking_for_cycles(&self,
@@ -178,7 +201,7 @@ impl Bindings {
 
 //
 
-enum ResolutionError {
+pub enum ResolutionError {
     Cycle(ast::PathPtr),
     DoubleBinding(ExplicitBindingPtr, ExplicitBindingPtr),
     AmbiguousBinding(GlobBindingPtr, GlobBindingPtr),
@@ -193,6 +216,7 @@ struct ResolutionContext<'a> {
 
 impl<'ast> ResolutionContext<'ast> {
     fn seed(&mut self) -> Fallible<()> {
+        println!("seed");
         let ast = self.ast;
         for mod_id in range(0, self.ast.items.len()) {
             match ast.items[mod_id] {
@@ -305,6 +329,7 @@ impl<'ast> ResolutionContext<'ast> {
                 match new_bindings.pop() {
                     None => break,
                     Some((mod_id, id, binding)) => {
+                        debug!("New binding: {} {}", mod_id, id);
                         self.insert_binding_unconditionally(mod_id, id, binding);
                     }
                 }
@@ -334,19 +359,39 @@ impl<'ast> ResolutionContext<'ast> {
                     match self.bindings.lookup_all(index) {
                         None => { }
                         Some(module_map) => {
-                            for (&id, binding) in module_map.iter() {
-                                if binding.is_export() {
-                                    let path = Rc::new(ast::Subpath(u.path.clone(), id));
-                                    let binding = Rc::new(GlobBinding(GlobUse(u.kind, path)));
-                                    new_bindings.push((mod_id, id, binding.clone()));
-                                }
-                            }
+                            try!(reexport_module_bindings(self, mod_id, u,
+                                                          module_map, new_bindings))
                         }
                     }
                 }
             }
         }
-        Ok(())
+        return Ok(());
+
+        fn reexport_module_bindings(this: &ResolutionContext,
+                                    mod_id: ast::ItemIndex,
+                                    u: &ast::Use,
+                                    from_module_map: &BindingsMap,
+                                    new_bindings: &mut ~[(ast::ItemIndex, Id, BindingPtr)]) -> Fallible<()> {
+            /*!
+             * For each item X exported by `from_module_map`, create an
+             * export X in `mod_id`.
+             */
+
+            for (&id, binding) in from_module_map.iter() {
+                if binding.is_export() {
+                    let path = Rc::new(ast::Subpath(u.path.clone(), id));
+                    let binding = Rc::new(GlobBinding(GlobUse(u.kind, path)));
+                    match try!(this.compare_binding(mod_id, id, binding)) {
+                        None => { }
+                        Some(new_binding) => {
+                            new_bindings.push((mod_id, id, new_binding));
+                        }
+                    }
+                }
+            }
+            Ok(())
+        }
     }
 }
 
