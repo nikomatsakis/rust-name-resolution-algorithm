@@ -2,7 +2,7 @@ use ast;
 use intern;
 use grammar;
 use nameresolution::Bindings;
-use nameresolution::ResolvedToItem;
+use nameresolution::{ResolvedToItem,ResolvedToNothing};
 use log::macros;
 
 use std::io;
@@ -11,11 +11,10 @@ fn setup(text: &str,
          path_texts: &[&str],
          test_body: |&ast::AST, &[ast::PathPtr]|) {
     intern::install(|| {
-        let items = grammar::parse_program(text);
+        let ast = grammar::parse_ast(text);
         let paths: ~[ast::PathPtr] = path_texts.iter().map(|text| {
             grammar::parse_path(*text)
         }).collect();
-        let ast = ast::AST { items: items };
         test_body(&ast, paths)
     })
 }
@@ -61,8 +60,7 @@ pub fn test_the_first() {
 
             // a :: T yields an error because T is not an *EXPORT*
             let r = b.resolve_path_from_root(&paths[3]);
-            debug!("{:?}", r);
-            assert_eq!(r.err().is_some(), true);
+            assert_eq!(r.unwrap(), ResolvedToNothing);
 
             // but self :: T from within a works
             let r = b.resolve_path_from(&paths[0], &paths[6]);

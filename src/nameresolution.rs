@@ -3,7 +3,7 @@ use std::rc::Rc;
 use ast;
 use intern::Id;
 
-type BindingsMap = HashMap<Id, BindingPtr>;
+type ModuleMap = HashMap<Id, BindingPtr>;
 
 enum Binding {
     ExplicitBinding(ExplicitBinding),
@@ -21,8 +21,10 @@ enum ExplicitBinding {
 type ExplicitBindingPtr = Rc<ExplicitBinding>;
 
 #[deriving(Clone)]
-enum GlobBinding {
-    GlobUse(ast::UseKind, ast::PathPtr),
+struct GlobBinding {
+    use_index: ast::UseIndex,
+    use_kind: ast::UseKind,
+    path: ast::PathPtr,
 }
 
 type GlobBindingPtr = Rc<GlobBinding>;
@@ -32,13 +34,12 @@ impl Binding {
         match *self {
             ExplicitBinding(ExplicitUse(ast::PubUse, _)) |
             ExplicitBinding(ExplicitItem(_)) |
-            GlobBinding(GlobUse(ast::PubUse, _)) => {
+            GlobBinding(GlobBinding { use_kind: ast::PubUse, .. }) => {
                 true
             }
 
             ExplicitBinding(ExplicitUse(ast::ImportUse, _)) |
-            GlobBinding(GlobUse(ast::ImportUse, _)) |
-            GlobBinding(GlobAmbiguous(..)) => { // FIXME
+            GlobBinding(GlobBinding { use_kind: ast::ImportUse, .. }) => {
                 false
             }
         }
@@ -49,7 +50,7 @@ impl Binding {
 
 pub struct Bindings {
     root_index: uint,
-    module_maps: HashMap<ast::ItemIndex, BindingsMap>,
+    module_maps: HashMap<ast::ItemIndex, ModuleMap>,
 }
 
 #[deriving(Eq,Show)]
@@ -91,7 +92,7 @@ impl Bindings {
         }
     }
 
-    fn lookup_all<'a>(&'a self, mod_id: ast::ItemIndex) -> Option<&'a BindingsMap> {
+    fn lookup_all<'a>(&'a self, mod_id: ast::ItemIndex) -> Option<&'a ModuleMap> {
         self.module_maps.find(&mod_id)
     }
 
@@ -175,21 +176,19 @@ impl Bindings {
                             ExplicitBinding(ExplicitItem(id)) => {
                                 Ok(ResolvedToItem(id))
                             }
-                            GlobBinding(GlobUse(ast::PubUse, ref path)) |
+                            GlobBinding(GlobBinding { use_kind: ast::PubUse,
+                                                      path: ref path, .. }) |
                             ExplicitBinding(ExplicitUse(ast::PubUse, ref path)) => {
                                 self.resolve_path_after_checking_for_cycles(mod_id, path, visited)
                             }
-                            GlobBinding(GlobUse(ast::ImportUse, ref path)) |
+                            GlobBinding(GlobBinding { use_kind: ast::ImportUse,
+                                                      path: ref path, .. }) |
                             ExplicitBinding(ExplicitUse(ast::ImportUse, ref path)) => {
                                 if pub_use_only {
                                     Ok(ResolvedToNothing)
                                 } else {
                                     self.resolve_path_after_checking_for_cycles(mod_id, path, visited)
                                 }
-                            }
-                            GlobBinding(GlobAmbiguous(ref b1, ref b2)) => {
-                                Err(AmbiguousBinding(b1.clone(),
-                                                     b2.clone()))
                             }
                         }
                     }
@@ -234,7 +233,8 @@ impl<'ast> ResolutionContext<'ast> {
                  mod_id: ast::ItemIndex,
                  m: &ast::Module)
                  -> Fallible<()> {
-        for u in m.uses.iter() {
+        for &use_index in m.uses.iter() {
+            let u = &self.ast.uses[use_index];
             match u.id {
                 ast::Glob => { }
                 ast::Named(id) => {
@@ -342,7 +342,9 @@ impl<'ast> ResolutionContext<'ast> {
                      m: &ast::Module,
                      new_bindings: &mut ~[(ast::ItemIndex, Id, BindingPtr)])
                      -> Fallible<()> {
-        for u in m.uses.iter() {
+        for &use_index in m.uses.iter() {
+            let u = &self.ast.uses[use_index];
+
             // Just select for Glob imports.
             match u.id {
                 ast::Glob => { }
@@ -359,8 +361,9 @@ impl<'ast> ResolutionContext<'ast> {
                     match self.bindings.lookup_all(index) {
                         None => { }
                         Some(module_map) => {
-                            try!(reexport_module_bindings(self, mod_id, u,
-                                                          module_map, new_bindings))
+                            try!(reexport_module_bindings(
+                                self, mod_id, use_index,
+                                module_map, new_bindings))
                         }
                     }
                 }
@@ -370,18 +373,23 @@ impl<'ast> ResolutionContext<'ast> {
 
         fn reexport_module_bindings(this: &ResolutionContext,
                                     mod_id: ast::ItemIndex,
-                                    u: &ast::Use,
-                                    from_module_map: &BindingsMap,
+                                    use_id: ast::UseIndex,
+                                    from_module_map: &ModuleMap,
                                     new_bindings: &mut ~[(ast::ItemIndex, Id, BindingPtr)]) -> Fallible<()> {
             /*!
              * For each item X exported by `from_module_map`, create an
              * export X in `mod_id`.
              */
 
+            let u = &this.ast.uses[use_id];
             for (&id, binding) in from_module_map.iter() {
                 if binding.is_export() {
                     let path = Rc::new(ast::Subpath(u.path.clone(), id));
-                    let binding = Rc::new(GlobBinding(GlobUse(u.kind, path)));
+                    let binding = Rc::new(GlobBinding(GlobBinding {
+                        use_index: use_id,
+                        use_kind: u.kind,
+                        path: path
+                    }));
                     match try!(this.compare_binding(mod_id, id, binding)) {
                         None => { }
                         Some(new_binding) => {
@@ -412,16 +420,15 @@ fn combine_binding(old: &BindingPtr,
             Err(DoubleBinding(Rc::new((*o).clone()), Rc::new((*n).clone())))
         }
 
-        // If there are two glob bindings, that's illegal but only
-        // if the user actually tries to resolve a path.
-        (&GlobBinding(GlobAmbiguous(..)), &GlobBinding(_)) => {
-            Ok(None)
-        }
+        // Two glob bindings to the same id are an error, unless
+        // they originate from the same use statement.
         (&GlobBinding(ref o), &GlobBinding(ref n)) => {
-            let ambig =
-                Rc::new(GlobBinding(GlobAmbiguous(Rc::new((*o).clone()),
-                                                  Rc::new((*n).clone()))));
-            Ok(Some(ambig))
+            if o.use_index == n.use_index {
+                Ok(None)
+            } else {
+                Err(AmbiguousBinding(Rc::new((*o).clone()),
+                                     Rc::new((*n).clone())))
+            }
         }
     }
 }

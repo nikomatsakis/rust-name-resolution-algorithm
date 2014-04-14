@@ -7,14 +7,14 @@ use std::rc::Rc;
 ///////////////////////////////////////////////////////////////////////////
 // Context data which must be installed to do a parse
 
-local_data_key!(the_items: ~[ast::Item])
+local_data_key!(the_ast: ast::AST)
 
 ///////////////////////////////////////////////////////////////////////////
 // Public entry points
 
-pub fn parse_program(text: &str) -> ~[ast::Item] {
+pub fn parse_ast(text: &str) -> ast::AST {
     let text_bytes = text.as_bytes();
-    local_data::set(the_items, ~[]);
+    local_data::set(the_ast, ast::AST { items: ~[], uses: ~[] });
     let grammar = Grammar::new();
     let m = match parse(&grammar, text_bytes, &Module()) {
         Ok(m) => m,
@@ -25,9 +25,9 @@ pub fn parse_program(text: &str) -> ~[ast::Item] {
                   text.slice_from(byte))
         }
     };
-    let mut items = local_data::pop(the_items).unwrap();
-    items.push(ast::Module(m));
-    items
+    let mut ast = local_data::pop(the_ast).unwrap();
+    ast.items.push(ast::Module(m));
+    ast
 }
 
 pub fn parse_path(text: &str) -> ast::PathPtr {
@@ -112,7 +112,7 @@ fn Path() -> GParser<ast::PathPtr> {
 ///////////////////////////////////////////////////////////////////////////
 // Use
 
-fn Use() -> GParser<ast::Use> {
+fn Use() -> GParser<ast::UseIndex> {
     // One of the following:
     //
     // [pub] use id = path
@@ -128,7 +128,7 @@ fn Use() -> GParser<ast::Use> {
 
         UseKind().then(UseKw().thenr(Path()))
             .map(use_path),
-    ]).thenl(Semi());
+    ]).thenl(Semi()).map(register);
 
     fn UseKind() -> GParser<ast::UseKind> {
         PubKw().opt().map(to_use_kind)
@@ -153,6 +153,16 @@ fn Use() -> GParser<ast::Use> {
         let id = p.tail_id();
         ast::Use { kind: k, path: p, id: ast::Named(id) }
     }
+
+    fn register(u: ast::Use) -> ast::UseIndex {
+        let mut u = Some(u);
+        local_data::get_mut(the_ast, |ast| {
+            let ast = ast.unwrap();
+            let index = ast.uses.len();
+            ast.uses.push(u.take().unwrap());
+            index
+        })
+    }
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -175,7 +185,7 @@ fn MakeModule() -> GParser<ast::Module> {
         .thenl(Rbrace())
         .map(module);
 
-    fn module(((id, uses), items): ((Id, ~[ast::Use]), ~[ast::ItemIndex])) -> ast::Module {
+    fn module(((id, uses), items): ((Id, ~[ast::UseIndex]), ~[ast::ItemIndex])) -> ast::Module {
         ast::Module { id: id, uses: uses, members: items }
     }
 }
@@ -206,10 +216,10 @@ fn Item() -> GParser<ast::ItemIndex> {
 
     fn register(item: ast::Item) -> ast::ItemIndex {
         let mut item = Some(item);
-        local_data::get_mut(the_items, |items| {
-            let items = items.unwrap();
-            let index = items.len();
-            items.push(item.take().unwrap());
+        local_data::get_mut(the_ast, |ast| {
+            let ast = ast.unwrap();
+            let index = ast.items.len();
+            ast.items.push(item.take().unwrap());
             index
         })
     }

@@ -3,9 +3,11 @@ use intern::Id;
 
 pub struct AST {
     pub items: ~[Item],
+    pub uses: ~[Use],
 }
 
 pub type ItemIndex = uint;
+pub type UseIndex = uint;
 
 pub enum Item {
     Module(Module),
@@ -14,7 +16,7 @@ pub enum Item {
 
 pub struct Module {
     pub id: Id,
-    pub uses: ~[Use],
+    pub uses: ~[UseIndex],
     pub members: ~[ItemIndex],
 }
 
