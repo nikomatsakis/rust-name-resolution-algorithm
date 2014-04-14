@@ -25,7 +25,8 @@ General goals:
    users (see note about privacy below).
 3. Ordering of use statements with respect to declarations or to one
    another doesn't matter.
-4. Globs fully supported, behavior is "what you expect".
+4. Globs fully supported, behavior is "what you expect" (well,
+   what *I* expect, at least).
 5. No guessing. Any possible ambiguities yield an error.
 
 Some niggling details:
