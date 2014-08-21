@@ -2,22 +2,24 @@ use std::rc::Rc;
 use intern::Id;
 
 pub struct AST {
-    pub items: ~[Item],
-    pub uses: ~[Use],
+    pub items: Vec<Item>,
+    pub uses: Vec<Use>,
 }
 
 pub type ItemIndex = uint;
 pub type UseIndex = uint;
 
+#[deriving(Show)]
 pub enum Item {
     Module(Module),
     Struct(Struct),
 }
 
+#[deriving(Show)]
 pub struct Module {
     pub id: Id,
-    pub uses: ~[UseIndex],
-    pub members: ~[ItemIndex],
+    pub uses: Vec<UseIndex>,
+    pub members: Vec<ItemIndex>,
 }
 
 pub type ModulePtr = Rc<Module>;
@@ -28,13 +30,14 @@ pub enum UseId {
     Named(Id)
 }
 
+#[deriving(Show)]
 pub struct Use {
     pub kind: UseKind,
     pub path: PathPtr,
     pub id: UseId,
 }
 
-#[deriving(Clone)]
+#[deriving(Show,Clone)]
 pub enum UseKind {
     ImportUse,
     PubUse
@@ -47,7 +50,7 @@ pub struct Struct {
 
 pub type StructPtr = Rc<Struct>;
 
-#[deriving(Hash, Eq, TotalEq)]
+#[deriving(Show, Hash, Eq, PartialEq)]
 pub enum Path {
     Root(Id),
     Self(Id),

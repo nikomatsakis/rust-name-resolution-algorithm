@@ -4,19 +4,17 @@ use grammar;
 use nameresolution::Bindings;
 use nameresolution::{ResolvedToItem,ResolvedToNothing};
 use nameresolution::{Cycle,DoubleBinding,AmbiguousBinding};
-use log::macros;
 
-use std::io;
 
 fn setup(text: &str,
          path_texts: &[&str],
          test_body: |&ast::AST, &[ast::PathPtr]|) {
     intern::install(|| {
         let ast = grammar::parse_ast(text);
-        let paths: ~[ast::PathPtr] = path_texts.iter().map(|text| {
+        let paths: Vec<ast::PathPtr> = path_texts.iter().map(|text| {
             grammar::parse_path(*text)
         }).collect();
-        test_body(&ast, paths)
+        test_body(&ast, paths.as_slice())
     })
 }
 
@@ -155,11 +153,11 @@ pub fn ambiguous_double_use_glob() {
 
         [],
 
-        |ast, paths| {
+        |ast, _| {
             match Bindings::new(ast) {
                 Err(AmbiguousBinding(..)) => {}
                 r => {
-                    fail!("Expected ambiguity error, got: {:?}", r);
+                    fail!("Expected ambiguity error, got: {}", r);
                 }
             }
         })
@@ -186,11 +184,11 @@ pub fn ambiguous_double_use_explicit() {
 
         [],
 
-        |ast, paths| {
+        |ast, _| {
             match Bindings::new(ast) {
                 Err(DoubleBinding(..)) => {}
                 r => {
-                    fail!("Expected ambiguity error, got: {:?}", r);
+                    fail!("Expected ambiguity error, got: {}", r);
                 }
             }
         })
@@ -217,11 +215,11 @@ pub fn ambiguous_double_pub_use_glob() {
 
         [],
 
-        |ast, paths| {
+        |ast, _| {
             match Bindings::new(ast) {
                 Err(AmbiguousBinding(..)) => {}
                 r => {
-                    fail!("Expected ambiguity error, got: {:?}", r);
+                    fail!("Expected ambiguity error, got: {}", r);
                 }
             }
         })
@@ -247,11 +245,11 @@ pub fn ambiguous_pub_use_and_item() {
 
         [],
 
-        |ast, paths| {
+        |ast, _| {
             match Bindings::new(ast) {
                 Err(DoubleBinding(..)) => {}
                 r => {
-                    fail!("Expected ambiguity error, got: {:?}", r);
+                    fail!("Expected ambiguity error, got: {}", r);
                 }
             }
         })
@@ -278,11 +276,11 @@ pub fn specific_use_same_as_glob_use() {
 
         [],
 
-        |ast, paths| {
+        |ast, _| {
             match Bindings::new(ast) {
                 Ok(..) => {}
                 r => {
-                    fail!("Expected ambiguity error, got: {:?}", r);
+                    fail!("Expected ambiguity error, got: {}", r);
                 }
             }
         })
@@ -318,7 +316,7 @@ pub fn specific_use_overrides_glob_use() {
             let b = match Bindings::new(ast) {
                 Ok(b) => b,
                 r => {
-                    fail!("Expected ambiguity error, got: {:?}", r);
+                    fail!("Expected ambiguity error, got: {}", r);
                 }
             };
 
@@ -358,7 +356,7 @@ pub fn cyclic_pub_use() {
             for i in range(0u, 2u) {
                 match b.resolve_path_from(&paths[i], &paths[2]) {
                     Err(Cycle(..)) => (),
-                    r => fail!("Expected path {} to yield a cycle: {:?}",
+                    r => fail!("Expected path {} to yield a cycle: {}",
                                i, r)
                 }
             }
@@ -366,7 +364,7 @@ pub fn cyclic_pub_use() {
             for i in range(3u, 5u) {
                 match b.resolve_path_from_root(&paths[i]) {
                     Err(Cycle(..)) => (),
-                    r => fail!("Expected path {} to yield a cycle: {:?}",
+                    r => fail!("Expected path {} to yield a cycle: {}",
                                i, r)
                 }
             }
@@ -472,7 +470,7 @@ pub fn use_cycle() {
 
             match b.resolve_path_from(&paths[0], &paths[1]) {
                 Err(Cycle(_)) => { }
-                r => fail!("Expected cycle: {:?}", r),
+                r => fail!("Expected cycle: {}", r),
             }
         })
 }
@@ -497,12 +495,12 @@ pub fn pub_use_cycle() {
 
             match b.resolve_path_from(&paths[0], &paths[1]) {
                 Err(Cycle(_)) => { }
-                r => fail!("Expected cycle: {:?}", r),
+                r => fail!("Expected cycle: {}", r),
             }
 
             match b.resolve_path_from_root(&paths[2]) {
                 Err(Cycle(_)) => { }
-                r => fail!("Expected cycle: {:?}", r),
+                r => fail!("Expected cycle: {}", r),
             }
         })
 }

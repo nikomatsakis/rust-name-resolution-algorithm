@@ -1,23 +1,27 @@
-use collections::hashmap::HashMap;
+use std::collections::HashMap;
 use std::rc::Rc;
 use ast;
 use intern::Id;
 
 type ModuleMap = HashMap<Id, BindingPtr>;
 
-struct Binding {
-    kind: BindingKind,
-    index: ast::ItemIndex
-}
-
-enum BindingKind {
-    ExplicitBinding,
-    GlobBinding,
+#[deriving(Show)]
+enum Binding {
+    ExplicitBinding(ExplicitBinding),
+    GlobBinding(GlobBinding)
 }
 
 type BindingPtr = Rc<Binding>;
 
-#[deriving(Clone)]
+#[deriving(Show,Clone)]
+enum ExplicitBinding {
+    ExplicitUse(ast::UseKind, ast::PathPtr),
+    ExplicitItem(ast::ItemIndex),
+}
+
+type ExplicitBindingPtr = Rc<ExplicitBinding>;
+
+#[deriving(Show,Clone)]
 struct GlobBinding {
     use_index: ast::UseIndex,
     use_kind: ast::UseKind,
@@ -45,12 +49,13 @@ impl Binding {
 
 // Bindings
 
+#[deriving(Show)]
 pub struct Bindings {
     root_index: uint,
     module_maps: HashMap<ast::ItemIndex, ModuleMap>,
 }
 
-#[deriving(Eq,Show)]
+#[deriving(PartialEq,Eq,Show)]
 pub enum PathResolution {
     ResolvedToItem(ast::ItemIndex),
     ResolvedToNothing,
@@ -197,6 +202,7 @@ impl Bindings {
 
 //
 
+#[deriving(Show)]
 pub enum ResolutionError {
     Cycle(ast::PathPtr),
     DoubleBinding(ExplicitBindingPtr, ExplicitBindingPtr),
@@ -218,7 +224,27 @@ impl<'ast> ResolutionContext<'ast> {
             match ast.items[mod_id] {
                 ast::Struct(_) => { }
                 ast::Module(ref m) => {
+                    try!(self.seed_uses(mod_id, m));
                     try!(self.seed_members(mod_id, m));
+                }
+            }
+        }
+        Ok(())
+    }
+
+    fn seed_uses(&mut self,
+                 mod_id: ast::ItemIndex,
+                 m: &ast::Module)
+                 -> Fallible<()> {
+        for &use_index in m.uses.iter() {
+            let u = &self.ast.uses[use_index];
+            match u.id {
+                ast::Glob => { }
+                ast::Named(id) => {
+                    let binding = Rc::new(
+                        ExplicitBinding(ExplicitUse(u.kind,
+                                                    u.path.clone())));
+                    try!(self.insert_binding_if_necessary(mod_id, id, binding));
                 }
             }
         }
@@ -229,7 +255,6 @@ impl<'ast> ResolutionContext<'ast> {
                     mod_id: ast::ItemIndex,
                     m: &ast::Module)
                     -> Fallible<()> {
-        let ast = self.ast;
         for &index in m.members.iter() {
             let id = match self.ast.items[index] {
                 ast::Module(ref m) => m.id,
@@ -287,7 +312,7 @@ impl<'ast> ResolutionContext<'ast> {
     }
 
     fn saturate(&mut self) -> Fallible<()> {
-        let mut new_bindings = ~[];
+        let mut new_bindings = vec![];
         loop {
             let ast = self.ast.clone();
             for mod_id in range(0, self.ast.items.len()) {
@@ -318,7 +343,7 @@ impl<'ast> ResolutionContext<'ast> {
     fn saturate_uses(&mut self,
                      mod_id: ast::ItemIndex,
                      m: &ast::Module,
-                     new_bindings: &mut ~[(ast::ItemIndex, Id, BindingPtr)])
+                     new_bindings: &mut Vec<(ast::ItemIndex, Id, BindingPtr)>)
                      -> Fallible<()> {
         for &use_index in m.uses.iter() {
             let u = &self.ast.uses[use_index];
@@ -326,7 +351,7 @@ impl<'ast> ResolutionContext<'ast> {
             // Just select for Glob imports.
             match u.id {
                 ast::Glob => { }
-                ast::Named(id) => { continue; }
+                ast::Named(_) => { continue; }
             }
 
             // This is either a USE PATH :: * or PUB USE PATH :: *.
@@ -353,7 +378,7 @@ impl<'ast> ResolutionContext<'ast> {
                                     mod_id: ast::ItemIndex,
                                     use_id: ast::UseIndex,
                                     from_module_map: &ModuleMap,
-                                    new_bindings: &mut ~[(ast::ItemIndex, Id, BindingPtr)]) -> Fallible<()> {
+                                    new_bindings: &mut Vec<(ast::ItemIndex, Id, BindingPtr)>) -> Fallible<()> {
             /*!
              * For each item X exported by `from_module_map`, create an
              * export X in `mod_id`.
@@ -388,13 +413,26 @@ impl<'ast> ResolutionContext<'ast> {
 fn combine_binding(old: &BindingPtr,
                    new: &BindingPtr)
                    -> Fallible<Option<BindingPtr>> {
-    match (old.kind, new.kind) {
-        // Explicit bindings have precedence over globs.
-        (ExplicitBinding, GlobBinding) => Ok(None),
-        (GlobBinding, ExplicitBinding) => Ok(Some((*new).clone())),
+    match (&**old, &**new) {
+        // Let explicit bindings have precedence over globs.
+        (&ExplicitBinding(_), &GlobBinding(_)) => Ok(None),
+        (&GlobBinding(_), &ExplicitBinding(_)) => Ok(Some((*new).clone())),
 
-        // Two bindings with same precedence to the same thing are ok.
-        (_, _) if old.index == new.index => Ok(None),
+        // Two explicit bindings is an eager error.
+        (&ExplicitBinding(ref o), &ExplicitBinding(ref n)) => {
+            Err(DoubleBinding(Rc::new((*o).clone()), Rc::new((*n).clone())))
+        }
+
+        // Two glob bindings to the same id are an error, unless
+        // they originate from the same use statement.
+        (&GlobBinding(ref o), &GlobBinding(ref n)) => {
+            if o.use_index == n.use_index {
+                Ok(None)
+            } else {
+                Err(AmbiguousBinding(Rc::new((*o).clone()),
+                                     Rc::new((*n).clone())))
+            }
+        }
     }
 }
 

@@ -1,20 +1,21 @@
 use ast;
 use intern::Id;
 use parse::*;
-use std::local_data;
+use std::cell::RefCell;
 use std::rc::Rc;
 
 ///////////////////////////////////////////////////////////////////////////
 // Context data which must be installed to do a parse
 
-local_data_key!(the_ast: ast::AST)
+local_data_key!(the_ast: RefCell<ast::AST>)
 
 ///////////////////////////////////////////////////////////////////////////
 // Public entry points
 
 pub fn parse_ast(text: &str) -> ast::AST {
     let text_bytes = text.as_bytes();
-    local_data::set(the_ast, ast::AST { items: ~[], uses: ~[] });
+    the_ast.replace(Some(RefCell::new(
+        ast::AST { items: Vec::new(), uses: Vec::new() })));
     let grammar = Grammar::new();
     let m = match parse(&grammar, text_bytes, &Module()) {
         Ok(m) => m,
@@ -25,7 +26,7 @@ pub fn parse_ast(text: &str) -> ast::AST {
                   text.slice_from(byte))
         }
     };
-    let mut ast = local_data::pop(the_ast).unwrap();
+    let mut ast = the_ast.replace(None).unwrap().unwrap();
     ast.items.push(ast::Module(m));
     ast
 }
@@ -90,7 +91,7 @@ pub fn UseKw<G>() -> Parser<G,()> {
 //    self::...::id
 
 fn Path() -> GParser<ast::PathPtr> {
-    return Choice(~[
+    return Choice(vec![
         SelfKw()
             .thenr(ColonColon().thenr(Ident()))
             .then(ColonColon().thenr(Ident()).rep(0))
@@ -98,12 +99,12 @@ fn Path() -> GParser<ast::PathPtr> {
         Ident().then(ColonColon().thenr(Ident()).rep(0)).map(absolute)
     ]);
 
-    fn relative((id, ids): (Id, ~[Id])) -> ast::PathPtr {
+    fn relative((id, ids): (Id, Vec<Id>)) -> ast::PathPtr {
         let p = Rc::new(ast::Self(id));
         ids.move_iter().fold(p, |p, n| Rc::new(ast::Subpath(p, n)))
     }
 
-    fn absolute((id, ids): (Id, ~[Id])) -> ast::PathPtr {
+    fn absolute((id, ids): (Id, Vec<Id>)) -> ast::PathPtr {
         let p = Rc::new(ast::Root(id));
         ids.move_iter().fold(p, |p, n| Rc::new(ast::Subpath(p, n)))
     }
@@ -119,7 +120,7 @@ fn Use() -> GParser<ast::UseIndex> {
     // [pub] use path::*
     // [pub] use path
 
-    return Choice(~[
+    return Choice(vec![
         UseKind().then(UseKw().thenr(Ident()).then(Eq().thenr(Path())))
             .map(use_rename),
 
@@ -156,12 +157,11 @@ fn Use() -> GParser<ast::UseIndex> {
 
     fn register(u: ast::Use) -> ast::UseIndex {
         let mut u = Some(u);
-        local_data::get_mut(the_ast, |ast| {
-            let ast = ast.unwrap();
-            let index = ast.uses.len();
-            ast.uses.push(u.take().unwrap());
-            index
-        })
+        let ast = the_ast.get().unwrap();
+        let mut ast = ast.borrow_mut();
+        let index = ast.uses.len();
+        ast.uses.push(u.take().unwrap());
+        index
     }
 }
 
@@ -185,7 +185,7 @@ fn MakeModule() -> GParser<ast::Module> {
         .thenl(Rbrace())
         .map(module);
 
-    fn module(((id, uses), items): ((Id, ~[ast::UseIndex]), ~[ast::ItemIndex])) -> ast::Module {
+    fn module(((id, uses), items): ((Id, Vec<ast::UseIndex>), Vec<ast::ItemIndex>)) -> ast::Module {
         ast::Module { id: id, uses: uses, members: items }
     }
 }
@@ -209,18 +209,17 @@ fn Struct() -> GParser<ast::Struct> {
 fn Item() -> GParser<ast::ItemIndex> {
     // Module | Struct
 
-    return Choice(~[
+    return Choice(vec![
         Module().map(ast::Module),
         Struct().map(ast::Struct)])
         .map(register);
 
     fn register(item: ast::Item) -> ast::ItemIndex {
         let mut item = Some(item);
-        local_data::get_mut(the_ast, |ast| {
-            let ast = ast.unwrap();
-            let index = ast.items.len();
-            ast.items.push(item.take().unwrap());
-            index
-        })
+        let ast = the_ast.get().unwrap();
+        let mut ast = ast.borrow_mut();
+        let index = ast.items.len();
+        ast.items.push(item.take().unwrap());
+        index
     }
 }

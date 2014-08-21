@@ -1,7 +1,5 @@
 use std::fmt::Show;
 use intern;
-use std::uint;
-use std::str;
 
 //////////////////////////////////////////////////////////////////////////////
 // Simple parser combinator interface
@@ -19,10 +17,10 @@ pub trait Parse<G,T> {
 
 pub type ParseError<T> = Result<T, uint>;
 
-pub type Parser<G,T> = ~Parse<G,T>:'static;
+pub type Parser<G,T> = Box<Parse<G,T>+'static>;
 
 pub fn obj<G,T,R:'static+Parse<G,T>>(r: R) -> Parser<G,T> {
-    ~r as Parser<G,T>
+    box r as Parser<G,T>
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -39,10 +37,6 @@ pub fn is_ident_start(c: char) -> bool {
         'A' .. 'Z' | 'a' .. 'z' | '_' => true,
         _ => false
     }
-}
-
-pub fn is_not_ident_start(c: char) -> bool {
-    !is_ident_start(c)
 }
 
 pub fn is_ident_cont(c: char) -> bool {
@@ -78,7 +72,7 @@ pub fn is_whitespace(c: char) -> bool {
     }
 }
 
-fn accumulate(buf: &mut ~str,
+fn accumulate(buf: &mut String,
               input: &[u8],
               start: uint,
               test: |char| -> bool)
@@ -102,24 +96,6 @@ fn skip_whitespace(input: &[u8], start: uint) -> uint {
         i += 1;
     }
     i
-}
-
-//////////////////////////////////////////////////////////////////////////////
-
-struct Nothing1;
-
-fn Nothing<G>() -> Parser<G,()> {
-    obj(Nothing1)
-}
-
-impl<G> Parse<G,()> for Nothing1 {
-    fn parse(&self,
-             _: &G,
-             _: &[u8],
-             start: uint)
-             -> ParseError<(uint, ())> {
-        Ok((start, ()))
-    }
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -155,10 +131,6 @@ pub fn Token<G>(s: &'static str, term: Fn<char, bool>) -> Parser<G,()> {
     obj(Token { str: s, term: term })
 }
 
-pub fn Comma<G>() -> Parser<G,()> {
-    Token(",", is_any)
-}
-
 pub fn Star<G>() -> Parser<G,()> {
     Token("*", is_not_oper)
 }
@@ -171,24 +143,12 @@ pub fn Arrow<G>() -> Parser<G,()> {
     Token("->", is_not_oper)
 }
 
-pub fn FatArrow<G>() -> Parser<G,()> {
-    Token("=>", is_not_oper)
-}
-
 pub fn ColonColon<G>() -> Parser<G,()> {
     Token("::", is_not_oper)
 }
 
 pub fn Semi<G>() -> Parser<G,()> {
     Token(";", is_any)
-}
-
-pub fn Lparen<G>() -> Parser<G,()> {
-    Token("(", is_any)
-}
-
-pub fn Rparen<G>() -> Parser<G,()> {
-    Token(")", is_any)
 }
 
 pub fn Lbrace<G>() -> Parser<G,()> {
@@ -273,7 +233,7 @@ impl<G> Parse<G,intern::Id> for Ident1 {
              input: &[u8],
              start: uint)
              -> ParseError<(uint, intern::Id)> {
-        let mut buf = ~"";
+        let mut buf = "".to_string();
         let start = skip_whitespace(input, start);
 
         if start == input.len() {
@@ -300,7 +260,7 @@ impl<G> Parse<G,intern::Id> for Ident1 {
         if start == end {
             Err(start)
         } else {
-            let id = intern::intern(buf);
+            let id = intern::intern(buf.as_slice());
             Ok((end, id))
         }
     }
@@ -317,19 +277,19 @@ pub struct Repeat<G,T> {
 
 pub fn Repeat<G,T>(sub: Parser<G,T>,
                    min: uint,
-                   sep: Option<Parser<G,()>>) -> Parser<G,~[T]> {
+                   sep: Option<Parser<G,()>>) -> Parser<G,Vec<T>> {
     obj(Repeat { sub: sub, min: min, sep: sep })
 }
 
-impl<G,T> Parse<G,~[T]> for Repeat<G,T> {
+impl<G,T> Parse<G,Vec<T>> for Repeat<G,T> {
     fn parse(&self,
              grammar: &G,
              input: &[u8],
              start: uint)
-             -> ParseError<(uint, ~[T])> {
+             -> ParseError<(uint, Vec<T>)> {
         let mut pos = start;
         let mut err_pos;
-        let mut result = ~[];
+        let mut result = vec![];
         loop {
             match self.sub.parse(grammar, input, pos) {
                 Ok((end, v)) => {
@@ -430,15 +390,11 @@ impl<G,T,U> Parse<G,U> for Map<G,T,U> {
 // Choice: Tries many parsers in turn.
 
 pub struct Choice<G,T> {
-    choices: ~[Parser<G,T>]
+    choices: Vec<Parser<G,T>>
 }
 
-pub fn Choice<G,T>(choices: ~[Parser<G,T>]) -> Parser<G,T> {
+pub fn Choice<G,T>(choices: Vec<Parser<G,T>>) -> Parser<G,T> {
     obj(Choice { choices: choices })
-}
-
-pub fn Choice2<G,T>(left: Parser<G,T>, right: Parser<G,T>) -> Parser<G,T> {
-    Choice(~[left, right])
 }
 
 impl<G,T> Parse<G,T> for Choice<G,T> {
@@ -566,43 +522,14 @@ impl<G,T> Parse<G,()> for Not<G,T> {
 }
 
 //////////////////////////////////////////////////////////////////////////////
-// Not: Succeeds if `test` fails. Consumes nothing.
-
-pub struct Debug<G,T> {
-    tag: ~str,
-    sub: Parser<G,T>,
-}
-
-pub fn Debug<G,T>(tag: ~str, sub: Parser<G,T>) -> Parser<G,T> {
-    obj(Debug { tag: tag, sub: sub })
-}
-
-impl<G,T> Parse<G,T> for Debug<G,T> {
-    fn parse(&self,
-             grammar: &G,
-             input: &[u8],
-             start: uint)
-             -> ParseError<(uint, T)> {
-        match self.sub.parse(grammar, input, start) {
-            Ok((pos, v)) => {
-                Ok((pos, v))
-            }
-            Err(pos) => {
-                Err(pos)
-            }
-        }
-    }
-}
-
-//////////////////////////////////////////////////////////////////////////////
 // Convenient methods for constructing grammars
 
 fn first<T,U>((x, _): (T,U)) -> T { x }
 fn second<T,U>((_, x): (T,U)) -> U { x }
 
 pub trait Convenience<G,T> {
-    fn rep(self, min: uint) -> Parser<G,~[T]>;
-    fn rep_sep(self, min: uint, sep: Parser<G,()>) -> Parser<G,~[T]>;
+    fn rep(self, min: uint) -> Parser<G,Vec<T>>;
+    fn rep_sep(self, min: uint, sep: Parser<G,()>) -> Parser<G,Vec<T>>;
     fn opt(self) -> Parser<G,Option<T>>;
     fn then<U>(self, u: Parser<G,U>) -> Parser<G,(T,U)>;
     fn thenl<U>(self, u: Parser<G,U>) -> Parser<G,T>;
@@ -610,17 +537,16 @@ pub trait Convenience<G,T> {
     fn map<U>(self, f: Fn<T,U>) -> Parser<G,U>;
     fn test<U>(self, p: Parser<G,U>) -> Parser<G,T>;
     fn not(self) -> Parser<G,()>;
-    fn debug(self, tag: ~str) -> Parser<G,T>;
 }
 
 impl<G,T> Convenience<G,T> for Parser<G,T> {
     /// Repeat `self` at least `min` times
-    fn rep(self, min: uint) -> Parser<G,~[T]> {
+    fn rep(self, min: uint) -> Parser<G,Vec<T>> {
         Repeat(self, min, None)
     }
 
     /// Repeat `self` at least `min` times with separator `sep`
-    fn rep_sep(self, min: uint, sep: Parser<G,()>) -> Parser<G,~[T]> {
+    fn rep_sep(self, min: uint, sep: Parser<G,()>) -> Parser<G,Vec<T>> {
         Repeat(self, min, Some(sep))
     }
 
@@ -660,11 +586,6 @@ impl<G,T> Convenience<G,T> for Parser<G,T> {
     fn not(self) -> Parser<G,()> {
         Not(self)
     }
-
-    /// Print some debug output after parse is attempted
-    fn debug(self, tag: ~str) -> Parser<G,T> {
-        Debug(tag, self)
-    }
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -686,20 +607,6 @@ pub fn parse<G,T>(grammar: &G,
     }
 }
 
-pub fn parse_or_fail<G,T>(grammar: &G,
-                          text: &[u8],
-                          parser: &Parser<G,T>)
-                          -> T {
-    match parse(grammar, text, parser) {
-        Ok(v) => v,
-        Err(pos) => {
-            fail!(format!("Parse error: \"{}\" (here) \"{}\"",
-                          str::from_utf8(text.slice_to(pos)),
-                          str::from_utf8(text.slice_from(pos))));
-        }
-    }
-}
-
 //////////////////////////////////////////////////////////////////////////////
 // Tests
 
@@ -716,7 +623,7 @@ pub fn test<G,T:Show>(grammar: G,
             }
             Ok(v) => {
                 let description = format!("{}", v);
-                assert_eq!(description.slice_from(0), expected);
+                assert_eq!(description.as_slice(), expected);
             }
         }
     })
@@ -763,7 +670,7 @@ fn idents_or_digits() {
     enum Choice { IsIdent(intern::Id), IsNumber(uint) }
 
     let parser =
-        Choice(~[
+        Choice(vec![
             Integer().map(IsNumber),
             Ident().map(IsIdent)]).rep(1);
     test((), " 12 24 hi  36", &parser, "[IsNumber(12), IsNumber(24), IsIdent(hi), IsNumber(36)]");
