@@ -75,6 +75,10 @@ pub fn StructKw<G>() -> Parser<G,()> {
     Token("struct", is_not_ident_cont)
 }
 
+pub fn FnKw<G>() -> Parser<G,()> {
+    Token("fn", is_not_ident_cont)
+}
+
 pub fn PubKw<G>() -> Parser<G,()> {
     Token("pub", is_not_ident_cont)
 }
@@ -214,6 +218,16 @@ fn Item() -> GParser<ast::ItemIndex> {
             ast::Item { privacy: p, name: id, kind: ast::Struct }
         }
     }
+
+//    fn Fn() -> GParser<ast::Item> {
+//        // fn Id;
+//
+//        return Privacy().then(FnKw().thenr(Ident()).thenl(Semi())).map(function);
+//
+//        fn function((p, id): (ast::Privacy, Id)) -> ast::Item {
+//            ast::Item { privacy: p, name: id, kind: ast::Function }
+//        }
+//    }
 
     fn register(item: ast::Item) -> ast::ItemIndex {
         let mut item = Some(item);

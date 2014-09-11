@@ -70,6 +70,13 @@ impl AST {
     pub fn import(&self, index: uint) -> &Import {
         &self.imports[index]
     }
+
+    pub fn is_module(&self, index: uint) -> bool {
+        match self.item(index).kind {
+            Module(..) => true,
+            Struct => false
+        }
+    }
 }
 
 impl Path {
