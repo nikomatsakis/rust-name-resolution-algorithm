@@ -30,12 +30,12 @@ pub fn setup(text: &str,
 pub fn main() {
     let args = os::args();
 
-    if args.len() == 0 {
+    if args.len() < 3 {
         println!("Arguments: ast-file paths...");
         return;
     }
 
-    let file_name = args.get(0).as_slice();
+    let file_name = args.get(1).as_slice();
     let ast_string = match File::open(&Path::new(file_name.as_slice())).read_to_end() {
         Ok(s) => s,
         Err(_) => {
@@ -45,13 +45,13 @@ pub fn main() {
     };
     let ast_string = match String::from_utf8(ast_string) {
         Ok(s) => s,
-        Err(_) => {
-            println!("Source file not utf-8");
+        Err(b) => {
+            println!("Source file not utf-8: {}", b);
             return;
         }
     };
 
-    let path_strings = args.slice_from(1);
+    let path_strings = args.slice_from(2);
 
     intern::install(|| {
         let ast = grammar::parse_ast(ast_string.as_slice());

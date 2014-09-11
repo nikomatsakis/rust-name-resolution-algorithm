@@ -21,39 +21,46 @@ pub struct ResolutionState<'ast> {
     verifications: Vec<Verification>,
 }
 
+#[deriving(Show)]
 struct ModuleState {
     bindings: HashMap<Id, BindingState>,
     errors: HashMap<Id, Vec<ast::Item>>
 }
 
+#[deriving(Show)]
 pub struct BindingState {
     precedence: Precedence,
     privacy: ast::Privacy,
     value: BindingValue,
 }
 
+#[deriving(Show)]
 enum BindingValue {
     Unknown(Vec<BindingOption>),
     Known(ast::ItemIndex),
     Error,
 }
 
+#[deriving(Show)]
 enum Precedence {
     Glob,
     Explicit,
 }
 
+#[deriving(Show)]
 enum BindingOption {
     ExplicitUse(Id),
     Definition(ast::ItemIndex),
     Redirect(Redirection)
 }
 
+#[deriving(Show)]
 struct Redirection {
     import_index: ast::ImportIndex,
     path: ast::PathPtr
 }
 
+#[deriving(Show)]
 struct Verification {
     module_index: ast::ItemIndex,
     name: Id,
@@ -148,21 +155,31 @@ impl<'a> ResolutionState<'a> {
                           privacy: ast::Privacy,
                           name: Id,
                           option: BindingOption) {
+        debug!("add_binding_option(module_index=`{}`, precedence={}, privacy={}, \
+               name={}, option={}",
+               module_index, precedence, privacy, name, option);
+
         let module_state = self.modules.find_mut(&module_index).unwrap();
         match module_state.bindings.find_mut(&name) {
             Some(cur_state) => {
                 match compare_precedence(cur_state.precedence, precedence) {
-                    Ignore => { }
+                    Ignore => {
+                        debug!("Current state has higher precedence: {}",
+                               cur_state.precedence);
+                    }
                     Append => {
                         match cur_state.value {
                             Unknown(ref mut options) => {
+                                debug!("Current state unknown: Added option");
                                 options.push(option);
                             }
                             Known(item_index) => {
+                                debug!("Current state known: {}", item_index);
                                 self.verifications.push(Verification::new(module_index, name,
                                                                           option, item_index));
                             }
                             Error => {
+                                debug!("Current state error");
                                 // Already some error been reported here. No need to pile on.
                             }
                         }
@@ -172,6 +189,9 @@ impl<'a> ResolutionState<'a> {
             }
             None => { }
         }
+
+        debug!("New binding");
+
         module_state.bindings.insert(
             name,
             BindingState {
