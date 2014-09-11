@@ -3,52 +3,51 @@ use intern::Id;
 
 pub struct AST {
     pub items: Vec<Item>,
-    pub uses: Vec<Use>,
+    pub imports: Vec<Import>,
 }
 
 pub type ItemIndex = uint;
-pub type UseIndex = uint;
+pub type ImportIndex = uint;
 
 #[deriving(Show)]
-pub enum Item {
+pub struct Item {
+    pub name: Id,
+    pub privacy: Privacy,
+    pub kind: ItemKind
+}
+
+#[deriving(Show)]
+pub enum ItemKind {
     Module(Module),
-    Struct(Struct),
+    Struct,
 }
 
 #[deriving(Show)]
 pub struct Module {
-    pub id: Id,
-    pub uses: Vec<UseIndex>,
+    pub imports: Vec<ImportIndex>,
     pub members: Vec<ItemIndex>,
 }
 
 pub type ModulePtr = Rc<Module>;
 
 #[deriving(Show)]
-pub enum UseId {
+pub enum ImportId {
     Glob,
     Named(Id)
 }
 
 #[deriving(Show)]
-pub struct Use {
-    pub kind: UseKind,
+pub struct Import {
+    pub privacy: Privacy,
     pub path: PathPtr,
-    pub id: UseId,
+    pub id: ImportId,
 }
 
 #[deriving(Show,Clone)]
-pub enum UseKind {
-    ImportUse,
-    PubUse
+pub enum Privacy {
+    Public,
+    Private,
 }
-
-#[deriving(Show)]
-pub struct Struct {
-    pub id: Id
-}
-
-pub type StructPtr = Rc<Struct>;
 
 #[deriving(Show, Hash, Eq, PartialEq)]
 pub enum Path {
@@ -62,6 +61,14 @@ pub type PathPtr = Rc<Path>;
 impl AST {
     pub fn root_index(&self) -> ItemIndex {
         self.items.len() - 1
+    }
+
+    pub fn item(&self, index: uint) -> &Item {
+        &self.items[index]
+    }
+
+    pub fn import(&self, index: uint) -> &Import {
+        &self.imports[index]
     }
 }
 

@@ -15,7 +15,7 @@ local_data_key!(the_ast: RefCell<ast::AST>)
 pub fn parse_ast(text: &str) -> ast::AST {
     let text_bytes = text.as_bytes();
     the_ast.replace(Some(RefCell::new(
-        ast::AST { items: Vec::new(), uses: Vec::new() })));
+        ast::AST { items: Vec::new(), imports: Vec::new() })));
     let grammar = Grammar::new();
     let m = match parse(&grammar, text_bytes, &Module()) {
         Ok(m) => m,
@@ -27,7 +27,7 @@ pub fn parse_ast(text: &str) -> ast::AST {
         }
     };
     let mut ast = the_ast.replace(None).unwrap().unwrap();
-    ast.items.push(ast::Module(m));
+    ast.items.push(m);
     ast
 }
 
@@ -49,7 +49,7 @@ pub fn parse_path(text: &str) -> ast::PathPtr {
 //
 
 struct Grammar {
-    module: GParser<ast::Module>,
+    module: GParser<ast::Item>,
 }
 
 impl Grammar {
@@ -61,7 +61,7 @@ impl Grammar {
 type GParser<T> = Parser<Grammar, T>;
 
 ///////////////////////////////////////////////////////////////////////////
-// Misc. keywords
+// Misc.
 
 pub fn SelfKw<G>() -> Parser<G,()> {
     Token("self", is_not_ident_cont)
@@ -81,6 +81,17 @@ pub fn PubKw<G>() -> Parser<G,()> {
 
 pub fn UseKw<G>() -> Parser<G,()> {
     Token("use", is_not_ident_cont)
+}
+
+fn Privacy<G>() -> Parser<G,ast::Privacy> {
+    return PubKw().opt().map(to_privacy);
+
+    fn to_privacy(o: Option<()>) -> ast::Privacy {
+        match o {
+            Some(()) => ast::Public,
+            None => ast::Private
+        }
+    }
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -113,7 +124,7 @@ fn Path() -> GParser<ast::PathPtr> {
 ///////////////////////////////////////////////////////////////////////////
 // Use
 
-fn Use() -> GParser<ast::UseIndex> {
+fn Use() -> GParser<ast::ImportIndex> {
     // One of the following:
     //
     // [pub] use id = path
@@ -121,46 +132,35 @@ fn Use() -> GParser<ast::UseIndex> {
     // [pub] use path
 
     return Choice(vec![
-        UseKind().then(UseKw().thenr(Ident()).then(Eq().thenr(Path())))
+        Privacy().then(UseKw().thenr(Ident()).then(Eq().thenr(Path())))
             .map(use_rename),
 
-        UseKind().then(UseKw().thenr(Path()).thenl(ColonColon().then(Star())))
+        Privacy().then(UseKw().thenr(Path()).thenl(ColonColon().then(Star())))
             .map(use_glob),
 
-        UseKind().then(UseKw().thenr(Path()))
+        Privacy().then(UseKw().thenr(Path()))
             .map(use_path),
     ]).thenl(Semi()).map(register);
 
-    fn UseKind() -> GParser<ast::UseKind> {
-        PubKw().opt().map(to_use_kind)
+    fn use_rename((k, (id, p)): (ast::Privacy, (Id, ast::PathPtr))) -> ast::Import {
+        ast::Import { privacy: k, path: p, id: ast::Named(id) }
     }
 
-    fn to_use_kind(opt: Option<()>) -> ast::UseKind {
-        match opt {
-            None => ast::ImportUse,
-            Some(()) => ast::PubUse
-        }
+    fn use_glob((k, p): (ast::Privacy, ast::PathPtr)) -> ast::Import {
+        ast::Import { privacy: k, path: p, id: ast::Glob }
     }
 
-    fn use_rename((k, (id, p)): (ast::UseKind, (Id, ast::PathPtr))) -> ast::Use {
-        ast::Use { kind: k, path: p, id: ast::Named(id) }
-    }
-
-    fn use_glob((k, p): (ast::UseKind, ast::PathPtr)) -> ast::Use {
-        ast::Use { kind: k, path: p, id: ast::Glob }
-    }
-
-    fn use_path((k, p): (ast::UseKind, ast::PathPtr)) -> ast::Use {
+    fn use_path((k, p): (ast::Privacy, ast::PathPtr)) -> ast::Import {
         let id = p.tail_id();
-        ast::Use { kind: k, path: p, id: ast::Named(id) }
+        ast::Import { privacy: k, path: p, id: ast::Named(id) }
     }
 
-    fn register(u: ast::Use) -> ast::UseIndex {
+    fn register(u: ast::Import) -> ast::ImportIndex {
         let mut u = Some(u);
         let ast = the_ast.get().unwrap();
         let mut ast = ast.borrow_mut();
-        let index = ast.uses.len();
-        ast.uses.push(u.take().unwrap());
+        let index = ast.imports.len();
+        ast.imports.push(u.take().unwrap());
         index
     }
 }
@@ -168,38 +168,32 @@ fn Use() -> GParser<ast::UseIndex> {
 ///////////////////////////////////////////////////////////////////////////
 // Module
 
-pub fn Module() -> GParser<ast::Module> {
+pub fn Module() -> GParser<ast::Item> {
     return Ref(get);
 
-    fn get<'a>(g: &'a Grammar) -> &'a GParser<ast::Module> {
+    fn get<'a>(g: &'a Grammar) -> &'a GParser<ast::Item> {
         &g.module
     }
 }
 
-fn MakeModule() -> GParser<ast::Module> {
+fn MakeModule() -> GParser<ast::Item> {
     // mod id { use* item* }
 
-    return ModKw().thenr(Ident().thenl(Lbrace()))
+    return Privacy().then(ModKw().thenr(Ident().thenl(Lbrace()))
         .then(Use().rep(0))
         .then(Item().rep(0))
-        .thenl(Rbrace())
+        .thenl(Rbrace()))
         .map(module);
 
-    fn module(((id, uses), items): ((Id, Vec<ast::UseIndex>), Vec<ast::ItemIndex>)) -> ast::Module {
-        ast::Module { id: id, uses: uses, members: items }
-    }
-}
-
-///////////////////////////////////////////////////////////////////////////
-// Struct
-
-fn Struct() -> GParser<ast::Struct> {
-    // struct Id;
-
-    return StructKw().thenr(Ident()).thenl(Semi()).map(structure);
-
-    fn structure(id: Id) -> ast::Struct {
-        ast::Struct { id: id }
+    fn module((privacy, ((id, imports), items)):
+              (ast::Privacy, ((Id, Vec<ast::ImportIndex>), Vec<ast::ItemIndex>)))
+              -> ast::Item
+    {
+        ast::Item {
+            name: id,
+            privacy: privacy,
+            kind: ast::Module(ast::Module { imports: imports, members: items })
+        }
     }
 }
 
@@ -209,10 +203,17 @@ fn Struct() -> GParser<ast::Struct> {
 fn Item() -> GParser<ast::ItemIndex> {
     // Module | Struct
 
-    return Choice(vec![
-        Module().map(ast::Module),
-        Struct().map(ast::Struct)])
-        .map(register);
+    return Choice(vec![Module(), Struct()]).map(register);
+
+    fn Struct() -> GParser<ast::Item> {
+        // struct Id;
+
+        return Privacy().then(StructKw().thenr(Ident()).thenl(Semi())).map(structure);
+
+        fn structure((p, id): (ast::Privacy, Id)) -> ast::Item {
+            ast::Item { privacy: p, name: id, kind: ast::Struct }
+        }
+    }
 
     fn register(item: ast::Item) -> ast::ItemIndex {
         let mut item = Some(item);
@@ -223,3 +224,4 @@ fn Item() -> GParser<ast::ItemIndex> {
         index
     }
 }
+

@@ -1,438 +1,237 @@
 use std::collections::HashMap;
-use std::rc::Rc;
 use ast;
 use intern::Id;
 
-type ModuleMap = HashMap<Id, BindingPtr>;
+///////////////////////////////////////////////////////////////////////////
+// PUBLIC INTERFACE
 
-#[deriving(Show)]
-enum Binding {
-    ExplicitBinding(ExplicitBinding),
-    GlobBinding(GlobBinding)
+pub type ModuleMap = HashMap<Id, Binding>;
+
+pub struct Binding {
+    pub privacy: ast::Privacy,
+    pub item: ast::ItemIndex,
 }
 
-type BindingPtr = Rc<Binding>;
+///////////////////////////////////////////////////////////////////////////
+// INTERMEDIATE DATA STRUCTURES
 
-#[deriving(Show,Clone)]
-enum ExplicitBinding {
-    ExplicitUse(ast::UseKind, ast::PathPtr),
-    ExplicitItem(ast::ItemIndex),
+pub struct ResolutionState<'ast> {
+    ast: &'ast ast::AST,
+    modules: HashMap<ast::ItemIndex, ModuleState>,
+    verifications: Vec<Verification>,
 }
 
-type ExplicitBindingPtr = Rc<ExplicitBinding>;
-
-#[deriving(Show,Clone)]
-struct GlobBinding {
-    use_index: ast::UseIndex,
-    use_kind: ast::UseKind,
-    path: ast::PathPtr,
+struct ModuleState {
+    bindings: HashMap<Id, BindingState>,
+    errors: HashMap<Id, Vec<ast::Item>>
 }
 
-type GlobBindingPtr = Rc<GlobBinding>;
+pub struct BindingState {
+    precedence: Precedence,
+    privacy: ast::Privacy,
+    value: BindingValue,
+}
 
-impl Binding {
-    fn is_export(&self) -> bool {
-        match *self {
-            ExplicitBinding(ExplicitUse(ast::PubUse, _)) |
-            ExplicitBinding(ExplicitItem(_)) |
-            GlobBinding(GlobBinding { use_kind: ast::PubUse, .. }) => {
-                true
-            }
+enum BindingValue {
+    Unknown(Vec<BindingOption>),
+    Known(ast::ItemIndex),
+    Error,
+}
 
-            ExplicitBinding(ExplicitUse(ast::ImportUse, _)) |
-            GlobBinding(GlobBinding { use_kind: ast::ImportUse, .. }) => {
-                false
-            }
+enum Precedence {
+    Glob,
+    Explicit,
+}
+
+enum BindingOption {
+    ExplicitUse(Id),
+    Definition(ast::ItemIndex),
+    Redirect(Redirection)
+}
+
+struct Redirection {
+    import_index: ast::ImportIndex,
+    path: ast::PathPtr
+}
+
+struct Verification {
+    module_index: ast::ItemIndex,
+    name: Id,
+    option: BindingOption,
+    should_resolve_to: ast::ItemIndex
+}
+
+///////////////////////////////////////////////////////////////////////////
+
+pub fn resolve(ast: &ast::AST) -> ResolutionState {
+    let mut state = ResolutionState::new(ast);
+    state.create_module_states();
+    state.seed();
+    state.saturate();
+    state.check();
+    state
+}
+
+impl<'a> ResolutionState<'a> {
+    fn new(ast: &'a ast::AST) -> ResolutionState<'a> {
+        ResolutionState {
+            ast: ast,
+            modules: HashMap::new(),
+            verifications: Vec::new()
         }
     }
-}
 
-// Bindings
-
-#[deriving(Show)]
-pub struct Bindings {
-    root_index: uint,
-    module_maps: HashMap<ast::ItemIndex, ModuleMap>,
-}
-
-#[deriving(PartialEq,Eq,Show)]
-pub enum PathResolution {
-    ResolvedToItem(ast::ItemIndex),
-    ResolvedToNothing,
-}
-
-impl Bindings {
-    pub fn new(ast: &ast::AST) -> Fallible<Bindings> {
-        let mut result = Bindings { root_index: ast.root_index(),
-                                    module_maps: HashMap::new() };
-        {
-            let mut cx = ResolutionContext { ast: ast, bindings: &mut result };
-
-            debug!("About to seed");
-            try!(cx.seed());
-
-            debug!("About to saturate");
-            try!(cx.saturate());
-        }
-        Ok(result)
-    }
-
-    fn insert(&mut self, mod_id: ast::ItemIndex, id: Id, binding: BindingPtr) {
-        let module_map = self.module_maps.find_or_insert_with(mod_id, |_| HashMap::new());
-        module_map.insert(id, binding);
-    }
-
-    fn lookup<'a>(&'a self, mod_id: ast::ItemIndex, id: Id) -> Option<&'a BindingPtr> {
-        match self.module_maps.find(&mod_id) {
-            None => {
-                None
-            }
-
-            Some(module_map) => {
-                module_map.find(&id)
+    fn create_module_states(&mut self) {
+        for (index, item) in self.ast.items.iter().enumerate() {
+            match item.kind {
+                ast::Module(..) => { self.modules.insert(index, ModuleState::new()); }
+                ast::Struct => { }
             }
         }
     }
 
-    fn lookup_all<'a>(&'a self, mod_id: ast::ItemIndex) -> Option<&'a ModuleMap> {
-        self.module_maps.find(&mod_id)
-    }
-
-    pub fn resolve_path(&self,
-                        mod_id: ast::ItemIndex,
-                        path: &ast::PathPtr)
-                        -> Fallible<PathResolution> {
-        let mut map = HashMap::new();
-        self.resolve_path_after_checking_for_cycles(mod_id, path, &mut map)
-    }
-
-    pub fn resolve_path_from_root(&self,
-                                  path: &ast::PathPtr)
-                                  -> Fallible<PathResolution> {
-        self.resolve_path(self.root_index, path)
-    }
-
-    pub fn resolve_path_from(&self,
-                             mod_path: &ast::PathPtr,
-                             path: &ast::PathPtr)
-                             -> Fallible<PathResolution>
-    {
-        match try!(self.resolve_path_from_root(mod_path)) {
-            ResolvedToNothing => Ok(ResolvedToNothing),
-            ResolvedToItem(mod_id) => {
-                self.resolve_path(mod_id, path)
+    fn seed(&mut self) {
+        for (index, item) in self.ast.items.iter().enumerate() {
+            match item.kind {
+                ast::Module(ref m) => { self.seed_module(index, m); }
+                ast::Struct => { }
             }
         }
     }
 
-    fn resolve_path_after_checking_for_cycles(&self,
-                                              mod_id: ast::ItemIndex,
-                                              path: &ast::PathPtr,
-                                              visited: &mut HashMap<ast::PathPtr,()>)
-                                              -> Fallible<PathResolution> {
-        // Watch out for cyclic path resolution.
-        if !visited.insert((*path).clone(), ()) {
-            Err(Cycle((*path).clone()))
-        } else {
-            self.resolve_path_no_cycle_check(mod_id, path, visited)
+    fn seed_module(&mut self, module_index: ast::ItemIndex, module: &ast::Module) {
+        for &import_index in module.imports.iter() {
+            self.seed_from_import(module_index, module, import_index);
+        }
+
+        for &item_index in module.members.iter() {
+            self.seed_from_member(module_index, module, item_index);
         }
     }
 
-    fn resolve_path_no_cycle_check(&self,
-                                   mod_id: ast::ItemIndex,
-                                   path: &ast::PathPtr,
-                                   visited: &mut HashMap<ast::PathPtr,()>)
-                                   -> Fallible<PathResolution> {
-        match **path {
-            ast::Root(id) => self.search_bindings(true, self.root_index, id, visited),
-            ast::Self(id) => self.search_bindings(false, mod_id, id, visited),
-            ast::Subpath(ref base_path, id) => {
-                match try!(self.resolve_path_no_cycle_check(mod_id, base_path, visited)) {
-                    ResolvedToNothing => Ok(ResolvedToNothing),
-                    ResolvedToItem(item_index) => {
-                        self.search_bindings(true, item_index, id, visited)
-                    }
-                }
+    fn seed_from_import(&mut self,
+                        module_index: ast::ItemIndex,
+                        module: &ast::Module,
+                        import_index: ast::ItemIndex) {
+        let import = self.ast.import(import_index);
+        match import.id {
+            ast::Glob => {
+                // Ignore globs during the seed phase.
+            }
+
+            ast::Named(name) => {
+                self.add_binding_option(module_index,
+                                        Explicit,
+                                        import.privacy,
+                                        name,
+                                        Redirect(Redirection::new(import_index,
+                                                                  import.path.clone())));
             }
         }
     }
 
-    fn search_bindings(&self,
-                       pub_use_only: bool,
-                       mod_id: ast::ItemIndex,
-                       id: Id,
-                       visited: &mut HashMap<ast::PathPtr,()>)
-                       -> Fallible<PathResolution> {
-        match self.module_maps.find(&mod_id) {
-            None => {
-                Ok(ResolvedToNothing)
-            }
+    fn seed_from_member(&mut self,
+                        module_index: ast::ItemIndex,
+                        module: &ast::Module,
+                        item_index: ast::ItemIndex) {
+        let item = self.ast.item(item_index);
+        self.add_binding_option(module_index,
+                                Explicit,
+                                item.privacy,
+                                item.name,
+                                Definition(item_index));
+    }
 
-            Some(module_map) => {
-                match module_map.find_copy(&id) {
-                    None => {
-                        Ok(ResolvedToNothing)
-                    }
-                    Some(r) => {
-                        match *r {
-                            ExplicitBinding(ExplicitItem(id)) => {
-                                Ok(ResolvedToItem(id))
+    fn add_binding_option(&mut self,
+                          module_index: ast::ItemIndex,
+                          precedence: Precedence,
+                          privacy: ast::Privacy,
+                          name: Id,
+                          option: BindingOption) {
+        let module_state = self.modules.find_mut(&module_index).unwrap();
+        match module_state.bindings.find_mut(&name) {
+            Some(cur_state) => {
+                match compare_precedence(cur_state.precedence, precedence) {
+                    Ignore => { }
+                    Append => {
+                        match cur_state.value {
+                            Unknown(ref mut options) => {
+                                options.push(option);
                             }
-                            GlobBinding(GlobBinding { use_kind: ast::PubUse,
-                                                      path: ref path, .. }) |
-                            ExplicitBinding(ExplicitUse(ast::PubUse, ref path)) => {
-                                self.resolve_path_after_checking_for_cycles(mod_id, path, visited)
+                            Known(item_index) => {
+                                self.verifications.push(Verification::new(module_index, name,
+                                                                          option, item_index));
                             }
-                            GlobBinding(GlobBinding { use_kind: ast::ImportUse,
-                                                      path: ref path, .. }) |
-                            ExplicitBinding(ExplicitUse(ast::ImportUse, ref path)) => {
-                                if pub_use_only {
-                                    Ok(ResolvedToNothing)
-                                } else {
-                                    self.resolve_path_after_checking_for_cycles(mod_id, path, visited)
-                                }
+                            Error => {
+                                // Already some error been reported here. No need to pile on.
                             }
                         }
                     }
                 }
+                return;
             }
-        }
-    }
-}
-
-//
-
-#[deriving(Show)]
-pub enum ResolutionError {
-    Cycle(ast::PathPtr),
-    DoubleBinding(ExplicitBindingPtr, ExplicitBindingPtr),
-    AmbiguousBinding(GlobBindingPtr, GlobBindingPtr),
-}
-
-type Fallible<T> = Result<T, ResolutionError>;
-
-struct ResolutionContext<'a> {
-    ast: &'a ast::AST,
-    bindings: &'a mut Bindings
-}
-
-impl<'ast> ResolutionContext<'ast> {
-    fn seed(&mut self) -> Fallible<()> {
-        debug!("seed");
-        let ast = self.ast;
-        for mod_id in range(0, self.ast.items.len()) {
-            match ast.items[mod_id] {
-                ast::Struct(_) => { }
-                ast::Module(ref m) => {
-                    try!(self.seed_uses(mod_id, m));
-                    try!(self.seed_members(mod_id, m));
-                }
-            }
-        }
-        Ok(())
-    }
-
-    fn seed_uses(&mut self,
-                 mod_id: ast::ItemIndex,
-                 m: &ast::Module)
-                 -> Fallible<()> {
-        for &use_index in m.uses.iter() {
-            let u = &self.ast.uses[use_index];
-            match u.id {
-                ast::Glob => { }
-                ast::Named(id) => {
-                    let binding = Rc::new(
-                        ExplicitBinding(ExplicitUse(u.kind,
-                                                    u.path.clone())));
-                    try!(self.insert_binding_if_necessary(mod_id, id, binding));
-                }
-            }
-        }
-        Ok(())
-    }
-
-    fn seed_members(&mut self,
-                    mod_id: ast::ItemIndex,
-                    m: &ast::Module)
-                    -> Fallible<()> {
-        for &index in m.members.iter() {
-            let id = match self.ast.items[index] {
-                ast::Module(ref m) => m.id,
-                ast::Struct(ref s) => s.id
-            };
-            let binding = Rc::new(ExplicitBinding(ExplicitItem(index)));
-            try!(self.insert_binding_if_necessary(mod_id, id, binding));
-        }
-        Ok(())
-    }
-
-    fn insert_binding_if_necessary(&mut self,
-                                   mod_id: ast::ItemIndex,
-                                   id: Id,
-                                   new_binding: BindingPtr)
-                                   -> Fallible<()> {
-        debug!("insert_binding_if_necessary: {} {}", mod_id, id);
-        match try!(self.compare_binding(mod_id, id, new_binding)) {
             None => { }
-            Some(new_binding) => {
-                self.insert_binding_unconditionally(mod_id, id, new_binding)
-            }
         }
-        Ok(())
+        module_state.bindings.insert(
+            name,
+            BindingState {
+                precedence: precedence,
+                privacy: privacy,
+                value: Unknown(vec![option])
+            });
     }
 
-    /**
-     * Compares the existing binding for `mod_id::id` (if any)
-     * to the new binding `new_binding`. Returns an error if it is
-     * illegal to have both bindings simultaneously. Otherwise,
-     * returns `Some(x)` if the existing binding should be replaced by
-     * `x` or `None` if the existing binding is fine.
-     */
-    fn compare_binding(&self,
-                       mod_id: ast::ItemIndex,
-                       id: Id,
-                       new_binding: BindingPtr)
-                       -> Fallible<Option<BindingPtr>> {
-        match self.bindings.lookup(mod_id, id) {
-            None => {
-                Ok(Some(new_binding))
-            }
-
-            Some(old_binding) => {
-                combine_binding(old_binding, &new_binding)
-            }
-        }
+    fn saturate(&mut self) {
     }
 
-    fn insert_binding_unconditionally(&mut self,
-                                      mod_id: ast::ItemIndex,
-                                      id: Id,
-                                      new_binding: BindingPtr) {
-        self.bindings.insert(mod_id, id, new_binding);
+    fn check(&mut self) {
     }
+}
 
-    fn saturate(&mut self) -> Fallible<()> {
-        let mut new_bindings = vec![];
-        loop {
-            let ast = self.ast.clone();
-            for mod_id in range(0, self.ast.items.len()) {
-                match ast.items[mod_id] {
-                    ast::Struct(_) => { }
-                    ast::Module(ref m) => {
-                        try!(self.saturate_uses(mod_id, m, &mut new_bindings));
-                    }
-                }
-            }
-
-            if new_bindings.len() == 0 {
-                return Ok(());
-            }
-
-            loop {
-                match new_bindings.pop() {
-                    None => break,
-                    Some((mod_id, id, binding)) => {
-                        debug!("New binding: {} {}", mod_id, id);
-                        self.insert_binding_unconditionally(mod_id, id, binding);
-                    }
-                }
-            }
-        }
-    }
-
-    fn saturate_uses(&mut self,
-                     mod_id: ast::ItemIndex,
-                     m: &ast::Module,
-                     new_bindings: &mut Vec<(ast::ItemIndex, Id, BindingPtr)>)
-                     -> Fallible<()> {
-        for &use_index in m.uses.iter() {
-            let u = &self.ast.uses[use_index];
-
-            // Just select for Glob imports.
-            match u.id {
-                ast::Glob => { }
-                ast::Named(_) => { continue; }
-            }
-
-            // This is either a USE PATH :: * or PUB USE PATH :: *.
-            // We need to (1) resolve PATH against the current state
-            //            (2) identify all of its current exported bindings
-            //            (3) add them to our local exporting bindings
-            match try!(self.bindings.resolve_path(mod_id, &u.path)) {
-                ResolvedToNothing => { }
-                ResolvedToItem(index) => {
-                    match self.bindings.lookup_all(index) {
-                        None => { }
-                        Some(module_map) => {
-                            try!(reexport_module_bindings(
-                                self, mod_id, use_index,
-                                module_map, new_bindings))
-                        }
-                    }
-                }
-            }
-        }
-        return Ok(());
-
-        fn reexport_module_bindings(this: &ResolutionContext,
-                                    mod_id: ast::ItemIndex,
-                                    use_id: ast::UseIndex,
-                                    from_module_map: &ModuleMap,
-                                    new_bindings: &mut Vec<(ast::ItemIndex, Id, BindingPtr)>) -> Fallible<()> {
-            /*!
-             * For each item X exported by `from_module_map`, create an
-             * export X in `mod_id`.
-             */
-
-            let u = &this.ast.uses[use_id];
-            for (&id, binding) in from_module_map.iter() {
-                if binding.is_export() {
-                    let path = Rc::new(ast::Subpath(u.path.clone(), id));
-                    let binding = Rc::new(GlobBinding(GlobBinding {
-                        use_index: use_id,
-                        use_kind: u.kind,
-                        path: path
-                    }));
-                    match try!(this.compare_binding(mod_id, id, binding)) {
-                        None => { }
-                        Some(new_binding) => {
-                            new_bindings.push((mod_id, id, new_binding));
-                        }
-                    }
-                }
-            }
-            Ok(())
+impl ModuleState {
+    fn new() -> ModuleState {
+        ModuleState {
+            bindings: HashMap::new(),
+            errors: HashMap::new()
         }
     }
 }
 
-/**
- * Given that we've already added the binding `old`, adjust for
- * the new binding `new`.
- */
-fn combine_binding(old: &BindingPtr,
-                   new: &BindingPtr)
-                   -> Fallible<Option<BindingPtr>> {
-    match (&**old, &**new) {
-        // Let explicit bindings have precedence over globs.
-        (&ExplicitBinding(_), &GlobBinding(_)) => Ok(None),
-        (&GlobBinding(_), &ExplicitBinding(_)) => Ok(Some((*new).clone())),
+impl Redirection {
+    fn new(i: ast::ImportIndex, p: ast::PathPtr) -> Redirection {
+        Redirection { import_index: i, path: p }
+    }
+}
 
-        // Two explicit bindings is an eager error.
-        (&ExplicitBinding(ref o), &ExplicitBinding(ref n)) => {
-            Err(DoubleBinding(Rc::new((*o).clone()), Rc::new((*n).clone())))
-        }
-
-        // Two glob bindings to the same id are an error, unless
-        // they originate from the same use statement.
-        (&GlobBinding(ref o), &GlobBinding(ref n)) => {
-            if o.use_index == n.use_index {
-                Ok(None)
-            } else {
-                Err(AmbiguousBinding(Rc::new((*o).clone()),
-                                     Rc::new((*n).clone())))
-            }
+impl Verification {
+    fn new(module_index: ast::ItemIndex,
+           name: Id,
+           option: BindingOption,
+           item: ast::ItemIndex)
+           -> Verification
+    {
+        Verification {
+            module_index: module_index, name:name, option: option, should_resolve_to: item
         }
     }
 }
 
+enum PrecedenceComparison {
+    /// Ignore the new value.
+    Ignore,
+
+    /// Append the new value.
+    Append,
+}
+
+fn compare_precedence(old_prec: Precedence,
+                      new_prec: Precedence)
+                      -> PrecedenceComparison
+{
+    match (old_prec, new_prec) {
+        (Explicit, Glob) => Ignore,
+        (Explicit, Explicit) => Append,
+        (Glob, Explicit) => fail!("Should not happen!"),
+        (Glob, Glob) => Append,
+    }
+}
