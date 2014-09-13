@@ -59,10 +59,24 @@ pub fn main() {
             grammar::parse_path(text.as_slice())
         }).collect();
 
-        let resolution_state = nameresolution::resolve(&ast);
+        let mut resolution_state = nameresolution::resolve(&ast);
+
+        for error in resolution_state.errors().iter() {
+            println!("Error: {}", error);
+        }
 
         for path in paths.iter() {
-            println!("Path={}", path);
+            let result = resolution_state.resolve_path_relative_to_root((*path).clone());
+            match result {
+                nameresolution::ResolvedToSuccess(item_index) => {
+                    println!("Path={} resolves to item #{} = {}",
+                             path, item_index, ast.item(item_index));
+                }
+                _ => {
+                    println!("Path={} resolves to {}",
+                             path, result);
+                }
+            }
         }
     });
 }

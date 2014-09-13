@@ -7,11 +7,24 @@ use intern::Id;
 ///////////////////////////////////////////////////////////////////////////
 // PUBLIC INTERFACE
 
-pub type ModuleMap = HashMap<Id, Binding>;
+pub struct ProgramBindings {
+    pub modules: HashMap<Id, ModuleBindings>
+}
+
+pub struct ModuleBindings {
+    pub bindings: HashMap<Id, Binding>
+}
 
 pub struct Binding {
     pub privacy: ast::Privacy,
     pub item: ast::ItemIndex,
+    pub kind: BindingTarget
+}
+
+pub enum BindingTarget {
+    BoundToItem(ast::ItemIndex),
+    BoundRelativeToType(ast::ItemIndex, Vec<Id>),
+    BoundAmbiguously
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -43,7 +56,7 @@ enum BindingValue {
 }
 
 #[deriving(Show)]
-enum Error {
+pub enum Error {
     CycleError(ast::ItemIndex, ast::PathPtr),
     GlobFromNonModule(ast::ItemIndex),
 }
@@ -86,6 +99,10 @@ impl<'a> ResolutionState<'a> {
             modules: HashMap::new(),
             errors: Vec::new()
         }
+    }
+
+    pub fn errors(&self) -> &Vec<Error> {
+        return &self.errors;
     }
 
     fn create_module_states(&mut self) {
@@ -225,6 +242,7 @@ impl<'a> ResolutionState<'a> {
     fn saturate(&mut self) {
         let mut changed = true;
         while changed {
+            changed = false;
             for (index, item) in self.ast.items.iter().enumerate() {
                 match item.kind {
                     ast::Struct => { }
@@ -263,6 +281,9 @@ impl<'a> ResolutionState<'a> {
                      import_index: ast::ImportIndex)
                      -> Vec<Redirection>
     {
+        debug!("module_index={} import_index={}",
+               module_index, import_index);
+
         let import = self.ast.import(import_index);
 
         let module_index = match import.id {
@@ -319,6 +340,14 @@ impl<'a> ResolutionState<'a> {
         let mut path_resolver = PathResolver::new(self);
         path_resolver.resolve_path(relative_to_module, path)
     }
+
+    pub fn resolve_path_relative_to_root(
+        &mut self,
+        path: ast::PathPtr)
+        -> PathResolution
+    {
+        self.resolve_path(self.ast.root_index(), path)
+    }
 }
 
 impl ModuleState {
@@ -372,7 +401,8 @@ struct PathResolver<'p, 'ast> {
     stack: Vec<ast::PathPtr>,
 }
 
-enum PathResolution {
+#[deriving(Show)]
+pub enum PathResolution {
     ResolvedToSuccess(ast::ItemIndex),
     ResolvedToTypeRelative(ast::ItemIndex, Vec<Id>),
     ResolvedToError,
