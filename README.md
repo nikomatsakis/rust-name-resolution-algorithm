@@ -130,3 +130,8 @@ General overview of the algoritm:
   the prototype, such cycles are only detected when we actually
   attempt to resolve a path like `a::T`.
 
+### ISSUES
+
+- Relative precedence of macros vs explicit declarations
+- Paths relative to types and type/value namespace -- resolve can't
+  know which is which!

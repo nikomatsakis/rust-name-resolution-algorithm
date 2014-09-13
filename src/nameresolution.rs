@@ -21,10 +21,10 @@ pub struct Binding {
     pub kind: BindingTarget
 }
 
+#[deriving(Show,PartialEq,Clone)]
 pub enum BindingTarget {
     BoundToItem(ast::ItemIndex),
     BoundRelativeToType(ast::ItemIndex, Vec<Id>),
-    BoundAmbiguously
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -51,7 +51,7 @@ pub struct BindingState {
 #[deriving(Show)]
 enum BindingValue {
     UnknownValue(Vec<BindingOption>),
-    KnownValue(ast::ItemIndex, Vec<BindingOption>),
+    KnownValue(BindingTarget, Vec<BindingOption>),
     ErrorValue,
 }
 
@@ -59,6 +59,8 @@ enum BindingValue {
 pub enum Error {
     CycleError(ast::ItemIndex, ast::PathPtr),
     GlobFromNonModule(ast::ItemIndex),
+    Conflict(ast::ItemIndex, Id, BindingTarget, BindingTarget),
+    Unresolved(ast::ItemIndex, Id),
 }
 
 #[deriving(Show)]
@@ -67,13 +69,13 @@ enum Precedence {
     Explicit,
 }
 
-#[deriving(Show,PartialEq)]
+#[deriving(Show,PartialEq,Clone)]
 enum BindingOption {
     Definition(ast::ItemIndex),
     Redirect(Redirection)
 }
 
-#[deriving(Show,PartialEq)]
+#[deriving(Show,PartialEq,Clone)]
 struct Redirection {
     name: Id,
     import_index: ast::ImportIndex,
@@ -88,7 +90,6 @@ pub fn resolve(ast: &ast::AST) -> ResolutionState {
     state.create_module_states();
     state.seed();
     state.saturate();
-    state.check();
     state
 }
 
@@ -292,14 +293,17 @@ impl<'a> ResolutionState<'a> {
             }
             ast::Glob => {
                 match self.resolve_path(module_index, import.path.clone()) {
-                    ResolvedToSuccess(item_index) => {
+                    ResolvedToSuccess(BoundToItem(item_index)) => {
                         if !self.ast.is_module(item_index) {
                             self.errors.push(GlobFromNonModule(item_index));
                             return Vec::new();
                         }
                         item_index
                     }
-                    ResolvedToTypeRelative(type_id, _) => {
+                    ResolvedToSuccess(BoundRelativeToType(type_id, _)) => {
+                        // In rustc, we might want to enable this in
+                        // some cases, e.g. use some::Trait::*;, but
+                        // we can't in general allow it.
                         self.errors.push(GlobFromNonModule(type_id));
                         return Vec::new();
                     }
@@ -328,10 +332,79 @@ impl<'a> ResolutionState<'a> {
             .collect()
     }
 
-    fn check(&mut self) {
+    pub fn check(&mut self) {
+        /*!
+         * At this point, we have reached a fully saturated state.
+         * We can now proceed to check.
+         */
+
+        let mut to_verify = Vec::new();
+
+        for (&module_index, module_state) in self.modules.iter() {
+            for (&binding_id, binding_state) in module_state.bindings.iter() {
+                match binding_state.value {
+                    UnknownValue(..) => {
+                        // If this value is unknown, it means that
+                        // nobody has touched it yet. Until they do,
+                        // we can ignore the unknown state -- it may
+                        // contain ambiguities etc but that's ok for
+                        // time being.
+                    }
+                    KnownValue(ref bound_to, ref options) => {
+                        to_verify.push((module_index,
+                                        binding_id,
+                                        (*bound_to).clone(),
+                                        (*options).clone()));
+                    }
+                    ErrorValue => { }
+                }
+            }
+        }
+
+        for &(module_index, binding_id, ref item, ref options) in to_verify.iter() {
+            self.verify(module_index, binding_id, item, options);
+        }
     }
 
-    fn resolve_path(
+    fn verify(
+        &mut self,
+        from_module: ast::ItemIndex,
+        name: Id,
+        resolves_to: &BindingTarget,
+        options: &Vec<BindingOption>)
+    {
+        for option in options.iter() {
+            let result = {
+                let mut path_resolver = PathResolver::new(self);
+                path_resolver.evaluate(option)
+            };
+            match result {
+                ResolvedToError => {
+                    return;
+                }
+                ResolvedToIncomplete(item, id) => {
+                    // When dealing with multiple namespaces, we
+                    // really ought not to be eager to report an
+                    // incomplete resolution.  In particular, it can
+                    // happen that some use declarations wind up
+                    // resolving to "nothing" in the type namespace
+                    // but do resolve to something in the value
+                    // namespace.
+                    self.errors.push(Unresolved(item, id));
+                }
+                ResolvedToSuccess(target) => {
+                    if *resolves_to != target {
+                        self.errors.push(Conflict(from_module,
+                                                  name,
+                                                  (*resolves_to).clone(),
+                                                  target));
+                    }
+                }
+            }
+        }
+    }
+
+    pub fn resolve_path(
         &mut self,
         relative_to_module: ast::ItemIndex,
         path: ast::PathPtr)
@@ -339,14 +412,6 @@ impl<'a> ResolutionState<'a> {
     {
         let mut path_resolver = PathResolver::new(self);
         path_resolver.resolve_path(relative_to_module, path)
-    }
-
-    pub fn resolve_path_relative_to_root(
-        &mut self,
-        path: ast::PathPtr)
-        -> PathResolution
-    {
-        self.resolve_path(self.ast.root_index(), path)
     }
 }
 
@@ -401,10 +466,9 @@ struct PathResolver<'p, 'ast> {
     stack: Vec<ast::PathPtr>,
 }
 
-#[deriving(Show)]
+#[deriving(Show, PartialEq)]
 pub enum PathResolution {
-    ResolvedToSuccess(ast::ItemIndex),
-    ResolvedToTypeRelative(ast::ItemIndex, Vec<Id>),
+    ResolvedToSuccess(BindingTarget),
     ResolvedToError,
     ResolvedToIncomplete(ast::ItemIndex, Id),
 }
@@ -447,11 +511,11 @@ impl<'a, 'ast> PathResolver<'a, 'ast> {
                     ResolvedToIncomplete(base_item, name) => {
                         ResolvedToIncomplete(base_item, name)
                     }
-                    ResolvedToTypeRelative(base_item, mut names) => {
+                    ResolvedToSuccess(BoundRelativeToType(base_item, mut names)) => {
                         names.push(name);
-                        ResolvedToTypeRelative(base_item, names)
+                        ResolvedToSuccess(BoundRelativeToType(base_item, names))
                     }
-                    ResolvedToSuccess(base_item) => {
+                    ResolvedToSuccess(BoundToItem(base_item)) => {
                         self.lookup(base_item, name)
                     }
                 }
@@ -481,11 +545,11 @@ impl<'a, 'ast> PathResolver<'a, 'ast> {
 
         let evaluations: Vec<PathResolution> =
             options.iter().map(|o| self.evaluate(o)).collect();
-        match evaluations.iter().find(|e| e.is_successful()) {
-            Some(&ResolvedToSuccess(index)) => {
+        match evaluations.move_iter().find(|e| e.is_successful()) {
+            Some(ResolvedToSuccess(index)) => {
                 let module_state = self.resolution_state.modules.find_mut(&relative_to).unwrap();
                 let binding_state = module_state.bindings.find_mut(&name).unwrap();
-                binding_state.value = KnownValue(index, options);
+                binding_state.value = KnownValue(index.clone(), options);
                 return ResolvedToSuccess(index);
             }
             _ => {
@@ -503,7 +567,7 @@ impl<'a, 'ast> PathResolver<'a, 'ast> {
     {
         match *option {
             Definition(item_index) => {
-                return ResolvedToSuccess(item_index);
+                return ResolvedToSuccess(BoundToItem(item_index));
             }
             Redirect(ref r) => {
                 return self.resolve_path(r.relative_to, r.path.clone());
@@ -518,7 +582,9 @@ impl<'a, 'ast> PathResolver<'a, 'ast> {
         -> OptionsLookup
     {
         match self.ast.item(relative_to).kind {
-            ast::Struct => { return Resolved(ResolvedToTypeRelative(relative_to, vec![name])); }
+            ast::Struct => {
+                return Resolved(ResolvedToSuccess(BoundRelativeToType(relative_to, vec![name])));
+            }
             ast::Module(..) => { }
         }
         let module_state = self.resolution_state.modules.find_mut(&relative_to).unwrap();
@@ -528,7 +594,7 @@ impl<'a, 'ast> PathResolver<'a, 'ast> {
         };
         match binding_state.value {
             UnknownValue(..) => { }
-            KnownValue(index, _) => { return Resolved(ResolvedToSuccess(index)); }
+            KnownValue(ref index, _) => { return Resolved(ResolvedToSuccess((*index).clone())); }
             ErrorValue => { return Resolved(ResolvedToError); }
         }
         let value = mem::replace(&mut binding_state.value, ErrorValue);

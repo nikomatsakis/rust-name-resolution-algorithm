@@ -7,6 +7,7 @@ extern crate log;
 use std::os;
 use std::io::File;
 use std::path::Path;
+use nameresolution as nr;
 
 mod ast;
 mod intern;
@@ -14,18 +15,6 @@ mod nameresolution;
 mod parse;
 mod grammar;
 mod test;
-
-pub fn setup(text: &str,
-             path_texts: &[&str],
-             test_body: |&ast::AST, &[ast::PathPtr]|) {
-    intern::install(|| {
-        let ast = grammar::parse_ast(text);
-        let paths: Vec<ast::PathPtr> = path_texts.iter().map(|text| {
-            grammar::parse_path(*text)
-        }).collect();
-        test_body(&ast, paths.as_slice())
-    })
-}
 
 pub fn main() {
     let args = os::args();
@@ -35,7 +24,7 @@ pub fn main() {
         return;
     }
 
-    let file_name = args.get(1).as_slice();
+    let file_name = args[1].as_slice();
     let ast_string = match File::open(&Path::new(file_name.as_slice())).read_to_end() {
         Ok(s) => s,
         Err(_) => {
@@ -59,24 +48,31 @@ pub fn main() {
             grammar::parse_path(text.as_slice())
         }).collect();
 
-        let mut resolution_state = nameresolution::resolve(&ast);
-
-        for error in resolution_state.errors().iter() {
-            println!("Error: {}", error);
-        }
+        let mut resolution_state = nr::resolve(&ast);
 
         for path in paths.iter() {
-            let result = resolution_state.resolve_path_relative_to_root((*path).clone());
+            let result = resolution_state.resolve_path(ast.root_index(),
+                                                       (*path).clone());
             match result {
-                nameresolution::ResolvedToSuccess(item_index) => {
+                nr::ResolvedToSuccess(nr::BoundToItem(item_index)) => {
                     println!("Path={} resolves to item #{} = {}",
                              path, item_index, ast.item(item_index));
+                }
+                nr::ResolvedToSuccess(nr::BoundRelativeToType(relative_to, names)) => {
+                    println!("Path={} resolves to type-related path item #{} = {}, {}",
+                             path, relative_to, ast.item(relative_to), names);
                 }
                 _ => {
                     println!("Path={} resolves to {}",
                              path, result);
                 }
             }
+        }
+
+        resolution_state.check();
+
+        for error in resolution_state.errors().iter() {
+            println!("Error: {}", error);
         }
     });
 }

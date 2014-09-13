@@ -1,22 +1,73 @@
 use ast;
 use intern;
 use grammar;
-//use nameresolution::Bindings;
-//use nameresolution::{ResolvedToItem,ResolvedToNothing};
-//use nameresolution::{Cycle,DoubleBinding,AmbiguousBinding};
-//
-//fn setup(text: &str,
-//         path_texts: &[&str],
-//         test_body: |&ast::AST, &[ast::PathPtr]|) {
-//    intern::install(|| {
-//        let ast = grammar::parse_ast(text);
-//        let paths: Vec<ast::PathPtr> = path_texts.iter().map(|text| {
-//            grammar::parse_path(*text)
-//        }).collect();
-//        test_body(&ast, paths.as_slice())
-//    })
-//}
-//
+use nameresolution as nr;
+
+fn setup(text: &str,
+         tests: &[(Option<&str>, &str, nr::PathResolution)],
+         errors: &[&str]) {
+    intern::install(|| {
+        let ast = grammar::parse_ast(text);
+        let mut resolution_state = nr::resolve(&ast);
+
+        for &(base, path_text, ref expected_resolution) in tests.iter() {
+            let base_index = match base {
+                None => ast.root_index(),
+                Some(base_text) => {
+                    let path = grammar::parse_path(base_text);
+                    match resolution_state.resolve_path(ast.root_index(), path) {
+                        nr::ResolvedToSuccess(nr::BoundToItem(index)) => index,
+                        r => {
+                            fail!(format!("root path {} yielded {}", base, r));
+                        }
+                    }
+                }
+            };
+
+            let path = grammar::parse_path(path_text);
+            let actual_resolution = resolution_state.resolve_path(base_index, path);
+            assert_eq!(actual_resolution, *expected_resolution);
+        }
+
+        for (expected_error, actual_error) in
+            errors.iter().zip(
+                resolution_state.errors().iter())
+        {
+            assert_eq!(format!("{}", actual_error), expected_error.to_owned());
+        }
+        assert_eq!(errors.len(), resolution_state.errors().len());
+    });
+}
+
+#[test]
+pub fn simple_test() {
+    setup(
+"mod root {
+    mod a {
+        use b :: *;
+        pub struct A;
+        pub struct C;
+    }
+
+    mod b {
+        use a :: *;
+        pub struct B;
+        pub struct C;
+    }
+}",
+
+&[(None, "a :: A", nr::ResolvedToSuccess(nr::BoundToItem(0))),
+  (None, "a :: B", nr::ResolvedToSuccess(nr::BoundToItem(3))),
+  (None, "a :: C", nr::ResolvedToSuccess(nr::BoundToItem(1))),
+  (None, "b :: A", nr::ResolvedToSuccess(nr::BoundToItem(0))),
+  (None, "b :: B", nr::ResolvedToSuccess(nr::BoundToItem(3))),
+  (None, "b :: C", nr::ResolvedToSuccess(nr::BoundToItem(4)))],
+
+&[]);
+}
+
+
+
 //#[test]
 //pub fn explicit_shadows_implicit_with_struct_and_use() {
 //    setup(
