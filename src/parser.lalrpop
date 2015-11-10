@@ -1,0 +1,64 @@
+use ast::*;
+use intern::{intern, InternedString};
+
+grammar(krate: &mut Krate);
+
+pub Krate: () = {
+    <items:Item+> => krate.modules[ROOT_ID.0].items = items
+};
+
+Item: ItemId = {
+    Module => ItemId::Module(<>),
+    Structure => ItemId::Structure(<>),
+    Import => ItemId::Import(<>),
+    MacroDef => ItemId::MacroDef(<>),
+    MacroRef => ItemId::MacroRef(<>),
+    Code => ItemId::Code(<>),
+};
+
+Module: ModuleId = {
+    <privacy:Privacy> "mod" <name:Id> "{" <items:Item+> "}" =>
+        krate.add_module(Module { privacy: privacy, name: name, items: items }),
+};
+
+Structure: StructureId = {
+    <privacy:Privacy> "struct" <name:Id> "{" "}" =>
+        krate.add_structure(Structure { privacy: privacy, name: name }),
+};
+
+Import: ImportId = {
+    <privacy:Privacy> "use" <path:Path> <a:("as" <Id>)?> ";" =>
+        krate.add_import(Import { privacy: privacy, path: path, alt_name: a }),
+};
+
+MacroDef: MacroDefId = {
+    <privacy:Privacy> "macro_rules" "!" <name:Id> "{" <items:Item+> "}" =>
+        krate.add_macro_def(MacroDef { privacy: privacy, name: name, items: items }),
+};
+
+MacroRef: MacroRefId = {
+    <path:Path> "!" ";" =>
+        krate.add_macro_ref(MacroRef { path: path }),
+};
+
+Code: CodeId = {
+    "{" <paths:(<Path> ";")*> "}" =>
+        krate.add_code(Code { paths: paths }),
+};
+
+Path: PathId = {
+    "self" => THIS_PATH,
+    "super" => SUPER_PATH,
+    "::" => ROOT_PATH,
+    Id => krate.add_path(Path::Cons(ROOT_PATH, <>)),
+    <Path> "::" <Id> => krate.add_path(Path::Cons(<>)),
+};
+
+Privacy: Privacy = {
+    "pub" => Privacy::Pub,
+    () => Privacy::Priv,
+};
+
+Id: InternedString = {
+    r"[a-zA-Z_][a-zA-Z0-9_]*" => intern(<>),
+};

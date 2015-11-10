@@ -1,5 +1,15 @@
 [package]
-
-name = "rust-name-resolution-algorithm"
-version = "0.0.1"
+name = "name-resolution-algorithm"
+version = "0.1.0"
 authors = ["Niko Matsakis <niko@alum.mit.edu>"]
+build = "build.rs" # LALRPOP preprocessing
+
+# Add a dependency on the LALRPOP runtime library:
+[dependencies.lalrpop-util]
+version = "0.8.0"
+
+[build-dependencies.lalrpop]
+version = "0.8.0"
+
+[dependencies]
+lalrpop-intern = "0.8.0"
