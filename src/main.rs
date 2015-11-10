@@ -1,13 +1,14 @@
 #![feature(globs,phase)]
 #![allow(non_snake_case_functions)]
 
-#[phase(plugin, link)]
-extern crate log;
-
 use std::os;
-use std::io::File;
+use std::fs::File;
 use std::path::Path;
 use nameresolution as nr;
+
+macro_rules! debug {
+    ($($x:tt)*) => { }
+}
 
 mod ast;
 mod intern;

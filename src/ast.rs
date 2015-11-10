@@ -6,23 +6,23 @@ pub struct AST {
     pub imports: Vec<Import>,
 }
 
-pub type ItemIndex = uint;
-pub type ImportIndex = uint;
+pub type ItemIndex = usize;
+pub type ImportIndex = usize;
 
-#[deriving(Show)]
+#[derive(Debug)]
 pub struct Item {
     pub name: Id,
     pub privacy: Privacy,
     pub kind: ItemKind
 }
 
-#[deriving(Show)]
+#[derive(Debug)]
 pub enum ItemKind {
     Module(Module),
     Struct,
 }
 
-#[deriving(Show)]
+#[derive(Debug)]
 pub struct Module {
     pub imports: Vec<ImportIndex>,
     pub members: Vec<ItemIndex>,
@@ -30,29 +30,29 @@ pub struct Module {
 
 pub type ModulePtr = Rc<Module>;
 
-#[deriving(Show)]
+#[derive(Debug)]
 pub enum ImportId {
     Glob,
     Named(Id)
 }
 
-#[deriving(Show)]
+#[derive(Debug)]
 pub struct Import {
     pub privacy: Privacy,
     pub path: PathPtr,
     pub id: ImportId,
 }
 
-#[deriving(Show,Clone)]
+#[derive(Debug, Clone)]
 pub enum Privacy {
     Public,
     Private,
 }
 
-#[deriving(Show, Hash, Eq, PartialEq)]
+#[derive(Debug, Hash, Eq, PartialEq)]
 pub enum Path {
     Root(Id),
-    Self(Id),
+    This(Id),
     Subpath(Rc<Path>, Id),
 }
 
@@ -63,18 +63,18 @@ impl AST {
         self.items.len() - 1
     }
 
-    pub fn item(&self, index: uint) -> &Item {
+    pub fn item(&self, index: usize) -> &Item {
         &self.items[index]
     }
 
-    pub fn import(&self, index: uint) -> &Import {
+    pub fn import(&self, index: usize) -> &Import {
         &self.imports[index]
     }
 
-    pub fn is_module(&self, index: uint) -> bool {
+    pub fn is_module(&self, index: usize) -> bool {
         match self.item(index).kind {
-            Module(..) => true,
-            Struct => false
+            ItemKind::Module(..) => true,
+            ItemKind::Struct => false
         }
     }
 }
@@ -82,9 +82,9 @@ impl AST {
 impl Path {
     pub fn tail_id(&self) -> Id {
         match *self {
-            Root(i) => i,
-            Self(i) => i,
-            Subpath(_, i) => i,
+            Path::Root(i) => i,
+            Path::This(i) => i,
+            Path::Subpath(_, i) => i,
         }
     }
 }

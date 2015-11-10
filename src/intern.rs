@@ -1,14 +1,16 @@
 use std::cell::RefCell;
 use std::fmt;
 
-local_data_key!(the_interner: RefCell<Interner>)
-
-#[deriving(Eq,PartialEq,Clone,Hash)]
-pub struct Id {
-    index: uint // index into context's identifiers list
+thread_local! {
+    static THE_INTERNER: RefCell<Interner> = RefCell::new(Interner::new())
 }
 
-pub fn Id(u: uint) -> Id {
+#[derive(Eq,PartialEq,Clone,Hash)]
+pub struct Id {
+    index: usize // index into context's identifiers list
+}
+
+pub fn Id(u: usize) -> Id {
     Id { index: u }
 }
 
@@ -16,15 +18,15 @@ pub struct Interner {
     identifiers: Vec<String>,
 }
 
-pub fn install(f: ||) {
+pub fn install<F>(f: F) where F: FnOnce() {
     let interner = RefCell::new(Interner::new());
-    the_interner.replace(Some(interner));
+    THE_INTERNER.replace(Some(interner));
     f();
-    the_interner.replace(None);
+    THE_INTERNER.replace(None);
 }
 
 pub fn intern(s: &str) -> Id {
-    the_interner.get().unwrap().borrow_mut().id(s)
+    THE_INTERNER.get().unwrap().borrow_mut().id(s)
 }
 
 impl Interner {
@@ -45,9 +47,9 @@ impl Interner {
     }
 }
 
-impl fmt::Show for Id {
+impl fmt::Debug for Id {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let b = the_interner.get().unwrap();
+        let b = THE_INTERNER.get().unwrap();
         let b = b.borrow();
         write!(f, "{}", b.identifiers[self.index])
     }

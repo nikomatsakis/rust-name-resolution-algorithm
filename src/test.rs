@@ -18,7 +18,7 @@ fn setup(text: &str,
                     match resolution_state.resolve_path(ast.root_index(), path) {
                         nr::ResolvedToSuccess(nr::BoundToItem(index)) => index,
                         r => {
-                            fail!(format!("root path {} yielded {}", base, r));
+                            panic!(format!("root path {} yielded {}", base, r));
                         }
                     }
                 }
@@ -29,6 +29,7 @@ fn setup(text: &str,
             assert_eq!(actual_resolution, *expected_resolution);
         }
 
+        println!("{}", resolution_state.errors());
         for (expected_error, actual_error) in
             errors.iter().zip(
                 resolution_state.errors().iter())
@@ -42,28 +43,53 @@ fn setup(text: &str,
 #[test]
 pub fn simple_test() {
     setup(
-"mod root {
-    mod a {
-        use b :: *;
-        pub struct A;
-        pub struct C;
-    }
+        "mod root {
+            mod a {
+                use b :: *;
+                pub struct A;
+                pub struct C;
+            }
 
-    mod b {
-        use a :: *;
-        pub struct B;
-        pub struct C;
-    }
-}",
+            mod b {
+                use a :: *;
+                pub struct B;
+                pub struct C;
+            }
+        }",
 
-&[(None, "a :: A", nr::ResolvedToSuccess(nr::BoundToItem(0))),
-  (None, "a :: B", nr::ResolvedToSuccess(nr::BoundToItem(3))),
-  (None, "a :: C", nr::ResolvedToSuccess(nr::BoundToItem(1))),
-  (None, "b :: A", nr::ResolvedToSuccess(nr::BoundToItem(0))),
-  (None, "b :: B", nr::ResolvedToSuccess(nr::BoundToItem(3))),
-  (None, "b :: C", nr::ResolvedToSuccess(nr::BoundToItem(4)))],
+        &[(None, "a :: A", nr::ResolvedToSuccess(nr::BoundToItem(0))),
+          (None, "a :: B", nr::ResolvedToSuccess(nr::BoundToItem(3))),
+          (None, "a :: C", nr::ResolvedToSuccess(nr::BoundToItem(1))),
+          (None, "b :: A", nr::ResolvedToSuccess(nr::BoundToItem(0))),
+          (None, "b :: B", nr::ResolvedToSuccess(nr::BoundToItem(3))),
+          (None, "b :: C", nr::ResolvedToSuccess(nr::BoundToItem(4)))],
 
-&[]);
+        &[]);
+}
+
+#[test]
+pub fn conflicting_imports() {
+    setup(
+        "mod root {
+            mod a {
+                use b :: *;
+                use c :: *;
+            }
+
+            mod b {
+                pub struct S;
+                pub struct T;
+            }
+
+            mod c {
+                pub struct S;
+                pub struct T;
+            }
+        }",
+
+        &[(None, "a :: S", nr::ResolvedToSuccess(nr::BoundToItem(1)))],
+
+        &[]);
 }
 
 
@@ -207,7 +233,7 @@ pub fn simple_test() {
 //            match Bindings::new(ast) {
 //                Err(AmbiguousBinding(..)) => {}
 //                r => {
-//                    fail!("Expected ambiguity error, got: {}", r);
+//                    panic!("Expected ambiguity error, got: {}", r);
 //                }
 //            }
 //        })
@@ -238,7 +264,7 @@ pub fn simple_test() {
 //            match Bindings::new(ast) {
 //                Err(DoubleBinding(..)) => {}
 //                r => {
-//                    fail!("Expected ambiguity error, got: {}", r);
+//                    panic!("Expected ambiguity error, got: {}", r);
 //                }
 //            }
 //        })
@@ -269,7 +295,7 @@ pub fn simple_test() {
 //            match Bindings::new(ast) {
 //                Err(AmbiguousBinding(..)) => {}
 //                r => {
-//                    fail!("Expected ambiguity error, got: {}", r);
+//                    panic!("Expected ambiguity error, got: {}", r);
 //                }
 //            }
 //        })
@@ -299,7 +325,7 @@ pub fn simple_test() {
 //            match Bindings::new(ast) {
 //                Err(DoubleBinding(..)) => {}
 //                r => {
-//                    fail!("Expected ambiguity error, got: {}", r);
+//                    panic!("Expected ambiguity error, got: {}", r);
 //                }
 //            }
 //        })
@@ -330,7 +356,7 @@ pub fn simple_test() {
 //            match Bindings::new(ast) {
 //                Ok(..) => {}
 //                r => {
-//                    fail!("Expected ambiguity error, got: {}", r);
+//                    panic!("Expected ambiguity error, got: {}", r);
 //                }
 //            }
 //        })
@@ -366,7 +392,7 @@ pub fn simple_test() {
 //            let b = match Bindings::new(ast) {
 //                Ok(b) => b,
 //                r => {
-//                    fail!("Expected ambiguity error, got: {}", r);
+//                    panic!("Expected ambiguity error, got: {}", r);
 //                }
 //            };
 //
@@ -406,7 +432,7 @@ pub fn simple_test() {
 //            for i in range(0u, 2u) {
 //                match b.resolve_path_from(&paths[i], &paths[2]) {
 //                    Err(Cycle(..)) => (),
-//                    r => fail!("Expected path {} to yield a cycle: {}",
+//                    r => panic!("Expected path {} to yield a cycle: {}",
 //                               i, r)
 //                }
 //            }
@@ -414,7 +440,7 @@ pub fn simple_test() {
 //            for i in range(3u, 5u) {
 //                match b.resolve_path_from_root(&paths[i]) {
 //                    Err(Cycle(..)) => (),
-//                    r => fail!("Expected path {} to yield a cycle: {}",
+//                    r => panic!("Expected path {} to yield a cycle: {}",
 //                               i, r)
 //                }
 //            }
@@ -520,7 +546,7 @@ pub fn simple_test() {
 //
 //            match b.resolve_path_from(&paths[0], &paths[1]) {
 //                Err(Cycle(_)) => { }
-//                r => fail!("Expected cycle: {}", r),
+//                r => panic!("Expected cycle: {}", r),
 //            }
 //        })
 //}
@@ -545,12 +571,12 @@ pub fn simple_test() {
 //
 //            match b.resolve_path_from(&paths[0], &paths[1]) {
 //                Err(Cycle(_)) => { }
-//                r => fail!("Expected cycle: {}", r),
+//                r => panic!("Expected cycle: {}", r),
 //            }
 //
 //            match b.resolve_path_from_root(&paths[2]) {
 //                Err(Cycle(_)) => { }
-//                r => fail!("Expected cycle: {}", r),
+//                r => panic!("Expected cycle: {}", r),
 //            }
 //        })
 //}

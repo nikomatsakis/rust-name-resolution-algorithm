@@ -21,11 +21,13 @@ pub struct Binding {
     pub kind: BindingTarget
 }
 
-#[deriving(Show,PartialEq,Clone)]
+#[derive(Debug,PartialEq,Clone)]
 pub enum BindingTarget {
     BoundToItem(ast::ItemIndex),
     BoundRelativeToType(ast::ItemIndex, Vec<Id>),
 }
+
+use self::BindingTarget::*;
 
 ///////////////////////////////////////////////////////////////////////////
 // INTERMEDIATE DATA STRUCTURES
@@ -36,26 +38,26 @@ pub struct ResolutionState<'ast> {
     errors: Vec<Error>,
 }
 
-#[deriving(Show)]
+#[derive(Debug)]
 struct ModuleState {
     bindings: HashMap<Id, BindingState>,
 }
 
-#[deriving(Show)]
+#[derive(Debug)]
 pub struct BindingState {
     precedence: Precedence,
     privacy: ast::Privacy,
     value: BindingValue,
 }
 
-#[deriving(Show)]
+#[derive(Debug)]
 enum BindingValue {
     UnknownValue(Vec<BindingOption>),
     KnownValue(BindingTarget, Vec<BindingOption>),
     ErrorValue,
 }
 
-#[deriving(Show)]
+#[derive(Debug)]
 pub enum Error {
     CycleError(ast::ItemIndex, ast::PathPtr),
     GlobFromNonModule(ast::ItemIndex),
@@ -63,19 +65,21 @@ pub enum Error {
     Unresolved(ast::ItemIndex, Id),
 }
 
-#[deriving(Show)]
+use self::Error::*;
+
+#[derive(Debug)]
 enum Precedence {
     Glob,
     Explicit,
 }
 
-#[deriving(Show,PartialEq,Clone)]
+#[derive(Debug,PartialEq,Clone)]
 enum BindingOption {
     Definition(ast::ItemIndex),
     Redirect(Redirection)
 }
 
-#[deriving(Show,PartialEq,Clone)]
+#[derive(Debug,PartialEq,Clone)]
 struct Redirection {
     name: Id,
     import_index: ast::ImportIndex,
@@ -109,8 +113,8 @@ impl<'a> ResolutionState<'a> {
     fn create_module_states(&mut self) {
         for (index, item) in self.ast.items.iter().enumerate() {
             match item.kind {
-                ast::Module(..) => { self.modules.insert(index, ModuleState::new()); }
-                ast::Struct => { }
+                ast::ItemKind::Module(..) => { self.modules.insert(index, ModuleState::new()); }
+                ast::ItemKind::Struct => { }
             }
         }
     }
@@ -118,8 +122,8 @@ impl<'a> ResolutionState<'a> {
     fn seed(&mut self) {
         for (index, item) in self.ast.items.iter().enumerate() {
             match item.kind {
-                ast::Module(ref m) => { self.seed_module(index, m); }
-                ast::Struct => { }
+                ast::ItemKind::Module(ref m) => { self.seed_module(index, m); }
+                ast::ItemKind::Struct => { }
             }
         }
     }
@@ -146,19 +150,20 @@ impl<'a> ResolutionState<'a> {
     {
         let import = self.ast.import(import_index);
         match import.id {
-            ast::Glob => {
+            ast::ImportId::Glob => {
                 // Ignore globs during the seed phase.
             }
 
-            ast::Named(name) => {
+            ast::ImportId::Named(name) => {
                 self.add_binding_option(module_index,
-                                        Explicit,
+                                        Precedence::Explicit,
                                         import.privacy,
                                         name,
-                                        Redirect(Redirection::new(name,
-                                                                  import_index,
-                                                                  module_index,
-                                                                  import.path.clone())));
+                                        BindingOption::Redirect(
+                                            Redirection::new(name,
+                                                             import_index,
+                                                             module_index,
+                                                             import.path.clone())));
             }
         }
     }
@@ -171,12 +176,12 @@ impl<'a> ResolutionState<'a> {
     {
         let item = self.ast.item(item_index);
         match item.kind {
-            ast::Module(..) | ast::Struct(..) => {
+            ast::ItemKind::Module(..) | ast::ItemKind::Struct(..) => {
                 self.add_binding_option(module_index,
-                                        Explicit,
+                                        Precedence::Explicit,
                                         item.privacy,
                                         item.name,
-                                        Definition(item_index));
+                                        BindingOption::Definition(item_index));
             }
         }
     }
@@ -205,8 +210,8 @@ impl<'a> ResolutionState<'a> {
                     }
                     Append => {
                         match cur_state.value {
-                            UnknownValue(ref mut options) |
-                            KnownValue(_, ref mut options) => {
+                            BindingValue::UnknownValue(ref mut options) |
+                            BindingValue::KnownValue(_, ref mut options) => {
                                 debug!("Current state unknown/known: Added option");
                                 if !options.contains(&option) {
                                     options.push(option);
@@ -215,7 +220,7 @@ impl<'a> ResolutionState<'a> {
                                     false
                                 }
                             }
-                            ErrorValue => {
+                            BindingValue::ErrorValue => {
                                 debug!("Current state error");
                                 // Already some error been reported here. No need to pile on.
                                 false
@@ -234,7 +239,7 @@ impl<'a> ResolutionState<'a> {
             BindingState {
                 precedence: precedence,
                 privacy: privacy,
-                value: UnknownValue(vec![option])
+                value: BindingValue::UnknownValue(vec![option])
             });
 
         true
@@ -246,8 +251,8 @@ impl<'a> ResolutionState<'a> {
             changed = false;
             for (index, item) in self.ast.items.iter().enumerate() {
                 match item.kind {
-                    ast::Struct => { }
-                    ast::Module(ref module) => {
+                    ast::ItemKind::Struct => { }
+                    ast::ItemKind::Module(ref module) => {
                         for &import in module.imports.iter() {
                             changed = self.saturate_from_import(index, import) || changed;
                         }
@@ -264,13 +269,13 @@ impl<'a> ResolutionState<'a> {
     {
         let import = self.ast.import(import_index);
         let redirections = self.identify_glob(module_index, import_index);
-        let mut added: uint = 0;
+        let mut added: usize = 0;
         for redirection in redirections.move_iter() {
             if self.add_binding_option(module_index,
-                                       Glob,
+                                       Precedence::Glob,
                                        import.privacy,
                                        redirection.name,
-                                       Redirect(redirection)) {
+                                       BindingOption::Redirect(redirection)) {
                 added += 1;
             }
         }
@@ -288,10 +293,10 @@ impl<'a> ResolutionState<'a> {
         let import = self.ast.import(import_index);
 
         let module_index = match import.id {
-            ast::Named(..) => {
+            ast::ImportId::Named(..) => {
                 return Vec::new();
             }
-            ast::Glob => {
+            ast::ImportId::Glob => {
                 match self.resolve_path(module_index, import.path.clone()) {
                     ResolvedToSuccess(BoundToItem(item_index)) => {
                         if !self.ast.is_module(item_index) {
@@ -321,8 +326,8 @@ impl<'a> ResolutionState<'a> {
             .iter()
             .filter(|&(_, binding_state)| {
                 match binding_state.privacy {
-                    ast::Public => true,
-                    ast::Private => false,
+                    ast::Privacy::Public => true,
+                    ast::Privacy::Private => false,
                 }
             })
             .map(|(&id, _)| {
@@ -452,7 +457,7 @@ fn compare_precedence(
     match (old_prec, new_prec) {
         (Explicit, Glob) => Ignore,
         (Explicit, Explicit) => Append,
-        (Glob, Explicit) => fail!("Should not happen!"),
+        (Glob, Explicit) => panic!("Should not happen!"),
         (Glob, Glob) => Append,
     }
 }
@@ -466,12 +471,14 @@ struct PathResolver<'p, 'ast> {
     stack: Vec<ast::PathPtr>,
 }
 
-#[deriving(Show, PartialEq)]
+#[derive(Debug, PartialEq)]
 pub enum PathResolution {
     ResolvedToSuccess(BindingTarget),
     ResolvedToError,
     ResolvedToIncomplete(ast::ItemIndex, Id),
 }
+
+use self::PathResolution::*;
 
 impl<'a, 'ast> PathResolver<'a, 'ast> {
     fn new(resolution_state: &'a mut ResolutionState<'ast>) -> PathResolver<'a, 'ast> {
@@ -600,7 +607,7 @@ impl<'a, 'ast> PathResolver<'a, 'ast> {
         let value = mem::replace(&mut binding_state.value, ErrorValue);
         match value {
             UnknownValue(options) => { return ResolvedToUnknown(options); }
-            KnownValue(..) | ErrorValue => { fail!("Impossible"); }
+            KnownValue(..) | ErrorValue => { panic!("Impossible"); }
         }
     }
 }

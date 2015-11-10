@@ -1,4 +1,4 @@
-use std::fmt::Show;
+use std::fmt::Debug;
 use intern;
 
 //////////////////////////////////////////////////////////////////////////////
@@ -20,28 +20,28 @@ pub type ParseError<T> = Result<T, uint>;
 pub type Parser<G,T> = Box<Parse<G,T>+'static>;
 
 pub fn obj<G,T,R:'static+Parse<G,T>>(r: R) -> Parser<G,T> {
-    box r as Parser<G,T>
+    Box::new(r) as Parser<G,T>
 }
 
 //////////////////////////////////////////////////////////////////////////////
 
 pub fn is_digit(c: char) -> bool {
     match c {
-        '0' .. '9' => true,
+        '0' ... '9' => true,
         _ => false
     }
 }
 
 pub fn is_ident_start(c: char) -> bool {
     match c {
-        'A' .. 'Z' | 'a' .. 'z' | '_' => true,
+        'A' ... 'Z' | 'a' ... 'z' | '_' => true,
         _ => false
     }
 }
 
 pub fn is_ident_cont(c: char) -> bool {
     match c {
-        '0' .. '9' | 'a' .. 'z' | 'A' .. 'Z' | '_' => true,
+        '0' ... '9' | 'a' ... 'z' | 'A' ... 'Z' | '_' => true,
         _ => false
     }
 }
@@ -72,11 +72,13 @@ pub fn is_whitespace(c: char) -> bool {
     }
 }
 
-fn accumulate(buf: &mut String,
-              input: &[u8],
-              start: uint,
-              test: |char| -> bool)
-              -> uint {
+fn accumulate<F>(buf: &mut String,
+                 input: &[u8],
+                 start: uint,
+                 mut test: F)
+                 -> uint
+    where F: FnMut(char) -> bool
+{
     let mut i = start;
     while i < input.len() {
         let c = input[i] as char;
@@ -100,7 +102,7 @@ fn skip_whitespace(input: &[u8], start: uint) -> uint {
 
 //////////////////////////////////////////////////////////////////////////////
 
-type RefFn<G,T> = extern "Rust" fn<'a>(g: &'a G) -> &'a Parser<G,T>;
+type RefFn<G,T> = for<'a> extern "Rust" fn(g: &'a G) -> &'a Parser<G,T>;
 
 struct Ref<G,T> {
     func: RefFn<G,T>
@@ -611,7 +613,7 @@ pub fn parse<G,T>(grammar: &G,
 // Tests
 
 #[cfg(test)]
-pub fn test<G,T:Show>(grammar: G,
+pub fn test<G,T:Debug>(grammar: G,
                       text: &'static str,
                       parser: &Parser<G,T>,
                       expected: &'static str) {
@@ -630,7 +632,7 @@ pub fn test<G,T:Show>(grammar: G,
 }
 
 #[cfg(test)]
-pub fn test_err<G,T:Show>(grammar: G,
+pub fn test_err<G,T:Debug>(grammar: G,
                           text: &'static str,
                           parser: &Parser<G,T>,
                           expected: uint) {
@@ -666,7 +668,7 @@ fn digits() {
 
 #[test]
 fn idents_or_digits() {
-    #[deriving(Show)]
+    #[derive(Debug)]
     enum Choice { IsIdent(intern::Id), IsNumber(uint) }
 
     let parser =

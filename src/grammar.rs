@@ -7,26 +7,26 @@ use std::rc::Rc;
 ///////////////////////////////////////////////////////////////////////////
 // Context data which must be installed to do a parse
 
-local_data_key!(the_ast: RefCell<ast::AST>)
+thread_local!(static THE_AST: RefCell<Option<ast::AST>> = RefCell::new(None));
 
 ///////////////////////////////////////////////////////////////////////////
 // Public entry points
 
 pub fn parse_ast(text: &str) -> ast::AST {
     let text_bytes = text.as_bytes();
-    the_ast.replace(Some(RefCell::new(
+    THE_AST.replace(Some(RefCell::new(
         ast::AST { items: Vec::new(), imports: Vec::new() })));
     let grammar = Grammar::new();
     let m = match parse(&grammar, text_bytes, &Module()) {
         Ok(m) => m,
         Err(byte) => {
-            fail!("Unexpected parse error for Program: {} (*) {}",
-                  // assumes ascii
-                  text.slice_to(byte),
-                  text.slice_from(byte))
+            panic!("Unexpected parse error for Program: {} (*) {}",
+                   // assumes ascii
+                   text.slice_to(byte),
+                   text.slice_from(byte))
         }
     };
-    let mut ast = the_ast.replace(None).unwrap().unwrap();
+    let mut ast = THE_AST.replace(None).unwrap().unwrap();
     ast.items.push(m);
     ast
 }
@@ -37,10 +37,10 @@ pub fn parse_path(text: &str) -> ast::PathPtr {
     match parse(&grammar, text_bytes, &Path()) {
         Ok(m) => m,
         Err(byte) => {
-            fail!("Unexpected parse error for Path: {} (*) {}",
-                  // assumes ascii
-                  text.slice_to(byte),
-                  text.slice_from(byte))
+            panic!("Unexpected parse error for Path: {} (*) {}",
+                   // assumes ascii
+                   text.slice_to(byte),
+                   text.slice_from(byte))
         }
     }
 }
@@ -161,7 +161,7 @@ fn Use() -> GParser<ast::ImportIndex> {
 
     fn register(u: ast::Import) -> ast::ImportIndex {
         let mut u = Some(u);
-        let ast = the_ast.get().unwrap();
+        let ast = THE_AST.get().unwrap();
         let mut ast = ast.borrow_mut();
         let index = ast.imports.len();
         ast.imports.push(u.take().unwrap());
@@ -231,7 +231,7 @@ fn Item() -> GParser<ast::ItemIndex> {
 
     fn register(item: ast::Item) -> ast::ItemIndex {
         let mut item = Some(item);
-        let ast = the_ast.get().unwrap();
+        let ast = THE_AST.get().unwrap();
         let mut ast = ast.borrow_mut();
         let index = ast.items.len();
         ast.items.push(item.take().unwrap());
