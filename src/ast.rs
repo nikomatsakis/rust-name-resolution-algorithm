@@ -1,9 +1,12 @@
+#![allow(dead_code)]
+
 use intern::{intern, InternedString};
 
 pub struct Krate {
     pub modules: Vec<Module>,
     pub structures: Vec<Structure>,
     pub imports: Vec<Import>,
+    pub globs: Vec<Glob>,
     pub macro_defs: Vec<MacroDef>,
     pub macro_refs: Vec<MacroRef>,
     pub paths: Vec<Path>,
@@ -15,6 +18,7 @@ pub enum ItemId {
     Module(ModuleId),
     Structure(StructureId),
     Import(ImportId),
+    Glob(GlobId),
     MacroDef(MacroDefId),
     MacroRef(MacroRefId),
     Code(CodeId),
@@ -23,7 +27,6 @@ pub enum ItemId {
 pub const ROOT_ID: ModuleId = ModuleId(0);
 pub const ROOT_PATH: PathId = PathId(0);
 pub const THIS_PATH: PathId = PathId(1);
-pub const SUPER_PATH: PathId = PathId(2);
 
 impl Krate {
     pub fn new() -> Krate {
@@ -31,11 +34,16 @@ impl Krate {
             modules: vec![Module { privacy: Privacy::Pub, name: intern(""), items: vec![] }],
             structures: vec![],
             imports: vec![],
+            globs: vec![],
             macro_defs: vec![],
             macro_refs: vec![],
-            paths: vec![Path::Root, Path::This, Path::Super],
+            paths: vec![Path::Root, Path::This],
             codes: vec![],
         }
+    }
+
+    pub fn module_ids(&self) -> Vec<ModuleId> {
+        (0..self.modules.len()).map(|i| ModuleId(i)).collect()
     }
 
     pub fn add_module(&mut self, module: Module) -> ModuleId {
@@ -51,6 +59,11 @@ impl Krate {
     pub fn add_import(&mut self, import: Import) -> ImportId {
         self.imports.push(import);
         ImportId(self.imports.len() - 1)
+    }
+
+    pub fn add_glob(&mut self, glob: Glob) -> GlobId {
+        self.globs.push(glob);
+        GlobId(self.globs.len() - 1)
     }
 
     pub fn add_macro_def(&mut self, macro_def: MacroDef) -> MacroDefId {
@@ -84,7 +97,7 @@ pub enum Privacy {
 
 ///////////////////////////////////////////////////////////////////////////
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub struct ModuleId(pub usize);
 
 #[derive(Debug)]
@@ -114,6 +127,16 @@ pub struct Import {
     pub privacy: Privacy,
     pub path: PathId,
     pub alt_name: Option<InternedString>,
+}
+
+///////////////////////////////////////////////////////////////////////////
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub struct GlobId(pub usize);
+
+pub struct Glob {
+    pub privacy: Privacy,
+    pub path: PathId,
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -150,10 +173,10 @@ pub struct Code {
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct PathId(pub usize);
 
+#[derive(Clone)]
 pub enum Path {
     Root,
     This,
-    Super,
     Cons(PathId, InternedString),
 }
 

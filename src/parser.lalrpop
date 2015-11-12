@@ -11,13 +11,14 @@ Item: ItemId = {
     Module => ItemId::Module(<>),
     Structure => ItemId::Structure(<>),
     Import => ItemId::Import(<>),
+    Glob => ItemId::Glob(<>),
     MacroDef => ItemId::MacroDef(<>),
     MacroRef => ItemId::MacroRef(<>),
     Code => ItemId::Code(<>),
 };
 
 Module: ModuleId = {
-    <privacy:Privacy> "mod" <name:Id> "{" <items:Item+> "}" =>
+    <privacy:Privacy> "mod" <name:Id> "{" <items:Item*> "}" =>
         krate.add_module(Module { privacy: privacy, name: name, items: items }),
 };
 
@@ -29,6 +30,11 @@ Structure: StructureId = {
 Import: ImportId = {
     <privacy:Privacy> "use" <path:Path> <a:("as" <Id>)?> ";" =>
         krate.add_import(Import { privacy: privacy, path: path, alt_name: a }),
+};
+
+Glob: GlobId = {
+    <privacy:Privacy> "use" <path:Path> "::" "*" ";" =>
+        krate.add_glob(Glob { privacy: privacy, path: path, }),
 };
 
 MacroDef: MacroDefId = {
@@ -48,7 +54,6 @@ Code: CodeId = {
 
 Path: PathId = {
     "self" => THIS_PATH,
-    "super" => SUPER_PATH,
     "::" => ROOT_PATH,
     Id => krate.add_path(Path::Cons(ROOT_PATH, <>)),
     <Path> "::" <Id> => krate.add_path(Path::Cons(<>)),
