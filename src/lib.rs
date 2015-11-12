@@ -46,7 +46,7 @@ mod bar { struct Struct { } }
     let result = resolve::resolve_and_expand(&mut krate);
     debug!("result = {:?}", result);
     assert!(match result {
-        Err(resolve::ResolutionError::MultipleNames { module_id, name, sources: _ }) => {
+        Err(resolve::ResolutionError::MultipleNames { module_id, name }) => {
             module_id == ModuleId(1) && name == intern("Struct")
         }
         _ => {
@@ -82,7 +82,7 @@ mod baz { use foo::Struct; }
     let result = resolve::resolve_and_expand(&mut krate);
     debug!("result = {:?}", result);
     assert!(match result {
-        Err(resolve::ResolutionError::MultipleNames { module_id, name, sources: _ }) => {
+        Err(resolve::ResolutionError::MultipleNames { module_id, name }) => {
             module_id == ModuleId(1) && name == intern("Struct")
         }
         _ => {
@@ -139,7 +139,7 @@ mod baz { use foo::Struct; }
     let result = resolve::resolve_and_expand(&mut krate);
     debug!("result = {:?}", result);
     assert!(match result {
-        Err(resolve::ResolutionError::MultipleNames { module_id, name, sources: _ }) => {
+        Err(resolve::ResolutionError::MultipleNames { module_id, name }) => {
             module_id == ModuleId(1) && name == intern("m")
         }
         _ => {
@@ -157,6 +157,41 @@ fn simple_cycle() {
     parse_Krate(&mut krate, r#"
 mod foo { use bar::x; }
 mod bar { use foo::x; }
+"#).unwrap();
+    let result = resolve::resolve_and_expand(&mut krate);
+    debug!("result = {:?}", result);
+    assert!(match result {
+        Err(resolve::ResolutionError::InvalidPath { .. }) => true,
+        _ => false,
+    });
+}
+
+#[test]
+fn if_a_glob_conflicts_in_a_forest() {
+    let mut krate = ast::Krate::new();
+
+    // Here, the macro m! generates mod x { n! }, and then invoking n!
+    // generates a (conflicting) definition for `m`. Mind-bending.
+    parse_Krate(&mut krate, r#"
+mod foo { use bar::*; use baz::*; { self::T; } }
+mod bar { struct S { } struct T { } }
+mod baz { struct S { } }
+"#).unwrap();
+    let result = resolve::resolve_and_expand(&mut krate);
+    debug!("result = {:?}", result);
+    assert!(result.is_ok());
+}
+
+#[test]
+fn if_a_glob_conflicts_in_a_forest_but_someone_sees() {
+    let mut krate = ast::Krate::new();
+
+    // Here, the macro m! generates mod x { n! }, and then invoking n!
+    // generates a (conflicting) definition for `m`. Mind-bending.
+    parse_Krate(&mut krate, r#"
+mod foo { use bar::*; use baz::*; { self::S; } }
+mod bar { struct S { } struct T { } }
+mod baz { struct S { } }
 "#).unwrap();
     let result = resolve::resolve_and_expand(&mut krate);
     debug!("result = {:?}", result);

@@ -34,7 +34,6 @@ pub enum ResolutionError {
     MultipleNames {
         module_id: ModuleId,
         name: InternedString,
-        sources: Vec<ItemId>,
     },
 
     InvalidPath {
@@ -190,30 +189,44 @@ fn check_path(krate: &Krate,
     }
 }
 
+fn check_decl(krate: &Krate,
+              resolutions: &ModuleContentSets,
+              module_id: ModuleId,
+              source: ItemId,
+              name: InternedString)
+              -> Result<(), ResolutionError> {
+    match resolutions.resolve_name(module_id, name) {
+        Resolution::One(id) => {
+            // path can be successfully resolved
+            assert_eq!(id, source);
+            Ok(())
+        }
+        _ => {
+            // invalid or incomplete path
+            Err(ResolutionError::MultipleNames {
+                module_id: module_id,
+                name: name,
+            })
+        }
+    }
+}
+
 fn verify_paths(krate: &Krate, resolutions: &ModuleContentSets) -> Result<(), ResolutionError> {
     for container_id in krate.module_ids() {
         let module = &krate.modules[container_id.0];
-        if let Some(module_contents) = resolutions.module_contents.get(&container_id) {
-            for (&name, resolutions) in &module_contents.members {
-                if resolutions.len() > 1 {
-                    return Err(ResolutionError::MultipleNames {
-                        module_id: container_id,
-                        name: name,
-                        sources: resolutions.iter()
-                                            .map(|r| r.source)
-                                            .collect(),
-                    });
-                }
-            }
-        }
-
         for &item_id in &module.items {
             match item_id {
-                ItemId::Module(_) => {
-                    // no paths to verify here
+                ItemId::Module(module_id) => {
+                    // this declares a name `S`. Therefore, resolving the path
+                    // `use self::S` should lead to this module. Check that.
+                    let module = &krate.modules[module_id.0];
+                    try!(check_decl(krate, resolutions, container_id, item_id, module.name));
                 }
-                ItemId::Structure(_) => {
-                    // no paths to verify here
+                ItemId::Structure(structure_id) => {
+                    // this declares a name `S`. Therefore, resolving the path
+                    // `use self::S` should lead to this structure. Check that.
+                    let structure = &krate.structures[structure_id.0];
+                    try!(check_decl(krate, resolutions, container_id, item_id, structure.name));
                 }
                 ItemId::Import(import_id) => {
                     let import = &krate.imports[import_id.0];
@@ -226,11 +239,17 @@ fn verify_paths(krate: &Krate, resolutions: &ModuleContentSets) -> Result<(), Re
                 }
 
                 ItemId::MacroDef(macro_def_id) => {
+                    // this declares a name `S`. Therefore, resolving the path
+                    // `use self::S` should lead to this macro_def. Check that.
+                    let macro_def = &krate.macro_defs[macro_def_id.0];
+                    try!(check_decl(krate, resolutions, container_id, item_id, macro_def.name));
                 }
 
                 ItemId::MacroRef(macro_ref_id) => {
+                    // this should not occur, must be an invalid path
                     let macro_ref = &krate.macro_refs[macro_ref_id.0];
                     try!(check_path(krate, resolutions, container_id, item_id, macro_ref.path));
+                    unreachable!();
                 }
 
                 ItemId::Code(code_id) => {
