@@ -200,3 +200,20 @@ mod baz { struct S { } }
         _ => false,
     });
 }
+
+#[test]
+fn expand_to_conflicting_macro() {
+    let mut krate = ast::Krate::new();
+
+    // Here the macro m! generates a conflict entry for m!. But we
+    // have to make sure that this results in an error.
+
+    parse_Krate(&mut krate, r#"
+mod foo { use bar::*; self::m!; }
+mod bar { macro_rules! m { macro_rules! m { struct S { } } } }
+"#).unwrap();
+    let result = resolve::resolve_and_expand(&mut krate);
+    debug!("result = {:?}", result);
+    assert!(result.is_err());
+}
+
