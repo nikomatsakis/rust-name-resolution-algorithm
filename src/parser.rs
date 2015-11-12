@@ -215,6 +215,16 @@ mod __parse__Krate {
     //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" Item+ "}" ["use"]
     //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" Item+ "}" ["{"]
     //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" Item+ "}" [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" [EOF]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["::"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["macro_rules"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["mod"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["pub"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["self"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["struct"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["use"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["{"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
     //   MacroRef = (*) Path "!" ";" [EOF]
     //   MacroRef = (*) Path "!" ";" ["::"]
     //   MacroRef = (*) Path "!" ";" ["macro_rules"]
@@ -830,6 +840,16 @@ mod __parse__Krate {
     //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" Item+ "}" ["use"]
     //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" Item+ "}" ["{"]
     //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" Item+ "}" [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" [EOF]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["::"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["macro_rules"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["mod"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["pub"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["self"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["struct"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["use"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["{"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
     //   MacroRef = (*) Path "!" ";" [EOF]
     //   MacroRef = (*) Path "!" ";" ["::"]
     //   MacroRef = (*) Path "!" ";" ["macro_rules"]
@@ -1327,6 +1347,16 @@ mod __parse__Krate {
     //   MacroDef = Privacy (*) "macro_rules" "!" Id "{" Item+ "}" ["use"]
     //   MacroDef = Privacy (*) "macro_rules" "!" Id "{" Item+ "}" ["{"]
     //   MacroDef = Privacy (*) "macro_rules" "!" Id "{" Item+ "}" [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
+    //   MacroDef = Privacy (*) "macro_rules" "!" Id "{" "}" [EOF]
+    //   MacroDef = Privacy (*) "macro_rules" "!" Id "{" "}" ["::"]
+    //   MacroDef = Privacy (*) "macro_rules" "!" Id "{" "}" ["macro_rules"]
+    //   MacroDef = Privacy (*) "macro_rules" "!" Id "{" "}" ["mod"]
+    //   MacroDef = Privacy (*) "macro_rules" "!" Id "{" "}" ["pub"]
+    //   MacroDef = Privacy (*) "macro_rules" "!" Id "{" "}" ["self"]
+    //   MacroDef = Privacy (*) "macro_rules" "!" Id "{" "}" ["struct"]
+    //   MacroDef = Privacy (*) "macro_rules" "!" Id "{" "}" ["use"]
+    //   MacroDef = Privacy (*) "macro_rules" "!" Id "{" "}" ["{"]
+    //   MacroDef = Privacy (*) "macro_rules" "!" Id "{" "}" [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
     //   Module = Privacy (*) "mod" Id "{" Item+ "}" [EOF]
     //   Module = Privacy (*) "mod" Id "{" Item+ "}" ["::"]
     //   Module = Privacy (*) "mod" Id "{" Item+ "}" ["macro_rules"]
@@ -1925,6 +1955,16 @@ mod __parse__Krate {
     //   MacroDef = Privacy "macro_rules" (*) "!" Id "{" Item+ "}" ["use"]
     //   MacroDef = Privacy "macro_rules" (*) "!" Id "{" Item+ "}" ["{"]
     //   MacroDef = Privacy "macro_rules" (*) "!" Id "{" Item+ "}" [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
+    //   MacroDef = Privacy "macro_rules" (*) "!" Id "{" "}" [EOF]
+    //   MacroDef = Privacy "macro_rules" (*) "!" Id "{" "}" ["::"]
+    //   MacroDef = Privacy "macro_rules" (*) "!" Id "{" "}" ["macro_rules"]
+    //   MacroDef = Privacy "macro_rules" (*) "!" Id "{" "}" ["mod"]
+    //   MacroDef = Privacy "macro_rules" (*) "!" Id "{" "}" ["pub"]
+    //   MacroDef = Privacy "macro_rules" (*) "!" Id "{" "}" ["self"]
+    //   MacroDef = Privacy "macro_rules" (*) "!" Id "{" "}" ["struct"]
+    //   MacroDef = Privacy "macro_rules" (*) "!" Id "{" "}" ["use"]
+    //   MacroDef = Privacy "macro_rules" (*) "!" Id "{" "}" ["{"]
+    //   MacroDef = Privacy "macro_rules" (*) "!" Id "{" "}" [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
     //
     //   "!" -> Shift(S35)
     //
@@ -2690,6 +2730,16 @@ mod __parse__Krate {
     //   MacroDef = Privacy "macro_rules" "!" (*) Id "{" Item+ "}" ["use"]
     //   MacroDef = Privacy "macro_rules" "!" (*) Id "{" Item+ "}" ["{"]
     //   MacroDef = Privacy "macro_rules" "!" (*) Id "{" Item+ "}" [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
+    //   MacroDef = Privacy "macro_rules" "!" (*) Id "{" "}" [EOF]
+    //   MacroDef = Privacy "macro_rules" "!" (*) Id "{" "}" ["::"]
+    //   MacroDef = Privacy "macro_rules" "!" (*) Id "{" "}" ["macro_rules"]
+    //   MacroDef = Privacy "macro_rules" "!" (*) Id "{" "}" ["mod"]
+    //   MacroDef = Privacy "macro_rules" "!" (*) Id "{" "}" ["pub"]
+    //   MacroDef = Privacy "macro_rules" "!" (*) Id "{" "}" ["self"]
+    //   MacroDef = Privacy "macro_rules" "!" (*) Id "{" "}" ["struct"]
+    //   MacroDef = Privacy "macro_rules" "!" (*) Id "{" "}" ["use"]
+    //   MacroDef = Privacy "macro_rules" "!" (*) Id "{" "}" ["{"]
+    //   MacroDef = Privacy "macro_rules" "!" (*) Id "{" "}" [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
     //
     //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Shift(S37)
     //
@@ -3354,6 +3404,16 @@ mod __parse__Krate {
     //   MacroDef = Privacy "macro_rules" "!" Id (*) "{" Item+ "}" ["use"]
     //   MacroDef = Privacy "macro_rules" "!" Id (*) "{" Item+ "}" ["{"]
     //   MacroDef = Privacy "macro_rules" "!" Id (*) "{" Item+ "}" [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
+    //   MacroDef = Privacy "macro_rules" "!" Id (*) "{" "}" [EOF]
+    //   MacroDef = Privacy "macro_rules" "!" Id (*) "{" "}" ["::"]
+    //   MacroDef = Privacy "macro_rules" "!" Id (*) "{" "}" ["macro_rules"]
+    //   MacroDef = Privacy "macro_rules" "!" Id (*) "{" "}" ["mod"]
+    //   MacroDef = Privacy "macro_rules" "!" Id (*) "{" "}" ["pub"]
+    //   MacroDef = Privacy "macro_rules" "!" Id (*) "{" "}" ["self"]
+    //   MacroDef = Privacy "macro_rules" "!" Id (*) "{" "}" ["struct"]
+    //   MacroDef = Privacy "macro_rules" "!" Id (*) "{" "}" ["use"]
+    //   MacroDef = Privacy "macro_rules" "!" Id (*) "{" "}" ["{"]
+    //   MacroDef = Privacy "macro_rules" "!" Id (*) "{" "}" [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
     //
     //   "{" -> Shift(S56)
     //
@@ -3542,6 +3602,16 @@ mod __parse__Krate {
     //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" Item+ "}" ["{"]
     //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" Item+ "}" ["}"]
     //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" Item+ "}" [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["::"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["macro_rules"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["mod"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["pub"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["self"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["struct"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["use"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["{"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["}"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
     //   MacroRef = (*) Path "!" ";" ["::"]
     //   MacroRef = (*) Path "!" ";" ["macro_rules"]
     //   MacroRef = (*) Path "!" ";" ["mod"]
@@ -4278,6 +4348,26 @@ mod __parse__Krate {
     //   MacroDef = Privacy "macro_rules" "!" Id "{" (*) Item+ "}" ["use"]
     //   MacroDef = Privacy "macro_rules" "!" Id "{" (*) Item+ "}" ["{"]
     //   MacroDef = Privacy "macro_rules" "!" Id "{" (*) Item+ "}" [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["::"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["macro_rules"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["mod"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["pub"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["self"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["struct"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["use"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["{"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["}"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
+    //   MacroDef = Privacy "macro_rules" "!" Id "{" (*) "}" [EOF]
+    //   MacroDef = Privacy "macro_rules" "!" Id "{" (*) "}" ["::"]
+    //   MacroDef = Privacy "macro_rules" "!" Id "{" (*) "}" ["macro_rules"]
+    //   MacroDef = Privacy "macro_rules" "!" Id "{" (*) "}" ["mod"]
+    //   MacroDef = Privacy "macro_rules" "!" Id "{" (*) "}" ["pub"]
+    //   MacroDef = Privacy "macro_rules" "!" Id "{" (*) "}" ["self"]
+    //   MacroDef = Privacy "macro_rules" "!" Id "{" (*) "}" ["struct"]
+    //   MacroDef = Privacy "macro_rules" "!" Id "{" (*) "}" ["use"]
+    //   MacroDef = Privacy "macro_rules" "!" Id "{" (*) "}" ["{"]
+    //   MacroDef = Privacy "macro_rules" "!" Id "{" (*) "}" [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
     //   MacroRef = (*) Path "!" ";" ["::"]
     //   MacroRef = (*) Path "!" ";" ["macro_rules"]
     //   MacroRef = (*) Path "!" ";" ["mod"]
@@ -4343,6 +4433,7 @@ mod __parse__Krate {
     //   "struct" -> Reduce(Privacy =  => ActionFn(39);)
     //   "use" -> Reduce(Privacy =  => ActionFn(39);)
     //   "{" -> Shift(S68)
+    //   "}" -> Shift(S76)
     //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Shift(S18)
     //
     //   Code -> S57
@@ -4398,6 +4489,11 @@ mod __parse__Krate {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym5 = &mut Some((__tok0));
                 __result = try!(__state68(krate, input, __lookbehind, __tokens, __sym5));
+            }
+            Some((_, (12, __tok0), __loc)) => {
+                let mut __lookbehind = Some(__loc);
+                let mut __sym5 = &mut Some((__tok0));
+                __result = try!(__state76(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3, __sym4, __sym5));
             }
             Some((_, (13, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
@@ -4860,6 +4956,16 @@ mod __parse__Krate {
     //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" Item+ "}" ["{"]
     //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" Item+ "}" ["}"]
     //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" Item+ "}" [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["::"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["macro_rules"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["mod"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["pub"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["self"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["struct"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["use"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["{"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["}"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
     //   MacroRef = (*) Path "!" ";" ["::"]
     //   MacroRef = (*) Path "!" ";" ["macro_rules"]
     //   MacroRef = (*) Path "!" ";" ["mod"]
@@ -4935,14 +5041,14 @@ mod __parse__Krate {
     //   "struct" -> Reduce(Privacy =  => ActionFn(39);)
     //   "use" -> Reduce(Privacy =  => ActionFn(39);)
     //   "{" -> Shift(S68)
-    //   "}" -> Shift(S77)
+    //   "}" -> Shift(S78)
     //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Shift(S18)
     //
     //   Code -> S57
     //   Glob -> S58
     //   Id -> S3
     //   Import -> S59
-    //   Item -> S76
+    //   Item -> S77
     //   MacroDef -> S62
     //   MacroRef -> S63
     //   Module -> S64
@@ -4990,7 +5096,7 @@ mod __parse__Krate {
             Some((_, (12, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym5 = &mut Some((__tok0));
-                __result = try!(__state77(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3, __sym4, __sym5));
+                __result = try!(__state78(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3, __sym4, __sym5));
             }
             Some((_, (13, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
@@ -5032,7 +5138,7 @@ mod __parse__Krate {
                 }
                 __Nonterminal::Item(__nt) => {
                     let __sym5 = &mut Some(__nt);
-                    __result = try!(__state76(krate, input, __lookbehind, __tokens, __lookahead, __sym4, __sym5));
+                    __result = try!(__state77(krate, input, __lookbehind, __tokens, __lookahead, __sym4, __sym5));
                 }
                 __Nonterminal::MacroDef(__nt) => {
                     let __sym5 = &mut Some(__nt);
@@ -5260,7 +5366,7 @@ mod __parse__Krate {
     //   Path = Path (*) "::" Id ["!"]
     //   Path = Path (*) "::" Id ["::"]
     //
-    //   "!" -> Shift(S78)
+    //   "!" -> Shift(S79)
     //   "::" -> Shift(S21)
     //
     pub fn __state65<
@@ -5280,7 +5386,7 @@ mod __parse__Krate {
             Some((_, (0, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym1 = &mut Some((__tok0));
-                __result = try!(__state78(krate, input, __lookbehind, __tokens, __sym0, __sym1));
+                __result = try!(__state79(krate, input, __lookbehind, __tokens, __sym0, __sym1));
             }
             Some((_, (2, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
@@ -5338,6 +5444,16 @@ mod __parse__Krate {
     //   MacroDef = Privacy (*) "macro_rules" "!" Id "{" Item+ "}" ["{"]
     //   MacroDef = Privacy (*) "macro_rules" "!" Id "{" Item+ "}" ["}"]
     //   MacroDef = Privacy (*) "macro_rules" "!" Id "{" Item+ "}" [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
+    //   MacroDef = Privacy (*) "macro_rules" "!" Id "{" "}" ["::"]
+    //   MacroDef = Privacy (*) "macro_rules" "!" Id "{" "}" ["macro_rules"]
+    //   MacroDef = Privacy (*) "macro_rules" "!" Id "{" "}" ["mod"]
+    //   MacroDef = Privacy (*) "macro_rules" "!" Id "{" "}" ["pub"]
+    //   MacroDef = Privacy (*) "macro_rules" "!" Id "{" "}" ["self"]
+    //   MacroDef = Privacy (*) "macro_rules" "!" Id "{" "}" ["struct"]
+    //   MacroDef = Privacy (*) "macro_rules" "!" Id "{" "}" ["use"]
+    //   MacroDef = Privacy (*) "macro_rules" "!" Id "{" "}" ["{"]
+    //   MacroDef = Privacy (*) "macro_rules" "!" Id "{" "}" ["}"]
+    //   MacroDef = Privacy (*) "macro_rules" "!" Id "{" "}" [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
     //   Module = Privacy (*) "mod" Id "{" Item+ "}" ["::"]
     //   Module = Privacy (*) "mod" Id "{" Item+ "}" ["macro_rules"]
     //   Module = Privacy (*) "mod" Id "{" Item+ "}" ["mod"]
@@ -5369,10 +5485,10 @@ mod __parse__Krate {
     //   Structure = Privacy (*) "struct" Id "{" "}" ["}"]
     //   Structure = Privacy (*) "struct" Id "{" "}" [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
     //
-    //   "macro_rules" -> Shift(S79)
-    //   "mod" -> Shift(S80)
-    //   "struct" -> Shift(S81)
-    //   "use" -> Shift(S82)
+    //   "macro_rules" -> Shift(S80)
+    //   "mod" -> Shift(S81)
+    //   "struct" -> Shift(S82)
+    //   "use" -> Shift(S83)
     //
     pub fn __state66<
         'input,
@@ -5391,22 +5507,22 @@ mod __parse__Krate {
             Some((_, (5, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym1 = &mut Some((__tok0));
-                __result = try!(__state79(krate, input, __lookbehind, __tokens, __sym0, __sym1));
+                __result = try!(__state80(krate, input, __lookbehind, __tokens, __sym0, __sym1));
             }
             Some((_, (6, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym1 = &mut Some((__tok0));
-                __result = try!(__state80(krate, input, __lookbehind, __tokens, __sym0, __sym1));
+                __result = try!(__state81(krate, input, __lookbehind, __tokens, __sym0, __sym1));
             }
             Some((_, (9, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym1 = &mut Some((__tok0));
-                __result = try!(__state81(krate, input, __lookbehind, __tokens, __sym0, __sym1));
+                __result = try!(__state82(krate, input, __lookbehind, __tokens, __sym0, __sym1));
             }
             Some((_, (10, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym1 = &mut Some((__tok0));
-                __result = try!(__state82(krate, input, __lookbehind, __tokens, __sym0, __sym1));
+                __result = try!(__state83(krate, input, __lookbehind, __tokens, __sym0, __sym1));
             }
             _ => {
                 return Err(__ParseError::UnrecognizedToken {
@@ -5520,10 +5636,10 @@ mod __parse__Krate {
     //
     //   "::" -> Shift(S29)
     //   "self" -> Shift(S30)
-    //   "}" -> Shift(S84)
+    //   "}" -> Shift(S85)
     //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Shift(S32)
     //
-    //   (<Path> ";")+ -> S83
+    //   (<Path> ";")+ -> S84
     //   Id -> S27
     //   Path -> S28
     pub fn __state68<
@@ -5557,7 +5673,7 @@ mod __parse__Krate {
             Some((_, (12, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym1 = &mut Some((__tok0));
-                __result = try!(__state84(krate, input, __lookbehind, __tokens, __sym0, __sym1));
+                __result = try!(__state85(krate, input, __lookbehind, __tokens, __sym0, __sym1));
             }
             Some((_, (13, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
@@ -5576,7 +5692,7 @@ mod __parse__Krate {
             match __nt {
                 __Nonterminal::_28_3cPath_3e_20_22_3b_22_29_2b(__nt) => {
                     let __sym1 = &mut Some(__nt);
-                    __result = try!(__state83(krate, input, __lookbehind, __tokens, __lookahead, __sym0, __sym1));
+                    __result = try!(__state84(krate, input, __lookbehind, __tokens, __lookahead, __sym0, __sym1));
                 }
                 __Nonterminal::Id(__nt) => {
                     let __sym1 = &mut Some(__nt);
@@ -5606,16 +5722,16 @@ mod __parse__Krate {
     //   Module = Privacy "mod" Id "{" "}" (*) ["{"]
     //   Module = Privacy "mod" Id "{" "}" (*) [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
     //
-    //   EOF -> Reduce(Module = Privacy, "mod", Id, "{", "}" => ActionFn(44);)
-    //   "::" -> Reduce(Module = Privacy, "mod", Id, "{", "}" => ActionFn(44);)
-    //   "macro_rules" -> Reduce(Module = Privacy, "mod", Id, "{", "}" => ActionFn(44);)
-    //   "mod" -> Reduce(Module = Privacy, "mod", Id, "{", "}" => ActionFn(44);)
-    //   "pub" -> Reduce(Module = Privacy, "mod", Id, "{", "}" => ActionFn(44);)
-    //   "self" -> Reduce(Module = Privacy, "mod", Id, "{", "}" => ActionFn(44);)
-    //   "struct" -> Reduce(Module = Privacy, "mod", Id, "{", "}" => ActionFn(44);)
-    //   "use" -> Reduce(Module = Privacy, "mod", Id, "{", "}" => ActionFn(44);)
-    //   "{" -> Reduce(Module = Privacy, "mod", Id, "{", "}" => ActionFn(44);)
-    //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Reduce(Module = Privacy, "mod", Id, "{", "}" => ActionFn(44);)
+    //   EOF -> Reduce(Module = Privacy, "mod", Id, "{", "}" => ActionFn(46);)
+    //   "::" -> Reduce(Module = Privacy, "mod", Id, "{", "}" => ActionFn(46);)
+    //   "macro_rules" -> Reduce(Module = Privacy, "mod", Id, "{", "}" => ActionFn(46);)
+    //   "mod" -> Reduce(Module = Privacy, "mod", Id, "{", "}" => ActionFn(46);)
+    //   "pub" -> Reduce(Module = Privacy, "mod", Id, "{", "}" => ActionFn(46);)
+    //   "self" -> Reduce(Module = Privacy, "mod", Id, "{", "}" => ActionFn(46);)
+    //   "struct" -> Reduce(Module = Privacy, "mod", Id, "{", "}" => ActionFn(46);)
+    //   "use" -> Reduce(Module = Privacy, "mod", Id, "{", "}" => ActionFn(46);)
+    //   "{" -> Reduce(Module = Privacy, "mod", Id, "{", "}" => ActionFn(46);)
+    //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Reduce(Module = Privacy, "mod", Id, "{", "}" => ActionFn(46);)
     //
     pub fn __state69<
         'input,
@@ -5654,7 +5770,7 @@ mod __parse__Krate {
                 let __sym2 = __sym2.take().unwrap();
                 let __sym3 = __sym3.take().unwrap();
                 let __sym4 = __sym4.take().unwrap();
-                let __nt = super::__action44(krate, input, __sym0, __sym1, __sym2, __sym3, __sym4, &__lookbehind, &__lookahead);
+                let __nt = super::__action46(krate, input, __sym0, __sym1, __sym2, __sym3, __sym4, &__lookbehind, &__lookahead);
                 return Ok((__lookbehind, __lookahead, __Nonterminal::Module(__nt)));
             }
             _ => {
@@ -5793,7 +5909,7 @@ mod __parse__Krate {
     //   Glob = Privacy "use" Path "::" "*" (*) ";" ["{"]
     //   Glob = Privacy "use" Path "::" "*" (*) ";" [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
     //
-    //   ";" -> Shift(S85)
+    //   ";" -> Shift(S86)
     //
     pub fn __state72<
         'input,
@@ -5820,7 +5936,7 @@ mod __parse__Krate {
             Some((_, (3, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym5 = &mut Some((__tok0));
-                __result = try!(__state85(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3, __sym4, __sym5));
+                __result = try!(__state86(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3, __sym4, __sym5));
             }
             _ => {
                 return Err(__ParseError::UnrecognizedToken {
@@ -5844,7 +5960,7 @@ mod __parse__Krate {
     //   Import = Privacy "use" Path "as" Id (*) ";" ["{"]
     //   Import = Privacy "use" Path "as" Id (*) ";" [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
     //
-    //   ";" -> Shift(S86)
+    //   ";" -> Shift(S87)
     //
     pub fn __state73<
         'input,
@@ -5867,7 +5983,7 @@ mod __parse__Krate {
             Some((_, (3, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym5 = &mut Some((__tok0));
-                __result = try!(__state86(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3, __sym4, __sym5));
+                __result = try!(__state87(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3, __sym4, __sym5));
             }
             _ => {
                 return Err(__ParseError::UnrecognizedToken {
@@ -6069,6 +6185,16 @@ mod __parse__Krate {
     //   MacroDef = Privacy "macro_rules" "!" Id "{" Item+ (*) "}" ["use"]
     //   MacroDef = Privacy "macro_rules" "!" Id "{" Item+ (*) "}" ["{"]
     //   MacroDef = Privacy "macro_rules" "!" Id "{" Item+ (*) "}" [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["::"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["macro_rules"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["mod"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["pub"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["self"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["struct"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["use"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["{"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["}"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
     //   MacroRef = (*) Path "!" ";" ["::"]
     //   MacroRef = (*) Path "!" ";" ["macro_rules"]
     //   MacroRef = (*) Path "!" ";" ["mod"]
@@ -6134,14 +6260,14 @@ mod __parse__Krate {
     //   "struct" -> Reduce(Privacy =  => ActionFn(39);)
     //   "use" -> Reduce(Privacy =  => ActionFn(39);)
     //   "{" -> Shift(S68)
-    //   "}" -> Shift(S87)
+    //   "}" -> Shift(S88)
     //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Shift(S18)
     //
     //   Code -> S57
     //   Glob -> S58
     //   Id -> S3
     //   Import -> S59
-    //   Item -> S76
+    //   Item -> S77
     //   MacroDef -> S62
     //   MacroRef -> S63
     //   Module -> S64
@@ -6190,7 +6316,7 @@ mod __parse__Krate {
             Some((_, (12, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym6 = &mut Some((__tok0));
-                __result = try!(__state87(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3, __sym4, __sym5, __sym6));
+                __result = try!(__state88(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3, __sym4, __sym5, __sym6));
             }
             Some((_, (13, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
@@ -6232,7 +6358,7 @@ mod __parse__Krate {
                 }
                 __Nonterminal::Item(__nt) => {
                     let __sym6 = &mut Some(__nt);
-                    __result = try!(__state76(krate, input, __lookbehind, __tokens, __lookahead, __sym5, __sym6));
+                    __result = try!(__state77(krate, input, __lookbehind, __tokens, __lookahead, __sym5, __sym6));
                 }
                 __Nonterminal::MacroDef(__nt) => {
                     let __sym6 = &mut Some(__nt);
@@ -6267,6 +6393,80 @@ mod __parse__Krate {
     }
 
     // State 76
+    //   MacroDef = Privacy "macro_rules" "!" Id "{" "}" (*) [EOF]
+    //   MacroDef = Privacy "macro_rules" "!" Id "{" "}" (*) ["::"]
+    //   MacroDef = Privacy "macro_rules" "!" Id "{" "}" (*) ["macro_rules"]
+    //   MacroDef = Privacy "macro_rules" "!" Id "{" "}" (*) ["mod"]
+    //   MacroDef = Privacy "macro_rules" "!" Id "{" "}" (*) ["pub"]
+    //   MacroDef = Privacy "macro_rules" "!" Id "{" "}" (*) ["self"]
+    //   MacroDef = Privacy "macro_rules" "!" Id "{" "}" (*) ["struct"]
+    //   MacroDef = Privacy "macro_rules" "!" Id "{" "}" (*) ["use"]
+    //   MacroDef = Privacy "macro_rules" "!" Id "{" "}" (*) ["{"]
+    //   MacroDef = Privacy "macro_rules" "!" Id "{" "}" (*) [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
+    //
+    //   EOF -> Reduce(MacroDef = Privacy, "macro_rules", "!", Id, "{", "}" => ActionFn(44);)
+    //   "::" -> Reduce(MacroDef = Privacy, "macro_rules", "!", Id, "{", "}" => ActionFn(44);)
+    //   "macro_rules" -> Reduce(MacroDef = Privacy, "macro_rules", "!", Id, "{", "}" => ActionFn(44);)
+    //   "mod" -> Reduce(MacroDef = Privacy, "macro_rules", "!", Id, "{", "}" => ActionFn(44);)
+    //   "pub" -> Reduce(MacroDef = Privacy, "macro_rules", "!", Id, "{", "}" => ActionFn(44);)
+    //   "self" -> Reduce(MacroDef = Privacy, "macro_rules", "!", Id, "{", "}" => ActionFn(44);)
+    //   "struct" -> Reduce(MacroDef = Privacy, "macro_rules", "!", Id, "{", "}" => ActionFn(44);)
+    //   "use" -> Reduce(MacroDef = Privacy, "macro_rules", "!", Id, "{", "}" => ActionFn(44);)
+    //   "{" -> Reduce(MacroDef = Privacy, "macro_rules", "!", Id, "{", "}" => ActionFn(44);)
+    //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Reduce(MacroDef = Privacy, "macro_rules", "!", Id, "{", "}" => ActionFn(44);)
+    //
+    pub fn __state76<
+        'input,
+        __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
+    >(
+        krate: &mut Krate,
+        input: &'input str,
+        __lookbehind: Option<usize>,
+        __tokens: &mut __TOKENS,
+        __sym0: &mut Option<Privacy>,
+        __sym1: &mut Option<&'input str>,
+        __sym2: &mut Option<&'input str>,
+        __sym3: &mut Option<InternedString>,
+        __sym4: &mut Option<&'input str>,
+        __sym5: &mut Option<&'input str>,
+    ) -> Result<(Option<usize>, Option<(usize, (usize, &'input str), usize)>, __Nonterminal<>), __ParseError<usize,(usize, &'input str),()>>
+    {
+        let mut __result: (Option<usize>, Option<(usize, (usize, &'input str), usize)>, __Nonterminal<>);
+        let __lookahead = match __tokens.next() {
+            Some(Ok(v)) => Some(v),
+            None => None,
+            Some(Err(e)) => return Err(e),
+        };
+        match __lookahead {
+            None |
+            Some((_, (2, _), _)) |
+            Some((_, (5, _), _)) |
+            Some((_, (6, _), _)) |
+            Some((_, (7, _), _)) |
+            Some((_, (8, _), _)) |
+            Some((_, (9, _), _)) |
+            Some((_, (10, _), _)) |
+            Some((_, (11, _), _)) |
+            Some((_, (13, _), _)) => {
+                let __sym0 = __sym0.take().unwrap();
+                let __sym1 = __sym1.take().unwrap();
+                let __sym2 = __sym2.take().unwrap();
+                let __sym3 = __sym3.take().unwrap();
+                let __sym4 = __sym4.take().unwrap();
+                let __sym5 = __sym5.take().unwrap();
+                let __nt = super::__action44(krate, input, __sym0, __sym1, __sym2, __sym3, __sym4, __sym5, &__lookbehind, &__lookahead);
+                return Ok((__lookbehind, __lookahead, __Nonterminal::MacroDef(__nt)));
+            }
+            _ => {
+                return Err(__ParseError::UnrecognizedToken {
+                    token: __lookahead,
+                    expected: vec![],
+                });
+            }
+        }
+    }
+
+    // State 77
     //   Item+ = Item+ Item (*) ["::"]
     //   Item+ = Item+ Item (*) ["macro_rules"]
     //   Item+ = Item+ Item (*) ["mod"]
@@ -6289,7 +6489,7 @@ mod __parse__Krate {
     //   "}" -> Reduce(Item+ = Item+, Item => ActionFn(33);)
     //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Reduce(Item+ = Item+, Item => ActionFn(33);)
     //
-    pub fn __state76<
+    pub fn __state77<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -6328,7 +6528,7 @@ mod __parse__Krate {
         }
     }
 
-    // State 77
+    // State 78
     //   Module = Privacy "mod" Id "{" Item+ "}" (*) [EOF]
     //   Module = Privacy "mod" Id "{" Item+ "}" (*) ["::"]
     //   Module = Privacy "mod" Id "{" Item+ "}" (*) ["macro_rules"]
@@ -6340,18 +6540,18 @@ mod __parse__Krate {
     //   Module = Privacy "mod" Id "{" Item+ "}" (*) ["{"]
     //   Module = Privacy "mod" Id "{" Item+ "}" (*) [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
     //
-    //   EOF -> Reduce(Module = Privacy, "mod", Id, "{", Item+, "}" => ActionFn(45);)
-    //   "::" -> Reduce(Module = Privacy, "mod", Id, "{", Item+, "}" => ActionFn(45);)
-    //   "macro_rules" -> Reduce(Module = Privacy, "mod", Id, "{", Item+, "}" => ActionFn(45);)
-    //   "mod" -> Reduce(Module = Privacy, "mod", Id, "{", Item+, "}" => ActionFn(45);)
-    //   "pub" -> Reduce(Module = Privacy, "mod", Id, "{", Item+, "}" => ActionFn(45);)
-    //   "self" -> Reduce(Module = Privacy, "mod", Id, "{", Item+, "}" => ActionFn(45);)
-    //   "struct" -> Reduce(Module = Privacy, "mod", Id, "{", Item+, "}" => ActionFn(45);)
-    //   "use" -> Reduce(Module = Privacy, "mod", Id, "{", Item+, "}" => ActionFn(45);)
-    //   "{" -> Reduce(Module = Privacy, "mod", Id, "{", Item+, "}" => ActionFn(45);)
-    //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Reduce(Module = Privacy, "mod", Id, "{", Item+, "}" => ActionFn(45);)
+    //   EOF -> Reduce(Module = Privacy, "mod", Id, "{", Item+, "}" => ActionFn(47);)
+    //   "::" -> Reduce(Module = Privacy, "mod", Id, "{", Item+, "}" => ActionFn(47);)
+    //   "macro_rules" -> Reduce(Module = Privacy, "mod", Id, "{", Item+, "}" => ActionFn(47);)
+    //   "mod" -> Reduce(Module = Privacy, "mod", Id, "{", Item+, "}" => ActionFn(47);)
+    //   "pub" -> Reduce(Module = Privacy, "mod", Id, "{", Item+, "}" => ActionFn(47);)
+    //   "self" -> Reduce(Module = Privacy, "mod", Id, "{", Item+, "}" => ActionFn(47);)
+    //   "struct" -> Reduce(Module = Privacy, "mod", Id, "{", Item+, "}" => ActionFn(47);)
+    //   "use" -> Reduce(Module = Privacy, "mod", Id, "{", Item+, "}" => ActionFn(47);)
+    //   "{" -> Reduce(Module = Privacy, "mod", Id, "{", Item+, "}" => ActionFn(47);)
+    //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Reduce(Module = Privacy, "mod", Id, "{", Item+, "}" => ActionFn(47);)
     //
-    pub fn __state77<
+    pub fn __state78<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -6390,7 +6590,7 @@ mod __parse__Krate {
                 let __sym3 = __sym3.take().unwrap();
                 let __sym4 = __sym4.take().unwrap();
                 let __sym5 = __sym5.take().unwrap();
-                let __nt = super::__action45(krate, input, __sym0, __sym1, __sym2, __sym3, __sym4, __sym5, &__lookbehind, &__lookahead);
+                let __nt = super::__action47(krate, input, __sym0, __sym1, __sym2, __sym3, __sym4, __sym5, &__lookbehind, &__lookahead);
                 return Ok((__lookbehind, __lookahead, __Nonterminal::Module(__nt)));
             }
             _ => {
@@ -6402,7 +6602,7 @@ mod __parse__Krate {
         }
     }
 
-    // State 78
+    // State 79
     //   MacroRef = Path "!" (*) ";" ["::"]
     //   MacroRef = Path "!" (*) ";" ["macro_rules"]
     //   MacroRef = Path "!" (*) ";" ["mod"]
@@ -6414,9 +6614,9 @@ mod __parse__Krate {
     //   MacroRef = Path "!" (*) ";" ["}"]
     //   MacroRef = Path "!" (*) ";" [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
     //
-    //   ";" -> Shift(S88)
+    //   ";" -> Shift(S89)
     //
-    pub fn __state78<
+    pub fn __state79<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -6438,7 +6638,7 @@ mod __parse__Krate {
             Some((_, (3, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym2 = &mut Some((__tok0));
-                __result = try!(__state88(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2));
+                __result = try!(__state89(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2));
             }
             _ => {
                 return Err(__ParseError::UnrecognizedToken {
@@ -6450,7 +6650,7 @@ mod __parse__Krate {
         return Ok(__result);
     }
 
-    // State 79
+    // State 80
     //   MacroDef = Privacy "macro_rules" (*) "!" Id "{" Item+ "}" ["::"]
     //   MacroDef = Privacy "macro_rules" (*) "!" Id "{" Item+ "}" ["macro_rules"]
     //   MacroDef = Privacy "macro_rules" (*) "!" Id "{" Item+ "}" ["mod"]
@@ -6461,10 +6661,20 @@ mod __parse__Krate {
     //   MacroDef = Privacy "macro_rules" (*) "!" Id "{" Item+ "}" ["{"]
     //   MacroDef = Privacy "macro_rules" (*) "!" Id "{" Item+ "}" ["}"]
     //   MacroDef = Privacy "macro_rules" (*) "!" Id "{" Item+ "}" [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
+    //   MacroDef = Privacy "macro_rules" (*) "!" Id "{" "}" ["::"]
+    //   MacroDef = Privacy "macro_rules" (*) "!" Id "{" "}" ["macro_rules"]
+    //   MacroDef = Privacy "macro_rules" (*) "!" Id "{" "}" ["mod"]
+    //   MacroDef = Privacy "macro_rules" (*) "!" Id "{" "}" ["pub"]
+    //   MacroDef = Privacy "macro_rules" (*) "!" Id "{" "}" ["self"]
+    //   MacroDef = Privacy "macro_rules" (*) "!" Id "{" "}" ["struct"]
+    //   MacroDef = Privacy "macro_rules" (*) "!" Id "{" "}" ["use"]
+    //   MacroDef = Privacy "macro_rules" (*) "!" Id "{" "}" ["{"]
+    //   MacroDef = Privacy "macro_rules" (*) "!" Id "{" "}" ["}"]
+    //   MacroDef = Privacy "macro_rules" (*) "!" Id "{" "}" [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
     //
-    //   "!" -> Shift(S89)
+    //   "!" -> Shift(S90)
     //
-    pub fn __state79<
+    pub fn __state80<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -6486,7 +6696,7 @@ mod __parse__Krate {
             Some((_, (0, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym2 = &mut Some((__tok0));
-                __result = try!(__state89(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2));
+                __result = try!(__state90(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2));
             }
             _ => {
                 return Err(__ParseError::UnrecognizedToken {
@@ -6498,7 +6708,7 @@ mod __parse__Krate {
         return Ok(__result);
     }
 
-    // State 80
+    // State 81
     //   Id = (*) r#"[a-zA-Z_][a-zA-Z0-9_]*"# ["{"]
     //   Module = Privacy "mod" (*) Id "{" Item+ "}" ["::"]
     //   Module = Privacy "mod" (*) Id "{" Item+ "}" ["macro_rules"]
@@ -6520,68 +6730,6 @@ mod __parse__Krate {
     //   Module = Privacy "mod" (*) Id "{" "}" ["{"]
     //   Module = Privacy "mod" (*) Id "{" "}" ["}"]
     //   Module = Privacy "mod" (*) Id "{" "}" [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
-    //
-    //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Shift(S37)
-    //
-    //   Id -> S90
-    pub fn __state80<
-        'input,
-        __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
-    >(
-        krate: &mut Krate,
-        input: &'input str,
-        __lookbehind: Option<usize>,
-        __tokens: &mut __TOKENS,
-        __sym0: &mut Option<Privacy>,
-        __sym1: &mut Option<&'input str>,
-    ) -> Result<(Option<usize>, Option<(usize, (usize, &'input str), usize)>, __Nonterminal<>), __ParseError<usize,(usize, &'input str),()>>
-    {
-        let mut __result: (Option<usize>, Option<(usize, (usize, &'input str), usize)>, __Nonterminal<>);
-        let __lookahead = match __tokens.next() {
-            Some(Ok(v)) => Some(v),
-            None => None,
-            Some(Err(e)) => return Err(e),
-        };
-        match __lookahead {
-            Some((_, (13, __tok0), __loc)) => {
-                let mut __lookbehind = Some(__loc);
-                let mut __sym2 = &mut Some((__tok0));
-                __result = try!(__state37(krate, input, __lookbehind, __tokens, __sym2));
-            }
-            _ => {
-                return Err(__ParseError::UnrecognizedToken {
-                    token: __lookahead,
-                    expected: vec![],
-                });
-            }
-        }
-        while __sym1.is_some() {
-            let (__lookbehind, __lookahead, __nt) = __result;
-            match __nt {
-                __Nonterminal::Id(__nt) => {
-                    let __sym2 = &mut Some(__nt);
-                    __result = try!(__state90(krate, input, __lookbehind, __tokens, __lookahead, __sym0, __sym1, __sym2));
-                }
-                _ => {
-                    return Ok((__lookbehind, __lookahead, __nt));
-                }
-            }
-        }
-        return Ok(__result);
-    }
-
-    // State 81
-    //   Id = (*) r#"[a-zA-Z_][a-zA-Z0-9_]*"# ["{"]
-    //   Structure = Privacy "struct" (*) Id "{" "}" ["::"]
-    //   Structure = Privacy "struct" (*) Id "{" "}" ["macro_rules"]
-    //   Structure = Privacy "struct" (*) Id "{" "}" ["mod"]
-    //   Structure = Privacy "struct" (*) Id "{" "}" ["pub"]
-    //   Structure = Privacy "struct" (*) Id "{" "}" ["self"]
-    //   Structure = Privacy "struct" (*) Id "{" "}" ["struct"]
-    //   Structure = Privacy "struct" (*) Id "{" "}" ["use"]
-    //   Structure = Privacy "struct" (*) Id "{" "}" ["{"]
-    //   Structure = Privacy "struct" (*) Id "{" "}" ["}"]
-    //   Structure = Privacy "struct" (*) Id "{" "}" [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
     //
     //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Shift(S37)
     //
@@ -6633,6 +6781,68 @@ mod __parse__Krate {
     }
 
     // State 82
+    //   Id = (*) r#"[a-zA-Z_][a-zA-Z0-9_]*"# ["{"]
+    //   Structure = Privacy "struct" (*) Id "{" "}" ["::"]
+    //   Structure = Privacy "struct" (*) Id "{" "}" ["macro_rules"]
+    //   Structure = Privacy "struct" (*) Id "{" "}" ["mod"]
+    //   Structure = Privacy "struct" (*) Id "{" "}" ["pub"]
+    //   Structure = Privacy "struct" (*) Id "{" "}" ["self"]
+    //   Structure = Privacy "struct" (*) Id "{" "}" ["struct"]
+    //   Structure = Privacy "struct" (*) Id "{" "}" ["use"]
+    //   Structure = Privacy "struct" (*) Id "{" "}" ["{"]
+    //   Structure = Privacy "struct" (*) Id "{" "}" ["}"]
+    //   Structure = Privacy "struct" (*) Id "{" "}" [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
+    //
+    //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Shift(S37)
+    //
+    //   Id -> S92
+    pub fn __state82<
+        'input,
+        __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
+    >(
+        krate: &mut Krate,
+        input: &'input str,
+        __lookbehind: Option<usize>,
+        __tokens: &mut __TOKENS,
+        __sym0: &mut Option<Privacy>,
+        __sym1: &mut Option<&'input str>,
+    ) -> Result<(Option<usize>, Option<(usize, (usize, &'input str), usize)>, __Nonterminal<>), __ParseError<usize,(usize, &'input str),()>>
+    {
+        let mut __result: (Option<usize>, Option<(usize, (usize, &'input str), usize)>, __Nonterminal<>);
+        let __lookahead = match __tokens.next() {
+            Some(Ok(v)) => Some(v),
+            None => None,
+            Some(Err(e)) => return Err(e),
+        };
+        match __lookahead {
+            Some((_, (13, __tok0), __loc)) => {
+                let mut __lookbehind = Some(__loc);
+                let mut __sym2 = &mut Some((__tok0));
+                __result = try!(__state37(krate, input, __lookbehind, __tokens, __sym2));
+            }
+            _ => {
+                return Err(__ParseError::UnrecognizedToken {
+                    token: __lookahead,
+                    expected: vec![],
+                });
+            }
+        }
+        while __sym1.is_some() {
+            let (__lookbehind, __lookahead, __nt) = __result;
+            match __nt {
+                __Nonterminal::Id(__nt) => {
+                    let __sym2 = &mut Some(__nt);
+                    __result = try!(__state92(krate, input, __lookbehind, __tokens, __lookahead, __sym0, __sym1, __sym2));
+                }
+                _ => {
+                    return Ok((__lookbehind, __lookahead, __nt));
+                }
+            }
+        }
+        return Ok(__result);
+    }
+
+    // State 83
     //   Glob = Privacy "use" (*) Path "::" "*" ";" ["::"]
     //   Glob = Privacy "use" (*) Path "::" "*" ";" ["macro_rules"]
     //   Glob = Privacy "use" (*) Path "::" "*" ";" ["mod"]
@@ -6684,8 +6894,8 @@ mod __parse__Krate {
     //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Shift(S43)
     //
     //   Id -> S39
-    //   Path -> S92
-    pub fn __state82<
+    //   Path -> S93
+    pub fn __state83<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -6735,7 +6945,7 @@ mod __parse__Krate {
                 }
                 __Nonterminal::Path(__nt) => {
                     let __sym2 = &mut Some(__nt);
-                    __result = try!(__state92(krate, input, __lookbehind, __tokens, __lookahead, __sym0, __sym1, __sym2));
+                    __result = try!(__state93(krate, input, __lookbehind, __tokens, __lookahead, __sym0, __sym1, __sym2));
                 }
                 _ => {
                     return Ok((__lookbehind, __lookahead, __nt));
@@ -6745,7 +6955,7 @@ mod __parse__Krate {
         return Ok(__result);
     }
 
-    // State 83
+    // State 84
     //   (<Path> ";")+ = (<Path> ";")+ (*) Path ";" ["::"]
     //   (<Path> ";")+ = (<Path> ";")+ (*) Path ";" ["self"]
     //   (<Path> ";")+ = (<Path> ";")+ (*) Path ";" ["}"]
@@ -6773,12 +6983,12 @@ mod __parse__Krate {
     //
     //   "::" -> Shift(S29)
     //   "self" -> Shift(S30)
-    //   "}" -> Shift(S93)
+    //   "}" -> Shift(S94)
     //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Shift(S32)
     //
     //   Id -> S27
     //   Path -> S44
-    pub fn __state83<
+    pub fn __state84<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -6806,7 +7016,7 @@ mod __parse__Krate {
             Some((_, (12, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym2 = &mut Some((__tok0));
-                __result = try!(__state93(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2));
+                __result = try!(__state94(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2));
             }
             Some((_, (13, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
@@ -6839,7 +7049,7 @@ mod __parse__Krate {
         return Ok(__result);
     }
 
-    // State 84
+    // State 85
     //   Code = "{" "}" (*) ["::"]
     //   Code = "{" "}" (*) ["macro_rules"]
     //   Code = "{" "}" (*) ["mod"]
@@ -6862,7 +7072,7 @@ mod __parse__Krate {
     //   "}" -> Reduce(Code = "{", "}" => ActionFn(42);)
     //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Reduce(Code = "{", "}" => ActionFn(42);)
     //
-    pub fn __state84<
+    pub fn __state85<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -6905,7 +7115,7 @@ mod __parse__Krate {
         }
     }
 
-    // State 85
+    // State 86
     //   Glob = Privacy "use" Path "::" "*" ";" (*) [EOF]
     //   Glob = Privacy "use" Path "::" "*" ";" (*) ["::"]
     //   Glob = Privacy "use" Path "::" "*" ";" (*) ["macro_rules"]
@@ -6928,7 +7138,7 @@ mod __parse__Krate {
     //   "{" -> Reduce(Glob = Privacy, "use", Path, "::", "*", ";" => ActionFn(12);)
     //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Reduce(Glob = Privacy, "use", Path, "::", "*", ";" => ActionFn(12);)
     //
-    pub fn __state85<
+    pub fn __state86<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -6979,7 +7189,7 @@ mod __parse__Krate {
         }
     }
 
-    // State 86
+    // State 87
     //   Import = Privacy "use" Path "as" Id ";" (*) [EOF]
     //   Import = Privacy "use" Path "as" Id ";" (*) ["::"]
     //   Import = Privacy "use" Path "as" Id ";" (*) ["macro_rules"]
@@ -7002,7 +7212,7 @@ mod __parse__Krate {
     //   "{" -> Reduce(Import = Privacy, "use", Path, "as", Id, ";" => ActionFn(37);)
     //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Reduce(Import = Privacy, "use", Path, "as", Id, ";" => ActionFn(37);)
     //
-    pub fn __state86<
+    pub fn __state87<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -7053,7 +7263,7 @@ mod __parse__Krate {
         }
     }
 
-    // State 87
+    // State 88
     //   MacroDef = Privacy "macro_rules" "!" Id "{" Item+ "}" (*) [EOF]
     //   MacroDef = Privacy "macro_rules" "!" Id "{" Item+ "}" (*) ["::"]
     //   MacroDef = Privacy "macro_rules" "!" Id "{" Item+ "}" (*) ["macro_rules"]
@@ -7065,18 +7275,18 @@ mod __parse__Krate {
     //   MacroDef = Privacy "macro_rules" "!" Id "{" Item+ "}" (*) ["{"]
     //   MacroDef = Privacy "macro_rules" "!" Id "{" Item+ "}" (*) [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
     //
-    //   EOF -> Reduce(MacroDef = Privacy, "macro_rules", "!", Id, "{", Item+, "}" => ActionFn(13);)
-    //   "::" -> Reduce(MacroDef = Privacy, "macro_rules", "!", Id, "{", Item+, "}" => ActionFn(13);)
-    //   "macro_rules" -> Reduce(MacroDef = Privacy, "macro_rules", "!", Id, "{", Item+, "}" => ActionFn(13);)
-    //   "mod" -> Reduce(MacroDef = Privacy, "macro_rules", "!", Id, "{", Item+, "}" => ActionFn(13);)
-    //   "pub" -> Reduce(MacroDef = Privacy, "macro_rules", "!", Id, "{", Item+, "}" => ActionFn(13);)
-    //   "self" -> Reduce(MacroDef = Privacy, "macro_rules", "!", Id, "{", Item+, "}" => ActionFn(13);)
-    //   "struct" -> Reduce(MacroDef = Privacy, "macro_rules", "!", Id, "{", Item+, "}" => ActionFn(13);)
-    //   "use" -> Reduce(MacroDef = Privacy, "macro_rules", "!", Id, "{", Item+, "}" => ActionFn(13);)
-    //   "{" -> Reduce(MacroDef = Privacy, "macro_rules", "!", Id, "{", Item+, "}" => ActionFn(13);)
-    //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Reduce(MacroDef = Privacy, "macro_rules", "!", Id, "{", Item+, "}" => ActionFn(13);)
+    //   EOF -> Reduce(MacroDef = Privacy, "macro_rules", "!", Id, "{", Item+, "}" => ActionFn(45);)
+    //   "::" -> Reduce(MacroDef = Privacy, "macro_rules", "!", Id, "{", Item+, "}" => ActionFn(45);)
+    //   "macro_rules" -> Reduce(MacroDef = Privacy, "macro_rules", "!", Id, "{", Item+, "}" => ActionFn(45);)
+    //   "mod" -> Reduce(MacroDef = Privacy, "macro_rules", "!", Id, "{", Item+, "}" => ActionFn(45);)
+    //   "pub" -> Reduce(MacroDef = Privacy, "macro_rules", "!", Id, "{", Item+, "}" => ActionFn(45);)
+    //   "self" -> Reduce(MacroDef = Privacy, "macro_rules", "!", Id, "{", Item+, "}" => ActionFn(45);)
+    //   "struct" -> Reduce(MacroDef = Privacy, "macro_rules", "!", Id, "{", Item+, "}" => ActionFn(45);)
+    //   "use" -> Reduce(MacroDef = Privacy, "macro_rules", "!", Id, "{", Item+, "}" => ActionFn(45);)
+    //   "{" -> Reduce(MacroDef = Privacy, "macro_rules", "!", Id, "{", Item+, "}" => ActionFn(45);)
+    //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Reduce(MacroDef = Privacy, "macro_rules", "!", Id, "{", Item+, "}" => ActionFn(45);)
     //
-    pub fn __state87<
+    pub fn __state88<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -7117,7 +7327,7 @@ mod __parse__Krate {
                 let __sym4 = __sym4.take().unwrap();
                 let __sym5 = __sym5.take().unwrap();
                 let __sym6 = __sym6.take().unwrap();
-                let __nt = super::__action13(krate, input, __sym0, __sym1, __sym2, __sym3, __sym4, __sym5, __sym6, &__lookbehind, &__lookahead);
+                let __nt = super::__action45(krate, input, __sym0, __sym1, __sym2, __sym3, __sym4, __sym5, __sym6, &__lookbehind, &__lookahead);
                 return Ok((__lookbehind, __lookahead, __Nonterminal::MacroDef(__nt)));
             }
             _ => {
@@ -7129,7 +7339,7 @@ mod __parse__Krate {
         }
     }
 
-    // State 88
+    // State 89
     //   MacroRef = Path "!" ";" (*) ["::"]
     //   MacroRef = Path "!" ";" (*) ["macro_rules"]
     //   MacroRef = Path "!" ";" (*) ["mod"]
@@ -7152,7 +7362,7 @@ mod __parse__Krate {
     //   "}" -> Reduce(MacroRef = Path, "!", ";" => ActionFn(14);)
     //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Reduce(MacroRef = Path, "!", ";" => ActionFn(14);)
     //
-    pub fn __state88<
+    pub fn __state89<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -7197,7 +7407,7 @@ mod __parse__Krate {
         }
     }
 
-    // State 89
+    // State 90
     //   Id = (*) r#"[a-zA-Z_][a-zA-Z0-9_]*"# ["{"]
     //   MacroDef = Privacy "macro_rules" "!" (*) Id "{" Item+ "}" ["::"]
     //   MacroDef = Privacy "macro_rules" "!" (*) Id "{" Item+ "}" ["macro_rules"]
@@ -7209,11 +7419,21 @@ mod __parse__Krate {
     //   MacroDef = Privacy "macro_rules" "!" (*) Id "{" Item+ "}" ["{"]
     //   MacroDef = Privacy "macro_rules" "!" (*) Id "{" Item+ "}" ["}"]
     //   MacroDef = Privacy "macro_rules" "!" (*) Id "{" Item+ "}" [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
+    //   MacroDef = Privacy "macro_rules" "!" (*) Id "{" "}" ["::"]
+    //   MacroDef = Privacy "macro_rules" "!" (*) Id "{" "}" ["macro_rules"]
+    //   MacroDef = Privacy "macro_rules" "!" (*) Id "{" "}" ["mod"]
+    //   MacroDef = Privacy "macro_rules" "!" (*) Id "{" "}" ["pub"]
+    //   MacroDef = Privacy "macro_rules" "!" (*) Id "{" "}" ["self"]
+    //   MacroDef = Privacy "macro_rules" "!" (*) Id "{" "}" ["struct"]
+    //   MacroDef = Privacy "macro_rules" "!" (*) Id "{" "}" ["use"]
+    //   MacroDef = Privacy "macro_rules" "!" (*) Id "{" "}" ["{"]
+    //   MacroDef = Privacy "macro_rules" "!" (*) Id "{" "}" ["}"]
+    //   MacroDef = Privacy "macro_rules" "!" (*) Id "{" "}" [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
     //
     //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Shift(S37)
     //
-    //   Id -> S94
-    pub fn __state89<
+    //   Id -> S95
+    pub fn __state90<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -7250,7 +7470,7 @@ mod __parse__Krate {
             match __nt {
                 __Nonterminal::Id(__nt) => {
                     let __sym3 = &mut Some(__nt);
-                    __result = try!(__state94(krate, input, __lookbehind, __tokens, __lookahead, __sym0, __sym1, __sym2, __sym3));
+                    __result = try!(__state95(krate, input, __lookbehind, __tokens, __lookahead, __sym0, __sym1, __sym2, __sym3));
                 }
                 _ => {
                     return Ok((__lookbehind, __lookahead, __nt));
@@ -7260,7 +7480,7 @@ mod __parse__Krate {
         return Ok(__result);
     }
 
-    // State 90
+    // State 91
     //   Module = Privacy "mod" Id (*) "{" Item+ "}" ["::"]
     //   Module = Privacy "mod" Id (*) "{" Item+ "}" ["macro_rules"]
     //   Module = Privacy "mod" Id (*) "{" Item+ "}" ["mod"]
@@ -7281,51 +7501,6 @@ mod __parse__Krate {
     //   Module = Privacy "mod" Id (*) "{" "}" ["{"]
     //   Module = Privacy "mod" Id (*) "{" "}" ["}"]
     //   Module = Privacy "mod" Id (*) "{" "}" [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
-    //
-    //   "{" -> Shift(S95)
-    //
-    pub fn __state90<
-        'input,
-        __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
-    >(
-        krate: &mut Krate,
-        input: &'input str,
-        __lookbehind: Option<usize>,
-        __tokens: &mut __TOKENS,
-        __lookahead: Option<(usize, (usize, &'input str), usize)>,
-        __sym0: &mut Option<Privacy>,
-        __sym1: &mut Option<&'input str>,
-        __sym2: &mut Option<InternedString>,
-    ) -> Result<(Option<usize>, Option<(usize, (usize, &'input str), usize)>, __Nonterminal<>), __ParseError<usize,(usize, &'input str),()>>
-    {
-        let mut __result: (Option<usize>, Option<(usize, (usize, &'input str), usize)>, __Nonterminal<>);
-        match __lookahead {
-            Some((_, (11, __tok0), __loc)) => {
-                let mut __lookbehind = Some(__loc);
-                let mut __sym3 = &mut Some((__tok0));
-                __result = try!(__state95(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3));
-            }
-            _ => {
-                return Err(__ParseError::UnrecognizedToken {
-                    token: __lookahead,
-                    expected: vec![],
-                });
-            }
-        }
-        return Ok(__result);
-    }
-
-    // State 91
-    //   Structure = Privacy "struct" Id (*) "{" "}" ["::"]
-    //   Structure = Privacy "struct" Id (*) "{" "}" ["macro_rules"]
-    //   Structure = Privacy "struct" Id (*) "{" "}" ["mod"]
-    //   Structure = Privacy "struct" Id (*) "{" "}" ["pub"]
-    //   Structure = Privacy "struct" Id (*) "{" "}" ["self"]
-    //   Structure = Privacy "struct" Id (*) "{" "}" ["struct"]
-    //   Structure = Privacy "struct" Id (*) "{" "}" ["use"]
-    //   Structure = Privacy "struct" Id (*) "{" "}" ["{"]
-    //   Structure = Privacy "struct" Id (*) "{" "}" ["}"]
-    //   Structure = Privacy "struct" Id (*) "{" "}" [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
     //
     //   "{" -> Shift(S96)
     //
@@ -7361,6 +7536,51 @@ mod __parse__Krate {
     }
 
     // State 92
+    //   Structure = Privacy "struct" Id (*) "{" "}" ["::"]
+    //   Structure = Privacy "struct" Id (*) "{" "}" ["macro_rules"]
+    //   Structure = Privacy "struct" Id (*) "{" "}" ["mod"]
+    //   Structure = Privacy "struct" Id (*) "{" "}" ["pub"]
+    //   Structure = Privacy "struct" Id (*) "{" "}" ["self"]
+    //   Structure = Privacy "struct" Id (*) "{" "}" ["struct"]
+    //   Structure = Privacy "struct" Id (*) "{" "}" ["use"]
+    //   Structure = Privacy "struct" Id (*) "{" "}" ["{"]
+    //   Structure = Privacy "struct" Id (*) "{" "}" ["}"]
+    //   Structure = Privacy "struct" Id (*) "{" "}" [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
+    //
+    //   "{" -> Shift(S97)
+    //
+    pub fn __state92<
+        'input,
+        __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
+    >(
+        krate: &mut Krate,
+        input: &'input str,
+        __lookbehind: Option<usize>,
+        __tokens: &mut __TOKENS,
+        __lookahead: Option<(usize, (usize, &'input str), usize)>,
+        __sym0: &mut Option<Privacy>,
+        __sym1: &mut Option<&'input str>,
+        __sym2: &mut Option<InternedString>,
+    ) -> Result<(Option<usize>, Option<(usize, (usize, &'input str), usize)>, __Nonterminal<>), __ParseError<usize,(usize, &'input str),()>>
+    {
+        let mut __result: (Option<usize>, Option<(usize, (usize, &'input str), usize)>, __Nonterminal<>);
+        match __lookahead {
+            Some((_, (11, __tok0), __loc)) => {
+                let mut __lookbehind = Some(__loc);
+                let mut __sym3 = &mut Some((__tok0));
+                __result = try!(__state97(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3));
+            }
+            _ => {
+                return Err(__ParseError::UnrecognizedToken {
+                    token: __lookahead,
+                    expected: vec![],
+                });
+            }
+        }
+        return Ok(__result);
+    }
+
+    // State 93
     //   Glob = Privacy "use" Path (*) "::" "*" ";" ["::"]
     //   Glob = Privacy "use" Path (*) "::" "*" ";" ["macro_rules"]
     //   Glob = Privacy "use" Path (*) "::" "*" ";" ["mod"]
@@ -7395,11 +7615,11 @@ mod __parse__Krate {
     //   Path = Path (*) "::" Id [";"]
     //   Path = Path (*) "::" Id ["as"]
     //
-    //   "::" -> Shift(S97)
-    //   ";" -> Shift(S98)
-    //   "as" -> Shift(S99)
+    //   "::" -> Shift(S98)
+    //   ";" -> Shift(S99)
+    //   "as" -> Shift(S100)
     //
-    pub fn __state92<
+    pub fn __state93<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -7418,17 +7638,17 @@ mod __parse__Krate {
             Some((_, (2, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym3 = &mut Some((__tok0));
-                __result = try!(__state97(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3));
+                __result = try!(__state98(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3));
             }
             Some((_, (3, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym3 = &mut Some((__tok0));
-                __result = try!(__state98(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3));
+                __result = try!(__state99(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3));
             }
             Some((_, (4, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym3 = &mut Some((__tok0));
-                __result = try!(__state99(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3));
+                __result = try!(__state100(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3));
             }
             _ => {
                 return Err(__ParseError::UnrecognizedToken {
@@ -7440,7 +7660,7 @@ mod __parse__Krate {
         return Ok(__result);
     }
 
-    // State 93
+    // State 94
     //   Code = "{" (<Path> ";")+ "}" (*) ["::"]
     //   Code = "{" (<Path> ";")+ "}" (*) ["macro_rules"]
     //   Code = "{" (<Path> ";")+ "}" (*) ["mod"]
@@ -7463,7 +7683,7 @@ mod __parse__Krate {
     //   "}" -> Reduce(Code = "{", (<Path> ";")+, "}" => ActionFn(43);)
     //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Reduce(Code = "{", (<Path> ";")+, "}" => ActionFn(43);)
     //
-    pub fn __state93<
+    pub fn __state94<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -7508,7 +7728,7 @@ mod __parse__Krate {
         }
     }
 
-    // State 94
+    // State 95
     //   MacroDef = Privacy "macro_rules" "!" Id (*) "{" Item+ "}" ["::"]
     //   MacroDef = Privacy "macro_rules" "!" Id (*) "{" Item+ "}" ["macro_rules"]
     //   MacroDef = Privacy "macro_rules" "!" Id (*) "{" Item+ "}" ["mod"]
@@ -7519,10 +7739,20 @@ mod __parse__Krate {
     //   MacroDef = Privacy "macro_rules" "!" Id (*) "{" Item+ "}" ["{"]
     //   MacroDef = Privacy "macro_rules" "!" Id (*) "{" Item+ "}" ["}"]
     //   MacroDef = Privacy "macro_rules" "!" Id (*) "{" Item+ "}" [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
+    //   MacroDef = Privacy "macro_rules" "!" Id (*) "{" "}" ["::"]
+    //   MacroDef = Privacy "macro_rules" "!" Id (*) "{" "}" ["macro_rules"]
+    //   MacroDef = Privacy "macro_rules" "!" Id (*) "{" "}" ["mod"]
+    //   MacroDef = Privacy "macro_rules" "!" Id (*) "{" "}" ["pub"]
+    //   MacroDef = Privacy "macro_rules" "!" Id (*) "{" "}" ["self"]
+    //   MacroDef = Privacy "macro_rules" "!" Id (*) "{" "}" ["struct"]
+    //   MacroDef = Privacy "macro_rules" "!" Id (*) "{" "}" ["use"]
+    //   MacroDef = Privacy "macro_rules" "!" Id (*) "{" "}" ["{"]
+    //   MacroDef = Privacy "macro_rules" "!" Id (*) "{" "}" ["}"]
+    //   MacroDef = Privacy "macro_rules" "!" Id (*) "{" "}" [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
     //
-    //   "{" -> Shift(S100)
+    //   "{" -> Shift(S101)
     //
-    pub fn __state94<
+    pub fn __state95<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -7542,7 +7772,7 @@ mod __parse__Krate {
             Some((_, (11, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym4 = &mut Some((__tok0));
-                __result = try!(__state100(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3, __sym4));
+                __result = try!(__state101(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3, __sym4));
             }
             _ => {
                 return Err(__ParseError::UnrecognizedToken {
@@ -7554,7 +7784,7 @@ mod __parse__Krate {
         return Ok(__result);
     }
 
-    // State 95
+    // State 96
     //   Code = (*) "{" (<Path> ";")+ "}" ["::"]
     //   Code = (*) "{" (<Path> ";")+ "}" ["macro_rules"]
     //   Code = (*) "{" (<Path> ";")+ "}" ["mod"]
@@ -7707,6 +7937,16 @@ mod __parse__Krate {
     //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" Item+ "}" ["{"]
     //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" Item+ "}" ["}"]
     //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" Item+ "}" [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["::"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["macro_rules"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["mod"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["pub"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["self"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["struct"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["use"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["{"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["}"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
     //   MacroRef = (*) Path "!" ";" ["::"]
     //   MacroRef = (*) Path "!" ";" ["macro_rules"]
     //   MacroRef = (*) Path "!" ";" ["mod"]
@@ -7792,7 +8032,7 @@ mod __parse__Krate {
     //   "struct" -> Reduce(Privacy =  => ActionFn(39);)
     //   "use" -> Reduce(Privacy =  => ActionFn(39);)
     //   "{" -> Shift(S68)
-    //   "}" -> Shift(S102)
+    //   "}" -> Shift(S103)
     //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Shift(S18)
     //
     //   Code -> S57
@@ -7800,14 +8040,14 @@ mod __parse__Krate {
     //   Id -> S3
     //   Import -> S59
     //   Item -> S60
-    //   Item+ -> S101
+    //   Item+ -> S102
     //   MacroDef -> S62
     //   MacroRef -> S63
     //   Module -> S64
     //   Path -> S65
     //   Privacy -> S66
     //   Structure -> S67
-    pub fn __state95<
+    pub fn __state96<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -7851,7 +8091,7 @@ mod __parse__Krate {
             Some((_, (12, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym4 = &mut Some((__tok0));
-                __result = try!(__state102(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3, __sym4));
+                __result = try!(__state103(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3, __sym4));
             }
             Some((_, (13, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
@@ -7897,7 +8137,7 @@ mod __parse__Krate {
                 }
                 __Nonterminal::Item_2b(__nt) => {
                     let __sym4 = &mut Some(__nt);
-                    __result = try!(__state101(krate, input, __lookbehind, __tokens, __lookahead, __sym0, __sym1, __sym2, __sym3, __sym4));
+                    __result = try!(__state102(krate, input, __lookbehind, __tokens, __lookahead, __sym0, __sym1, __sym2, __sym3, __sym4));
                 }
                 __Nonterminal::MacroDef(__nt) => {
                     let __sym4 = &mut Some(__nt);
@@ -7931,7 +8171,7 @@ mod __parse__Krate {
         return Ok(__result);
     }
 
-    // State 96
+    // State 97
     //   Structure = Privacy "struct" Id "{" (*) "}" ["::"]
     //   Structure = Privacy "struct" Id "{" (*) "}" ["macro_rules"]
     //   Structure = Privacy "struct" Id "{" (*) "}" ["mod"]
@@ -7943,9 +8183,9 @@ mod __parse__Krate {
     //   Structure = Privacy "struct" Id "{" (*) "}" ["}"]
     //   Structure = Privacy "struct" Id "{" (*) "}" [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
     //
-    //   "}" -> Shift(S103)
+    //   "}" -> Shift(S104)
     //
-    pub fn __state96<
+    pub fn __state97<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -7969,7 +8209,7 @@ mod __parse__Krate {
             Some((_, (12, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym4 = &mut Some((__tok0));
-                __result = try!(__state103(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3, __sym4));
+                __result = try!(__state104(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3, __sym4));
             }
             _ => {
                 return Err(__ParseError::UnrecognizedToken {
@@ -7981,7 +8221,7 @@ mod __parse__Krate {
         return Ok(__result);
     }
 
-    // State 97
+    // State 98
     //   Glob = Privacy "use" Path "::" (*) "*" ";" ["::"]
     //   Glob = Privacy "use" Path "::" (*) "*" ";" ["macro_rules"]
     //   Glob = Privacy "use" Path "::" (*) "*" ";" ["mod"]
@@ -7999,11 +8239,11 @@ mod __parse__Krate {
     //   Path = Path "::" (*) Id [";"]
     //   Path = Path "::" (*) Id ["as"]
     //
-    //   "*" -> Shift(S104)
+    //   "*" -> Shift(S105)
     //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Shift(S43)
     //
     //   Id -> S71
-    pub fn __state97<
+    pub fn __state98<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -8027,7 +8267,7 @@ mod __parse__Krate {
             Some((_, (1, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym4 = &mut Some((__tok0));
-                __result = try!(__state104(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3, __sym4));
+                __result = try!(__state105(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3, __sym4));
             }
             Some((_, (13, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
@@ -8056,7 +8296,7 @@ mod __parse__Krate {
         return Ok(__result);
     }
 
-    // State 98
+    // State 99
     //   Import = Privacy "use" Path ";" (*) ["::"]
     //   Import = Privacy "use" Path ";" (*) ["macro_rules"]
     //   Import = Privacy "use" Path ";" (*) ["mod"]
@@ -8079,7 +8319,7 @@ mod __parse__Krate {
     //   "}" -> Reduce(Import = Privacy, "use", Path, ";" => ActionFn(38);)
     //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Reduce(Import = Privacy, "use", Path, ";" => ActionFn(38);)
     //
-    pub fn __state98<
+    pub fn __state99<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -8126,7 +8366,7 @@ mod __parse__Krate {
         }
     }
 
-    // State 99
+    // State 100
     //   Id = (*) r#"[a-zA-Z_][a-zA-Z0-9_]*"# [";"]
     //   Import = Privacy "use" Path "as" (*) Id ";" ["::"]
     //   Import = Privacy "use" Path "as" (*) Id ";" ["macro_rules"]
@@ -8141,8 +8381,8 @@ mod __parse__Krate {
     //
     //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Shift(S74)
     //
-    //   Id -> S105
-    pub fn __state99<
+    //   Id -> S106
+    pub fn __state100<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -8180,7 +8420,7 @@ mod __parse__Krate {
             match __nt {
                 __Nonterminal::Id(__nt) => {
                     let __sym4 = &mut Some(__nt);
-                    __result = try!(__state105(krate, input, __lookbehind, __tokens, __lookahead, __sym0, __sym1, __sym2, __sym3, __sym4));
+                    __result = try!(__state106(krate, input, __lookbehind, __tokens, __lookahead, __sym0, __sym1, __sym2, __sym3, __sym4));
                 }
                 _ => {
                     return Ok((__lookbehind, __lookahead, __nt));
@@ -8190,7 +8430,7 @@ mod __parse__Krate {
         return Ok(__result);
     }
 
-    // State 100
+    // State 101
     //   Code = (*) "{" (<Path> ";")+ "}" ["::"]
     //   Code = (*) "{" (<Path> ";")+ "}" ["macro_rules"]
     //   Code = (*) "{" (<Path> ";")+ "}" ["mod"]
@@ -8353,6 +8593,26 @@ mod __parse__Krate {
     //   MacroDef = Privacy "macro_rules" "!" Id "{" (*) Item+ "}" ["{"]
     //   MacroDef = Privacy "macro_rules" "!" Id "{" (*) Item+ "}" ["}"]
     //   MacroDef = Privacy "macro_rules" "!" Id "{" (*) Item+ "}" [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["::"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["macro_rules"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["mod"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["pub"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["self"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["struct"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["use"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["{"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["}"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
+    //   MacroDef = Privacy "macro_rules" "!" Id "{" (*) "}" ["::"]
+    //   MacroDef = Privacy "macro_rules" "!" Id "{" (*) "}" ["macro_rules"]
+    //   MacroDef = Privacy "macro_rules" "!" Id "{" (*) "}" ["mod"]
+    //   MacroDef = Privacy "macro_rules" "!" Id "{" (*) "}" ["pub"]
+    //   MacroDef = Privacy "macro_rules" "!" Id "{" (*) "}" ["self"]
+    //   MacroDef = Privacy "macro_rules" "!" Id "{" (*) "}" ["struct"]
+    //   MacroDef = Privacy "macro_rules" "!" Id "{" (*) "}" ["use"]
+    //   MacroDef = Privacy "macro_rules" "!" Id "{" (*) "}" ["{"]
+    //   MacroDef = Privacy "macro_rules" "!" Id "{" (*) "}" ["}"]
+    //   MacroDef = Privacy "macro_rules" "!" Id "{" (*) "}" [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
     //   MacroRef = (*) Path "!" ";" ["::"]
     //   MacroRef = (*) Path "!" ";" ["macro_rules"]
     //   MacroRef = (*) Path "!" ";" ["mod"]
@@ -8418,6 +8678,7 @@ mod __parse__Krate {
     //   "struct" -> Reduce(Privacy =  => ActionFn(39);)
     //   "use" -> Reduce(Privacy =  => ActionFn(39);)
     //   "{" -> Shift(S68)
+    //   "}" -> Shift(S108)
     //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Shift(S18)
     //
     //   Code -> S57
@@ -8425,14 +8686,14 @@ mod __parse__Krate {
     //   Id -> S3
     //   Import -> S59
     //   Item -> S60
-    //   Item+ -> S106
+    //   Item+ -> S107
     //   MacroDef -> S62
     //   MacroRef -> S63
     //   Module -> S64
     //   Path -> S65
     //   Privacy -> S66
     //   Structure -> S67
-    pub fn __state100<
+    pub fn __state101<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -8473,6 +8734,11 @@ mod __parse__Krate {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym5 = &mut Some((__tok0));
                 __result = try!(__state68(krate, input, __lookbehind, __tokens, __sym5));
+            }
+            Some((_, (12, __tok0), __loc)) => {
+                let mut __lookbehind = Some(__loc);
+                let mut __sym5 = &mut Some((__tok0));
+                __result = try!(__state108(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3, __sym4, __sym5));
             }
             Some((_, (13, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
@@ -8518,7 +8784,7 @@ mod __parse__Krate {
                 }
                 __Nonterminal::Item_2b(__nt) => {
                     let __sym5 = &mut Some(__nt);
-                    __result = try!(__state106(krate, input, __lookbehind, __tokens, __lookahead, __sym0, __sym1, __sym2, __sym3, __sym4, __sym5));
+                    __result = try!(__state107(krate, input, __lookbehind, __tokens, __lookahead, __sym0, __sym1, __sym2, __sym3, __sym4, __sym5));
                 }
                 __Nonterminal::MacroDef(__nt) => {
                     let __sym5 = &mut Some(__nt);
@@ -8552,7 +8818,7 @@ mod __parse__Krate {
         return Ok(__result);
     }
 
-    // State 101
+    // State 102
     //   Code = (*) "{" (<Path> ";")+ "}" ["::"]
     //   Code = (*) "{" (<Path> ";")+ "}" ["macro_rules"]
     //   Code = (*) "{" (<Path> ";")+ "}" ["mod"]
@@ -8695,6 +8961,16 @@ mod __parse__Krate {
     //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" Item+ "}" ["{"]
     //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" Item+ "}" ["}"]
     //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" Item+ "}" [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["::"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["macro_rules"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["mod"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["pub"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["self"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["struct"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["use"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["{"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["}"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
     //   MacroRef = (*) Path "!" ";" ["::"]
     //   MacroRef = (*) Path "!" ";" ["macro_rules"]
     //   MacroRef = (*) Path "!" ";" ["mod"]
@@ -8770,21 +9046,21 @@ mod __parse__Krate {
     //   "struct" -> Reduce(Privacy =  => ActionFn(39);)
     //   "use" -> Reduce(Privacy =  => ActionFn(39);)
     //   "{" -> Shift(S68)
-    //   "}" -> Shift(S107)
+    //   "}" -> Shift(S109)
     //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Shift(S18)
     //
     //   Code -> S57
     //   Glob -> S58
     //   Id -> S3
     //   Import -> S59
-    //   Item -> S76
+    //   Item -> S77
     //   MacroDef -> S62
     //   MacroRef -> S63
     //   Module -> S64
     //   Path -> S65
     //   Privacy -> S66
     //   Structure -> S67
-    pub fn __state101<
+    pub fn __state102<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -8825,7 +9101,7 @@ mod __parse__Krate {
             Some((_, (12, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym5 = &mut Some((__tok0));
-                __result = try!(__state107(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3, __sym4, __sym5));
+                __result = try!(__state109(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3, __sym4, __sym5));
             }
             Some((_, (13, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
@@ -8867,7 +9143,7 @@ mod __parse__Krate {
                 }
                 __Nonterminal::Item(__nt) => {
                     let __sym5 = &mut Some(__nt);
-                    __result = try!(__state76(krate, input, __lookbehind, __tokens, __lookahead, __sym4, __sym5));
+                    __result = try!(__state77(krate, input, __lookbehind, __tokens, __lookahead, __sym4, __sym5));
                 }
                 __Nonterminal::MacroDef(__nt) => {
                     let __sym5 = &mut Some(__nt);
@@ -8901,7 +9177,7 @@ mod __parse__Krate {
         return Ok(__result);
     }
 
-    // State 102
+    // State 103
     //   Module = Privacy "mod" Id "{" "}" (*) ["::"]
     //   Module = Privacy "mod" Id "{" "}" (*) ["macro_rules"]
     //   Module = Privacy "mod" Id "{" "}" (*) ["mod"]
@@ -8913,18 +9189,18 @@ mod __parse__Krate {
     //   Module = Privacy "mod" Id "{" "}" (*) ["}"]
     //   Module = Privacy "mod" Id "{" "}" (*) [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
     //
-    //   "::" -> Reduce(Module = Privacy, "mod", Id, "{", "}" => ActionFn(44);)
-    //   "macro_rules" -> Reduce(Module = Privacy, "mod", Id, "{", "}" => ActionFn(44);)
-    //   "mod" -> Reduce(Module = Privacy, "mod", Id, "{", "}" => ActionFn(44);)
-    //   "pub" -> Reduce(Module = Privacy, "mod", Id, "{", "}" => ActionFn(44);)
-    //   "self" -> Reduce(Module = Privacy, "mod", Id, "{", "}" => ActionFn(44);)
-    //   "struct" -> Reduce(Module = Privacy, "mod", Id, "{", "}" => ActionFn(44);)
-    //   "use" -> Reduce(Module = Privacy, "mod", Id, "{", "}" => ActionFn(44);)
-    //   "{" -> Reduce(Module = Privacy, "mod", Id, "{", "}" => ActionFn(44);)
-    //   "}" -> Reduce(Module = Privacy, "mod", Id, "{", "}" => ActionFn(44);)
-    //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Reduce(Module = Privacy, "mod", Id, "{", "}" => ActionFn(44);)
+    //   "::" -> Reduce(Module = Privacy, "mod", Id, "{", "}" => ActionFn(46);)
+    //   "macro_rules" -> Reduce(Module = Privacy, "mod", Id, "{", "}" => ActionFn(46);)
+    //   "mod" -> Reduce(Module = Privacy, "mod", Id, "{", "}" => ActionFn(46);)
+    //   "pub" -> Reduce(Module = Privacy, "mod", Id, "{", "}" => ActionFn(46);)
+    //   "self" -> Reduce(Module = Privacy, "mod", Id, "{", "}" => ActionFn(46);)
+    //   "struct" -> Reduce(Module = Privacy, "mod", Id, "{", "}" => ActionFn(46);)
+    //   "use" -> Reduce(Module = Privacy, "mod", Id, "{", "}" => ActionFn(46);)
+    //   "{" -> Reduce(Module = Privacy, "mod", Id, "{", "}" => ActionFn(46);)
+    //   "}" -> Reduce(Module = Privacy, "mod", Id, "{", "}" => ActionFn(46);)
+    //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Reduce(Module = Privacy, "mod", Id, "{", "}" => ActionFn(46);)
     //
-    pub fn __state102<
+    pub fn __state103<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -8961,7 +9237,7 @@ mod __parse__Krate {
                 let __sym2 = __sym2.take().unwrap();
                 let __sym3 = __sym3.take().unwrap();
                 let __sym4 = __sym4.take().unwrap();
-                let __nt = super::__action44(krate, input, __sym0, __sym1, __sym2, __sym3, __sym4, &__lookbehind, &__lookahead);
+                let __nt = super::__action46(krate, input, __sym0, __sym1, __sym2, __sym3, __sym4, &__lookbehind, &__lookahead);
                 return Ok((__lookbehind, __lookahead, __Nonterminal::Module(__nt)));
             }
             _ => {
@@ -8973,7 +9249,7 @@ mod __parse__Krate {
         }
     }
 
-    // State 103
+    // State 104
     //   Structure = Privacy "struct" Id "{" "}" (*) ["::"]
     //   Structure = Privacy "struct" Id "{" "}" (*) ["macro_rules"]
     //   Structure = Privacy "struct" Id "{" "}" (*) ["mod"]
@@ -8996,7 +9272,7 @@ mod __parse__Krate {
     //   "}" -> Reduce(Structure = Privacy, "struct", Id, "{", "}" => ActionFn(10);)
     //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Reduce(Structure = Privacy, "struct", Id, "{", "}" => ActionFn(10);)
     //
-    pub fn __state103<
+    pub fn __state104<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -9045,7 +9321,7 @@ mod __parse__Krate {
         }
     }
 
-    // State 104
+    // State 105
     //   Glob = Privacy "use" Path "::" "*" (*) ";" ["::"]
     //   Glob = Privacy "use" Path "::" "*" (*) ";" ["macro_rules"]
     //   Glob = Privacy "use" Path "::" "*" (*) ";" ["mod"]
@@ -9057,9 +9333,9 @@ mod __parse__Krate {
     //   Glob = Privacy "use" Path "::" "*" (*) ";" ["}"]
     //   Glob = Privacy "use" Path "::" "*" (*) ";" [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
     //
-    //   ";" -> Shift(S108)
+    //   ";" -> Shift(S110)
     //
-    pub fn __state104<
+    pub fn __state105<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -9084,7 +9360,7 @@ mod __parse__Krate {
             Some((_, (3, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym5 = &mut Some((__tok0));
-                __result = try!(__state108(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3, __sym4, __sym5));
+                __result = try!(__state110(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3, __sym4, __sym5));
             }
             _ => {
                 return Err(__ParseError::UnrecognizedToken {
@@ -9096,7 +9372,7 @@ mod __parse__Krate {
         return Ok(__result);
     }
 
-    // State 105
+    // State 106
     //   Import = Privacy "use" Path "as" Id (*) ";" ["::"]
     //   Import = Privacy "use" Path "as" Id (*) ";" ["macro_rules"]
     //   Import = Privacy "use" Path "as" Id (*) ";" ["mod"]
@@ -9108,9 +9384,9 @@ mod __parse__Krate {
     //   Import = Privacy "use" Path "as" Id (*) ";" ["}"]
     //   Import = Privacy "use" Path "as" Id (*) ";" [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
     //
-    //   ";" -> Shift(S109)
+    //   ";" -> Shift(S111)
     //
-    pub fn __state105<
+    pub fn __state106<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -9131,7 +9407,7 @@ mod __parse__Krate {
             Some((_, (3, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym5 = &mut Some((__tok0));
-                __result = try!(__state109(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3, __sym4, __sym5));
+                __result = try!(__state111(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3, __sym4, __sym5));
             }
             _ => {
                 return Err(__ParseError::UnrecognizedToken {
@@ -9143,7 +9419,7 @@ mod __parse__Krate {
         return Ok(__result);
     }
 
-    // State 106
+    // State 107
     //   Code = (*) "{" (<Path> ";")+ "}" ["::"]
     //   Code = (*) "{" (<Path> ";")+ "}" ["macro_rules"]
     //   Code = (*) "{" (<Path> ";")+ "}" ["mod"]
@@ -9296,6 +9572,16 @@ mod __parse__Krate {
     //   MacroDef = Privacy "macro_rules" "!" Id "{" Item+ (*) "}" ["{"]
     //   MacroDef = Privacy "macro_rules" "!" Id "{" Item+ (*) "}" ["}"]
     //   MacroDef = Privacy "macro_rules" "!" Id "{" Item+ (*) "}" [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["::"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["macro_rules"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["mod"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["pub"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["self"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["struct"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["use"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["{"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" ["}"]
+    //   MacroDef = (*) Privacy "macro_rules" "!" Id "{" "}" [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
     //   MacroRef = (*) Path "!" ";" ["::"]
     //   MacroRef = (*) Path "!" ";" ["macro_rules"]
     //   MacroRef = (*) Path "!" ";" ["mod"]
@@ -9361,21 +9647,21 @@ mod __parse__Krate {
     //   "struct" -> Reduce(Privacy =  => ActionFn(39);)
     //   "use" -> Reduce(Privacy =  => ActionFn(39);)
     //   "{" -> Shift(S68)
-    //   "}" -> Shift(S110)
+    //   "}" -> Shift(S112)
     //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Shift(S18)
     //
     //   Code -> S57
     //   Glob -> S58
     //   Id -> S3
     //   Import -> S59
-    //   Item -> S76
+    //   Item -> S77
     //   MacroDef -> S62
     //   MacroRef -> S63
     //   Module -> S64
     //   Path -> S65
     //   Privacy -> S66
     //   Structure -> S67
-    pub fn __state106<
+    pub fn __state107<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -9417,7 +9703,7 @@ mod __parse__Krate {
             Some((_, (12, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym6 = &mut Some((__tok0));
-                __result = try!(__state110(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3, __sym4, __sym5, __sym6));
+                __result = try!(__state112(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3, __sym4, __sym5, __sym6));
             }
             Some((_, (13, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
@@ -9459,7 +9745,7 @@ mod __parse__Krate {
                 }
                 __Nonterminal::Item(__nt) => {
                     let __sym6 = &mut Some(__nt);
-                    __result = try!(__state76(krate, input, __lookbehind, __tokens, __lookahead, __sym5, __sym6));
+                    __result = try!(__state77(krate, input, __lookbehind, __tokens, __lookahead, __sym5, __sym6));
                 }
                 __Nonterminal::MacroDef(__nt) => {
                     let __sym6 = &mut Some(__nt);
@@ -9493,7 +9779,81 @@ mod __parse__Krate {
         return Ok(__result);
     }
 
-    // State 107
+    // State 108
+    //   MacroDef = Privacy "macro_rules" "!" Id "{" "}" (*) ["::"]
+    //   MacroDef = Privacy "macro_rules" "!" Id "{" "}" (*) ["macro_rules"]
+    //   MacroDef = Privacy "macro_rules" "!" Id "{" "}" (*) ["mod"]
+    //   MacroDef = Privacy "macro_rules" "!" Id "{" "}" (*) ["pub"]
+    //   MacroDef = Privacy "macro_rules" "!" Id "{" "}" (*) ["self"]
+    //   MacroDef = Privacy "macro_rules" "!" Id "{" "}" (*) ["struct"]
+    //   MacroDef = Privacy "macro_rules" "!" Id "{" "}" (*) ["use"]
+    //   MacroDef = Privacy "macro_rules" "!" Id "{" "}" (*) ["{"]
+    //   MacroDef = Privacy "macro_rules" "!" Id "{" "}" (*) ["}"]
+    //   MacroDef = Privacy "macro_rules" "!" Id "{" "}" (*) [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
+    //
+    //   "::" -> Reduce(MacroDef = Privacy, "macro_rules", "!", Id, "{", "}" => ActionFn(44);)
+    //   "macro_rules" -> Reduce(MacroDef = Privacy, "macro_rules", "!", Id, "{", "}" => ActionFn(44);)
+    //   "mod" -> Reduce(MacroDef = Privacy, "macro_rules", "!", Id, "{", "}" => ActionFn(44);)
+    //   "pub" -> Reduce(MacroDef = Privacy, "macro_rules", "!", Id, "{", "}" => ActionFn(44);)
+    //   "self" -> Reduce(MacroDef = Privacy, "macro_rules", "!", Id, "{", "}" => ActionFn(44);)
+    //   "struct" -> Reduce(MacroDef = Privacy, "macro_rules", "!", Id, "{", "}" => ActionFn(44);)
+    //   "use" -> Reduce(MacroDef = Privacy, "macro_rules", "!", Id, "{", "}" => ActionFn(44);)
+    //   "{" -> Reduce(MacroDef = Privacy, "macro_rules", "!", Id, "{", "}" => ActionFn(44);)
+    //   "}" -> Reduce(MacroDef = Privacy, "macro_rules", "!", Id, "{", "}" => ActionFn(44);)
+    //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Reduce(MacroDef = Privacy, "macro_rules", "!", Id, "{", "}" => ActionFn(44);)
+    //
+    pub fn __state108<
+        'input,
+        __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
+    >(
+        krate: &mut Krate,
+        input: &'input str,
+        __lookbehind: Option<usize>,
+        __tokens: &mut __TOKENS,
+        __sym0: &mut Option<Privacy>,
+        __sym1: &mut Option<&'input str>,
+        __sym2: &mut Option<&'input str>,
+        __sym3: &mut Option<InternedString>,
+        __sym4: &mut Option<&'input str>,
+        __sym5: &mut Option<&'input str>,
+    ) -> Result<(Option<usize>, Option<(usize, (usize, &'input str), usize)>, __Nonterminal<>), __ParseError<usize,(usize, &'input str),()>>
+    {
+        let mut __result: (Option<usize>, Option<(usize, (usize, &'input str), usize)>, __Nonterminal<>);
+        let __lookahead = match __tokens.next() {
+            Some(Ok(v)) => Some(v),
+            None => None,
+            Some(Err(e)) => return Err(e),
+        };
+        match __lookahead {
+            Some((_, (2, _), _)) |
+            Some((_, (5, _), _)) |
+            Some((_, (6, _), _)) |
+            Some((_, (7, _), _)) |
+            Some((_, (8, _), _)) |
+            Some((_, (9, _), _)) |
+            Some((_, (10, _), _)) |
+            Some((_, (11, _), _)) |
+            Some((_, (12, _), _)) |
+            Some((_, (13, _), _)) => {
+                let __sym0 = __sym0.take().unwrap();
+                let __sym1 = __sym1.take().unwrap();
+                let __sym2 = __sym2.take().unwrap();
+                let __sym3 = __sym3.take().unwrap();
+                let __sym4 = __sym4.take().unwrap();
+                let __sym5 = __sym5.take().unwrap();
+                let __nt = super::__action44(krate, input, __sym0, __sym1, __sym2, __sym3, __sym4, __sym5, &__lookbehind, &__lookahead);
+                return Ok((__lookbehind, __lookahead, __Nonterminal::MacroDef(__nt)));
+            }
+            _ => {
+                return Err(__ParseError::UnrecognizedToken {
+                    token: __lookahead,
+                    expected: vec![],
+                });
+            }
+        }
+    }
+
+    // State 109
     //   Module = Privacy "mod" Id "{" Item+ "}" (*) ["::"]
     //   Module = Privacy "mod" Id "{" Item+ "}" (*) ["macro_rules"]
     //   Module = Privacy "mod" Id "{" Item+ "}" (*) ["mod"]
@@ -9505,18 +9865,18 @@ mod __parse__Krate {
     //   Module = Privacy "mod" Id "{" Item+ "}" (*) ["}"]
     //   Module = Privacy "mod" Id "{" Item+ "}" (*) [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
     //
-    //   "::" -> Reduce(Module = Privacy, "mod", Id, "{", Item+, "}" => ActionFn(45);)
-    //   "macro_rules" -> Reduce(Module = Privacy, "mod", Id, "{", Item+, "}" => ActionFn(45);)
-    //   "mod" -> Reduce(Module = Privacy, "mod", Id, "{", Item+, "}" => ActionFn(45);)
-    //   "pub" -> Reduce(Module = Privacy, "mod", Id, "{", Item+, "}" => ActionFn(45);)
-    //   "self" -> Reduce(Module = Privacy, "mod", Id, "{", Item+, "}" => ActionFn(45);)
-    //   "struct" -> Reduce(Module = Privacy, "mod", Id, "{", Item+, "}" => ActionFn(45);)
-    //   "use" -> Reduce(Module = Privacy, "mod", Id, "{", Item+, "}" => ActionFn(45);)
-    //   "{" -> Reduce(Module = Privacy, "mod", Id, "{", Item+, "}" => ActionFn(45);)
-    //   "}" -> Reduce(Module = Privacy, "mod", Id, "{", Item+, "}" => ActionFn(45);)
-    //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Reduce(Module = Privacy, "mod", Id, "{", Item+, "}" => ActionFn(45);)
+    //   "::" -> Reduce(Module = Privacy, "mod", Id, "{", Item+, "}" => ActionFn(47);)
+    //   "macro_rules" -> Reduce(Module = Privacy, "mod", Id, "{", Item+, "}" => ActionFn(47);)
+    //   "mod" -> Reduce(Module = Privacy, "mod", Id, "{", Item+, "}" => ActionFn(47);)
+    //   "pub" -> Reduce(Module = Privacy, "mod", Id, "{", Item+, "}" => ActionFn(47);)
+    //   "self" -> Reduce(Module = Privacy, "mod", Id, "{", Item+, "}" => ActionFn(47);)
+    //   "struct" -> Reduce(Module = Privacy, "mod", Id, "{", Item+, "}" => ActionFn(47);)
+    //   "use" -> Reduce(Module = Privacy, "mod", Id, "{", Item+, "}" => ActionFn(47);)
+    //   "{" -> Reduce(Module = Privacy, "mod", Id, "{", Item+, "}" => ActionFn(47);)
+    //   "}" -> Reduce(Module = Privacy, "mod", Id, "{", Item+, "}" => ActionFn(47);)
+    //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Reduce(Module = Privacy, "mod", Id, "{", Item+, "}" => ActionFn(47);)
     //
-    pub fn __state107<
+    pub fn __state109<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -9555,7 +9915,7 @@ mod __parse__Krate {
                 let __sym3 = __sym3.take().unwrap();
                 let __sym4 = __sym4.take().unwrap();
                 let __sym5 = __sym5.take().unwrap();
-                let __nt = super::__action45(krate, input, __sym0, __sym1, __sym2, __sym3, __sym4, __sym5, &__lookbehind, &__lookahead);
+                let __nt = super::__action47(krate, input, __sym0, __sym1, __sym2, __sym3, __sym4, __sym5, &__lookbehind, &__lookahead);
                 return Ok((__lookbehind, __lookahead, __Nonterminal::Module(__nt)));
             }
             _ => {
@@ -9567,7 +9927,7 @@ mod __parse__Krate {
         }
     }
 
-    // State 108
+    // State 110
     //   Glob = Privacy "use" Path "::" "*" ";" (*) ["::"]
     //   Glob = Privacy "use" Path "::" "*" ";" (*) ["macro_rules"]
     //   Glob = Privacy "use" Path "::" "*" ";" (*) ["mod"]
@@ -9590,7 +9950,7 @@ mod __parse__Krate {
     //   "}" -> Reduce(Glob = Privacy, "use", Path, "::", "*", ";" => ActionFn(12);)
     //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Reduce(Glob = Privacy, "use", Path, "::", "*", ";" => ActionFn(12);)
     //
-    pub fn __state108<
+    pub fn __state110<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -9641,7 +10001,7 @@ mod __parse__Krate {
         }
     }
 
-    // State 109
+    // State 111
     //   Import = Privacy "use" Path "as" Id ";" (*) ["::"]
     //   Import = Privacy "use" Path "as" Id ";" (*) ["macro_rules"]
     //   Import = Privacy "use" Path "as" Id ";" (*) ["mod"]
@@ -9664,7 +10024,7 @@ mod __parse__Krate {
     //   "}" -> Reduce(Import = Privacy, "use", Path, "as", Id, ";" => ActionFn(37);)
     //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Reduce(Import = Privacy, "use", Path, "as", Id, ";" => ActionFn(37);)
     //
-    pub fn __state109<
+    pub fn __state111<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -9715,7 +10075,7 @@ mod __parse__Krate {
         }
     }
 
-    // State 110
+    // State 112
     //   MacroDef = Privacy "macro_rules" "!" Id "{" Item+ "}" (*) ["::"]
     //   MacroDef = Privacy "macro_rules" "!" Id "{" Item+ "}" (*) ["macro_rules"]
     //   MacroDef = Privacy "macro_rules" "!" Id "{" Item+ "}" (*) ["mod"]
@@ -9727,18 +10087,18 @@ mod __parse__Krate {
     //   MacroDef = Privacy "macro_rules" "!" Id "{" Item+ "}" (*) ["}"]
     //   MacroDef = Privacy "macro_rules" "!" Id "{" Item+ "}" (*) [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
     //
-    //   "::" -> Reduce(MacroDef = Privacy, "macro_rules", "!", Id, "{", Item+, "}" => ActionFn(13);)
-    //   "macro_rules" -> Reduce(MacroDef = Privacy, "macro_rules", "!", Id, "{", Item+, "}" => ActionFn(13);)
-    //   "mod" -> Reduce(MacroDef = Privacy, "macro_rules", "!", Id, "{", Item+, "}" => ActionFn(13);)
-    //   "pub" -> Reduce(MacroDef = Privacy, "macro_rules", "!", Id, "{", Item+, "}" => ActionFn(13);)
-    //   "self" -> Reduce(MacroDef = Privacy, "macro_rules", "!", Id, "{", Item+, "}" => ActionFn(13);)
-    //   "struct" -> Reduce(MacroDef = Privacy, "macro_rules", "!", Id, "{", Item+, "}" => ActionFn(13);)
-    //   "use" -> Reduce(MacroDef = Privacy, "macro_rules", "!", Id, "{", Item+, "}" => ActionFn(13);)
-    //   "{" -> Reduce(MacroDef = Privacy, "macro_rules", "!", Id, "{", Item+, "}" => ActionFn(13);)
-    //   "}" -> Reduce(MacroDef = Privacy, "macro_rules", "!", Id, "{", Item+, "}" => ActionFn(13);)
-    //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Reduce(MacroDef = Privacy, "macro_rules", "!", Id, "{", Item+, "}" => ActionFn(13);)
+    //   "::" -> Reduce(MacroDef = Privacy, "macro_rules", "!", Id, "{", Item+, "}" => ActionFn(45);)
+    //   "macro_rules" -> Reduce(MacroDef = Privacy, "macro_rules", "!", Id, "{", Item+, "}" => ActionFn(45);)
+    //   "mod" -> Reduce(MacroDef = Privacy, "macro_rules", "!", Id, "{", Item+, "}" => ActionFn(45);)
+    //   "pub" -> Reduce(MacroDef = Privacy, "macro_rules", "!", Id, "{", Item+, "}" => ActionFn(45);)
+    //   "self" -> Reduce(MacroDef = Privacy, "macro_rules", "!", Id, "{", Item+, "}" => ActionFn(45);)
+    //   "struct" -> Reduce(MacroDef = Privacy, "macro_rules", "!", Id, "{", Item+, "}" => ActionFn(45);)
+    //   "use" -> Reduce(MacroDef = Privacy, "macro_rules", "!", Id, "{", Item+, "}" => ActionFn(45);)
+    //   "{" -> Reduce(MacroDef = Privacy, "macro_rules", "!", Id, "{", Item+, "}" => ActionFn(45);)
+    //   "}" -> Reduce(MacroDef = Privacy, "macro_rules", "!", Id, "{", Item+, "}" => ActionFn(45);)
+    //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Reduce(MacroDef = Privacy, "macro_rules", "!", Id, "{", Item+, "}" => ActionFn(45);)
     //
-    pub fn __state110<
+    pub fn __state112<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -9779,7 +10139,7 @@ mod __parse__Krate {
                 let __sym4 = __sym4.take().unwrap();
                 let __sym5 = __sym5.take().unwrap();
                 let __sym6 = __sym6.take().unwrap();
-                let __nt = super::__action13(krate, input, __sym0, __sym1, __sym2, __sym3, __sym4, __sym5, __sym6, &__lookbehind, &__lookahead);
+                let __nt = super::__action45(krate, input, __sym0, __sym1, __sym2, __sym3, __sym4, __sym5, __sym6, &__lookbehind, &__lookahead);
                 return Ok((__lookbehind, __lookahead, __Nonterminal::MacroDef(__nt)));
             }
             _ => {
@@ -20972,6 +21332,80 @@ pub fn __action44<
     input: &'input str,
     __0: Privacy,
     __1: &'input str,
+    __2: &'input str,
+    __3: InternedString,
+    __4: &'input str,
+    __5: &'input str,
+    __lookbehind: &Option<usize>,
+    __lookahead: &Option<(usize, (usize, &'input str), usize)>,
+) -> MacroDefId
+{
+    let __temp0 = __action30(
+        krate,
+        input,
+        __lookbehind,
+        __lookahead,
+    );
+    __action13(
+        krate,
+        input,
+        __0,
+        __1,
+        __2,
+        __3,
+        __4,
+        __temp0,
+        __5,
+        __lookbehind,
+        __lookahead,
+    )
+}
+
+pub fn __action45<
+    'input,
+>(
+    krate: &mut Krate,
+    input: &'input str,
+    __0: Privacy,
+    __1: &'input str,
+    __2: &'input str,
+    __3: InternedString,
+    __4: &'input str,
+    __5: ::std::vec::Vec<ItemId>,
+    __6: &'input str,
+    __lookbehind: &Option<usize>,
+    __lookahead: &Option<(usize, (usize, &'input str), usize)>,
+) -> MacroDefId
+{
+    let __temp0 = __action31(
+        krate,
+        input,
+        __5,
+        __lookbehind,
+        __lookahead,
+    );
+    __action13(
+        krate,
+        input,
+        __0,
+        __1,
+        __2,
+        __3,
+        __4,
+        __temp0,
+        __6,
+        __lookbehind,
+        __lookahead,
+    )
+}
+
+pub fn __action46<
+    'input,
+>(
+    krate: &mut Krate,
+    input: &'input str,
+    __0: Privacy,
+    __1: &'input str,
     __2: InternedString,
     __3: &'input str,
     __4: &'input str,
@@ -20999,7 +21433,7 @@ pub fn __action44<
     )
 }
 
-pub fn __action45<
+pub fn __action47<
     'input,
 >(
     krate: &mut Krate,

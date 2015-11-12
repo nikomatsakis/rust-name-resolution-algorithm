@@ -38,7 +38,7 @@ Glob: GlobId = {
 };
 
 MacroDef: MacroDefId = {
-    <privacy:Privacy> "macro_rules" "!" <name:Id> "{" <items:Item+> "}" =>
+    <privacy:Privacy> "macro_rules" "!" <name:Id> "{" <items:Item*> "}" =>
         krate.add_macro_def(MacroDef { privacy: privacy, name: name, items: items }),
 };
 
