@@ -3,16 +3,17 @@ use intern::InternedString;
 use std::collections::{HashMap, HashSet};
 use std::mem;
 
+#[derive(Debug)]
 pub struct ModuleContentSets {
     pub module_contents: HashMap<ModuleId, ModuleContents>,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct ModuleContents {
     pub members: HashMap<InternedString, Vec<NameResolution>>,
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct NameResolution {
     /// Item that name maps to.
     pub target: ItemId,
