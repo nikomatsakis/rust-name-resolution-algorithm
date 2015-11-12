@@ -147,3 +147,21 @@ mod baz { use foo::Struct; }
         }
     });
 }
+
+#[test]
+fn simple_cycle() {
+    let mut krate = ast::Krate::new();
+
+    // Here, the macro m! generates mod x { n! }, and then invoking n!
+    // generates a (conflicting) definition for `m`. Mind-bending.
+    parse_Krate(&mut krate, r#"
+mod foo { use bar::x; }
+mod bar { use foo::x; }
+"#).unwrap();
+    let result = resolve::resolve_and_expand(&mut krate);
+    debug!("result = {:?}", result);
+    assert!(match result {
+        Err(resolve::ResolutionError::InvalidPath { .. }) => true,
+        _ => false,
+    });
+}
