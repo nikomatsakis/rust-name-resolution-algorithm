@@ -1,4 +1,4 @@
-This respository contains a prototype for the new name resolution
+This repository contains a prototype for the new name resolution
 algorithm I would like to propose (and eventually implement) for Rust.
 It is a very flexible algorithm: globs are fully supported; macros can
 be used and impored like anything else; references to macros do not
