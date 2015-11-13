@@ -294,3 +294,56 @@ Another option might be including annotations on macros to help make
 it clear what names they will define, but this seems likely to be
 quite a burden, particularly if names are defined programmatically.
 
+**This seems too good to be true. What's the catch?**
+
+I am nervous about the glob precedence rules, particularly as they
+interact with attributes and decorators. I would like it if attributes
+and decorators were a kind of "alternate form" of macros, so that
+something like:
+
+```rust
+#[my_decorator]
+struct Bar { .. }
+```
+
+was kind of equivalent to:
+
+```rust
+my_decorator! {
+    struct Bar { .. }
+}
+```
+
+There are lots of details to work out, but let's assume that somehow,
+in some way, attributes and decorators can act in this fashion.  In
+that case, what happens to the name `Bar` in the decorated struct? Is
+it added to the glob exclusion list or not? I think it must be, because
+otherwise the glob exclusion list will be really confusing and quite
+incomplete, since most every struct includes a `#[derive]` annotation
+or something.
+
+But if we do add it to the list, that is also suboptimal, since the
+decorator may change the name or remove the item. Changing the name
+seems relatively unlikely, though of course not impossible, but
+removing the item seems very common: after all, consider `#[cfg]`. In
+other words, examples like this could be quite surprising:
+
+```rust
+#[cfg(unix)] use something::*;
+#[cfg(windows)] struct Foo { }
+```
+
+Now I would find that, on unix, the `*` glob does not bring in `Foo`,
+because there is an explicit declaration (albeit one that is cfg'd
+out). It seems like we could explain this rule readily enough, but
+still, it's suboptimal. (I am assuming that we resolve and process
+`#[cfg]` like any other macro here.)
+
+This also affects another question that has been kicking about. If
+decorators are shorthand for attributes, can we accept arbitrary token
+trees? It might be plausible to have a rule like "`#[foo]` can be
+followed by arbitrary text until either a `;` or `{...}` section". But
+that wouldn't work well with the exclusion list; I think we would want
+to ensure that attributes were only applied to legal items.  This
+seems ok though: particularly given that attributes can be applied to
+expressions, and inner attributes, and all the other things.
