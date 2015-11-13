@@ -261,3 +261,37 @@ mod baz { macro_rules! m { } }
     assert!(result.is_err());
 }
 
+#[test]
+fn banning_macro_globs_is_not_enough() {
+    let mut krate = ast::Krate::new();
+
+    // Here the macro m! generates a conflict entry for m!. But we
+    // have to make sure that this results in an error.
+
+    parse_Krate(&mut krate, r#"
+mod a {
+    use b::c::n;
+    self::n!;
+}
+mod b {
+    use c::*;
+    macro_rules! m {
+        mod d {
+            macro_rules! n { }
+        }
+    }
+    self::m!;
+}
+mod c {
+    mod d {
+        macro_rules! n { }
+    }
+}
+"#).unwrap();
+    let result = resolve::resolve_and_expand(&mut krate);
+    debug!("result = {:?}", result);
+    assert!(match result {
+        Err(ResolutionError::InvalidPath { .. }) => true,
+        _ => false
+    });
+}

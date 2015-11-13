@@ -21,7 +21,7 @@ Here are some of the interesting characteristics:
    so long as the module never refers to `X`).
    
 The core algorithm is (I think) backwards compatible with Rust today
-(modulo bugs in today's code that accept things they should not).  But
+(modulo bugs in today's code that accept things they should not). But
 there are a few places that the algorithm as implemented here diverge
 from Rust which are probably not strictly backwards compatible (and
 may not be desirable, depending on who you ask):
@@ -293,6 +293,48 @@ Bar}` (this might be nice in any case. But that's for another day.
 Another option might be including annotations on macros to help make
 it clear what names they will define, but this seems likely to be
 quite a burden, particularly if names are defined programmatically.
+
+**Can we just remove macros from globs instead?**
+
+It has been proposed that we could keep the full inference rules if we
+just removed macros from globs. But I don't think that works. Consider this
+example:
+
+```rust
+mod a {
+    use b::c::n
+    n! { }
+}
+mod b {
+    use c::*;
+    macro_rules! m {
+        () => {
+            mod d {
+                macro_rules! n { ... }
+            }
+        }
+    }
+    m! { }
+}
+mod c {
+    mod d {
+        () => {
+            macro_rules! n {
+                ...
+            }
+        }
+    }
+}
+```
+
+The problem here has to do with the macro reference `n!` invoked by
+the module `a`. It is imported with the path `b::d::n`. We can resolve
+this via the glob import from `c` but, once we expand the macro `m` in
+module `b`, we see that in fact this module generates a
+higher-precedence module that should have taken precedence over the
+glob. So we are stuck in that we cannot freely expand macros in any
+order. (Note: this is the test case
+`banning_macro_globs_is_not_enough`.)
 
 **This seems too good to be true. What's the catch?**
 
