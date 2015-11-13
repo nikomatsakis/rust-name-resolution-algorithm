@@ -53,8 +53,8 @@ Code: CodeId = {
 };
 
 Path: PathId = {
-    "self" => THIS_PATH,
-    "::" => ROOT_PATH,
+    "self" "::" <Id> => krate.add_path(Path::Cons(THIS_PATH, <>)),
+    "::" <Id> => krate.add_path(Path::Cons(ROOT_PATH, <>)),
     Id => krate.add_path(Path::Cons(ROOT_PATH, <>)),
     <Path> "::" <Id> => krate.add_path(Path::Cons(<>)),
 };

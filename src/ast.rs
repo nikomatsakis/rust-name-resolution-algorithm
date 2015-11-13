@@ -93,6 +93,16 @@ impl Krate {
         self.paths.push(path);
         PathId(self.paths.len() - 1)
     }
+
+    pub fn import_name(&self, import_id: ImportId) -> InternedString {
+        let import = &self.imports[import_id.0];
+        import.alt_name.unwrap_or_else(|| {
+            match self.paths[import.path.0] {
+                Path::Root | Path::This => unreachable!(), // grammar doesn't allow this
+                Path::Cons(_, s) => s,
+            }
+        })
+    }
 }
 
 ///////////////////////////////////////////////////////////////////////////

@@ -259,10 +259,10 @@ mod __parse__Krate {
     //   Path = (*) Id ["::"]
     //   Path = (*) Path "::" Id ["!"]
     //   Path = (*) Path "::" Id ["::"]
-    //   Path = (*) "::" ["!"]
-    //   Path = (*) "::" ["::"]
-    //   Path = (*) "self" ["!"]
-    //   Path = (*) "self" ["::"]
+    //   Path = (*) "::" Id ["!"]
+    //   Path = (*) "::" Id ["::"]
+    //   Path = (*) "self" "::" Id ["!"]
+    //   Path = (*) "self" "::" Id ["::"]
     //   Privacy = (*) ["macro_rules"]
     //   Privacy = (*) ["mod"]
     //   Privacy = (*) ["struct"]
@@ -884,10 +884,10 @@ mod __parse__Krate {
     //   Path = (*) Id ["::"]
     //   Path = (*) Path "::" Id ["!"]
     //   Path = (*) Path "::" Id ["::"]
-    //   Path = (*) "::" ["!"]
-    //   Path = (*) "::" ["::"]
-    //   Path = (*) "self" ["!"]
-    //   Path = (*) "self" ["::"]
+    //   Path = (*) "::" Id ["!"]
+    //   Path = (*) "::" Id ["::"]
+    //   Path = (*) "self" "::" Id ["!"]
+    //   Path = (*) "self" "::" Id ["::"]
     //   Privacy = (*) ["macro_rules"]
     //   Privacy = (*) ["mod"]
     //   Privacy = (*) ["struct"]
@@ -1498,12 +1498,14 @@ mod __parse__Krate {
     }
 
     // State 14
-    //   Path = "::" (*) ["!"]
-    //   Path = "::" (*) ["::"]
+    //   Id = (*) r#"[a-zA-Z_][a-zA-Z0-9_]*"# ["!"]
+    //   Id = (*) r#"[a-zA-Z_][a-zA-Z0-9_]*"# ["::"]
+    //   Path = "::" (*) Id ["!"]
+    //   Path = "::" (*) Id ["::"]
     //
-    //   "!" -> Reduce(Path = "::" => ActionFn(17);)
-    //   "::" -> Reduce(Path = "::" => ActionFn(17);)
+    //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Shift(S18)
     //
+    //   Id -> S26
     pub fn __state14<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
@@ -1522,11 +1524,10 @@ mod __parse__Krate {
             Some(Err(e)) => return Err(e),
         };
         match __lookahead {
-            Some((_, (0, _), _)) |
-            Some((_, (2, _), _)) => {
-                let __sym0 = __sym0.take().unwrap();
-                let __nt = super::__action17(krate, input, __sym0, &__lookbehind, &__lookahead);
-                return Ok((__lookbehind, __lookahead, __Nonterminal::Path(__nt)));
+            Some((_, (13, __tok0), __loc)) => {
+                let mut __lookbehind = Some(__loc);
+                let mut __sym1 = &mut Some((__tok0));
+                __result = try!(__state18(krate, input, __lookbehind, __tokens, __sym1));
             }
             _ => {
                 return Err(__ParseError::UnrecognizedToken {
@@ -1535,6 +1536,19 @@ mod __parse__Krate {
                 });
             }
         }
+        while __sym0.is_some() {
+            let (__lookbehind, __lookahead, __nt) = __result;
+            match __nt {
+                __Nonterminal::Id(__nt) => {
+                    let __sym1 = &mut Some(__nt);
+                    __result = try!(__state26(krate, input, __lookbehind, __tokens, __lookahead, __sym0, __sym1));
+                }
+                _ => {
+                    return Ok((__lookbehind, __lookahead, __nt));
+                }
+            }
+        }
+        return Ok(__result);
     }
 
     // State 15
@@ -1584,11 +1598,10 @@ mod __parse__Krate {
     }
 
     // State 16
-    //   Path = "self" (*) ["!"]
-    //   Path = "self" (*) ["::"]
+    //   Path = "self" (*) "::" Id ["!"]
+    //   Path = "self" (*) "::" Id ["::"]
     //
-    //   "!" -> Reduce(Path = "self" => ActionFn(16);)
-    //   "::" -> Reduce(Path = "self" => ActionFn(16);)
+    //   "::" -> Shift(S27)
     //
     pub fn __state16<
         'input,
@@ -1608,11 +1621,10 @@ mod __parse__Krate {
             Some(Err(e)) => return Err(e),
         };
         match __lookahead {
-            Some((_, (0, _), _)) |
-            Some((_, (2, _), _)) => {
-                let __sym0 = __sym0.take().unwrap();
-                let __nt = super::__action16(krate, input, __sym0, &__lookbehind, &__lookahead);
-                return Ok((__lookbehind, __lookahead, __Nonterminal::Path(__nt)));
+            Some((_, (2, __tok0), __loc)) => {
+                let mut __lookbehind = Some(__loc);
+                let mut __sym1 = &mut Some((__tok0));
+                __result = try!(__state27(krate, input, __lookbehind, __tokens, __sym0, __sym1));
             }
             _ => {
                 return Err(__ParseError::UnrecognizedToken {
@@ -1621,6 +1633,7 @@ mod __parse__Krate {
                 });
             }
         }
+        return Ok(__result);
     }
 
     // State 17
@@ -1658,19 +1671,19 @@ mod __parse__Krate {
     //   Path = (*) Id [";"]
     //   Path = (*) Path "::" Id ["::"]
     //   Path = (*) Path "::" Id [";"]
-    //   Path = (*) "::" ["::"]
-    //   Path = (*) "::" [";"]
-    //   Path = (*) "self" ["::"]
-    //   Path = (*) "self" [";"]
+    //   Path = (*) "::" Id ["::"]
+    //   Path = (*) "::" Id [";"]
+    //   Path = (*) "self" "::" Id ["::"]
+    //   Path = (*) "self" "::" Id [";"]
     //
-    //   "::" -> Shift(S29)
-    //   "self" -> Shift(S30)
-    //   "}" -> Shift(S31)
-    //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Shift(S32)
+    //   "::" -> Shift(S31)
+    //   "self" -> Shift(S32)
+    //   "}" -> Shift(S33)
+    //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Shift(S34)
     //
-    //   (<Path> ";")+ -> S26
-    //   Id -> S27
-    //   Path -> S28
+    //   (<Path> ";")+ -> S28
+    //   Id -> S29
+    //   Path -> S30
     pub fn __state17<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
@@ -1692,22 +1705,22 @@ mod __parse__Krate {
             Some((_, (2, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym1 = &mut Some((__tok0));
-                __result = try!(__state29(krate, input, __lookbehind, __tokens, __sym1));
+                __result = try!(__state31(krate, input, __lookbehind, __tokens, __sym1));
             }
             Some((_, (8, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym1 = &mut Some((__tok0));
-                __result = try!(__state30(krate, input, __lookbehind, __tokens, __sym1));
+                __result = try!(__state32(krate, input, __lookbehind, __tokens, __sym1));
             }
             Some((_, (12, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym1 = &mut Some((__tok0));
-                __result = try!(__state31(krate, input, __lookbehind, __tokens, __sym0, __sym1));
+                __result = try!(__state33(krate, input, __lookbehind, __tokens, __sym0, __sym1));
             }
             Some((_, (13, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym1 = &mut Some((__tok0));
-                __result = try!(__state32(krate, input, __lookbehind, __tokens, __sym1));
+                __result = try!(__state34(krate, input, __lookbehind, __tokens, __sym1));
             }
             _ => {
                 return Err(__ParseError::UnrecognizedToken {
@@ -1721,15 +1734,15 @@ mod __parse__Krate {
             match __nt {
                 __Nonterminal::_28_3cPath_3e_20_22_3b_22_29_2b(__nt) => {
                     let __sym1 = &mut Some(__nt);
-                    __result = try!(__state26(krate, input, __lookbehind, __tokens, __lookahead, __sym0, __sym1));
+                    __result = try!(__state28(krate, input, __lookbehind, __tokens, __lookahead, __sym0, __sym1));
                 }
                 __Nonterminal::Id(__nt) => {
                     let __sym1 = &mut Some(__nt);
-                    __result = try!(__state27(krate, input, __lookbehind, __tokens, __lookahead, __sym1));
+                    __result = try!(__state29(krate, input, __lookbehind, __tokens, __lookahead, __sym1));
                 }
                 __Nonterminal::Path(__nt) => {
                     let __sym1 = &mut Some(__nt);
-                    __result = try!(__state28(krate, input, __lookbehind, __tokens, __lookahead, __sym1));
+                    __result = try!(__state30(krate, input, __lookbehind, __tokens, __lookahead, __sym1));
                 }
                 _ => {
                     return Ok((__lookbehind, __lookahead, __nt));
@@ -1853,7 +1866,7 @@ mod __parse__Krate {
     //   MacroRef = Path "!" (*) ";" ["{"]
     //   MacroRef = Path "!" (*) ";" [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
     //
-    //   ";" -> Shift(S33)
+    //   ";" -> Shift(S35)
     //
     pub fn __state20<
         'input,
@@ -1877,7 +1890,7 @@ mod __parse__Krate {
             Some((_, (3, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym2 = &mut Some((__tok0));
-                __result = try!(__state33(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2));
+                __result = try!(__state35(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2));
             }
             _ => {
                 return Err(__ParseError::UnrecognizedToken {
@@ -1897,7 +1910,7 @@ mod __parse__Krate {
     //
     //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Shift(S18)
     //
-    //   Id -> S34
+    //   Id -> S36
     pub fn __state21<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
@@ -1934,7 +1947,7 @@ mod __parse__Krate {
             match __nt {
                 __Nonterminal::Id(__nt) => {
                     let __sym2 = &mut Some(__nt);
-                    __result = try!(__state34(krate, input, __lookbehind, __tokens, __lookahead, __sym0, __sym1, __sym2));
+                    __result = try!(__state36(krate, input, __lookbehind, __tokens, __lookahead, __sym0, __sym1, __sym2));
                 }
                 _ => {
                     return Ok((__lookbehind, __lookahead, __nt));
@@ -1966,7 +1979,7 @@ mod __parse__Krate {
     //   MacroDef = Privacy "macro_rules" (*) "!" Id "{" "}" ["{"]
     //   MacroDef = Privacy "macro_rules" (*) "!" Id "{" "}" [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
     //
-    //   "!" -> Shift(S35)
+    //   "!" -> Shift(S37)
     //
     pub fn __state22<
         'input,
@@ -1990,7 +2003,7 @@ mod __parse__Krate {
             Some((_, (0, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym2 = &mut Some((__tok0));
-                __result = try!(__state35(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2));
+                __result = try!(__state37(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2));
             }
             _ => {
                 return Err(__ParseError::UnrecognizedToken {
@@ -2025,9 +2038,9 @@ mod __parse__Krate {
     //   Module = Privacy "mod" (*) Id "{" "}" ["{"]
     //   Module = Privacy "mod" (*) Id "{" "}" [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
     //
-    //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Shift(S37)
+    //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Shift(S39)
     //
-    //   Id -> S36
+    //   Id -> S38
     pub fn __state23<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
@@ -2050,7 +2063,7 @@ mod __parse__Krate {
             Some((_, (13, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym2 = &mut Some((__tok0));
-                __result = try!(__state37(krate, input, __lookbehind, __tokens, __sym2));
+                __result = try!(__state39(krate, input, __lookbehind, __tokens, __sym2));
             }
             _ => {
                 return Err(__ParseError::UnrecognizedToken {
@@ -2064,7 +2077,7 @@ mod __parse__Krate {
             match __nt {
                 __Nonterminal::Id(__nt) => {
                     let __sym2 = &mut Some(__nt);
-                    __result = try!(__state36(krate, input, __lookbehind, __tokens, __lookahead, __sym0, __sym1, __sym2));
+                    __result = try!(__state38(krate, input, __lookbehind, __tokens, __lookahead, __sym0, __sym1, __sym2));
                 }
                 _ => {
                     return Ok((__lookbehind, __lookahead, __nt));
@@ -2087,9 +2100,9 @@ mod __parse__Krate {
     //   Structure = Privacy "struct" (*) Id "{" "}" ["{"]
     //   Structure = Privacy "struct" (*) Id "{" "}" [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
     //
-    //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Shift(S37)
+    //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Shift(S39)
     //
-    //   Id -> S38
+    //   Id -> S40
     pub fn __state24<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
@@ -2112,7 +2125,7 @@ mod __parse__Krate {
             Some((_, (13, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym2 = &mut Some((__tok0));
-                __result = try!(__state37(krate, input, __lookbehind, __tokens, __sym2));
+                __result = try!(__state39(krate, input, __lookbehind, __tokens, __sym2));
             }
             _ => {
                 return Err(__ParseError::UnrecognizedToken {
@@ -2126,7 +2139,7 @@ mod __parse__Krate {
             match __nt {
                 __Nonterminal::Id(__nt) => {
                     let __sym2 = &mut Some(__nt);
-                    __result = try!(__state38(krate, input, __lookbehind, __tokens, __lookahead, __sym0, __sym1, __sym2));
+                    __result = try!(__state40(krate, input, __lookbehind, __tokens, __lookahead, __sym0, __sym1, __sym2));
                 }
                 _ => {
                     return Ok((__lookbehind, __lookahead, __nt));
@@ -2176,19 +2189,19 @@ mod __parse__Krate {
     //   Path = (*) Path "::" Id ["::"]
     //   Path = (*) Path "::" Id [";"]
     //   Path = (*) Path "::" Id ["as"]
-    //   Path = (*) "::" ["::"]
-    //   Path = (*) "::" [";"]
-    //   Path = (*) "::" ["as"]
-    //   Path = (*) "self" ["::"]
-    //   Path = (*) "self" [";"]
-    //   Path = (*) "self" ["as"]
+    //   Path = (*) "::" Id ["::"]
+    //   Path = (*) "::" Id [";"]
+    //   Path = (*) "::" Id ["as"]
+    //   Path = (*) "self" "::" Id ["::"]
+    //   Path = (*) "self" "::" Id [";"]
+    //   Path = (*) "self" "::" Id ["as"]
     //
-    //   "::" -> Shift(S41)
-    //   "self" -> Shift(S42)
-    //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Shift(S43)
+    //   "::" -> Shift(S43)
+    //   "self" -> Shift(S44)
+    //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Shift(S45)
     //
-    //   Id -> S39
-    //   Path -> S40
+    //   Id -> S41
+    //   Path -> S42
     pub fn __state25<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
@@ -2211,17 +2224,17 @@ mod __parse__Krate {
             Some((_, (2, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym2 = &mut Some((__tok0));
-                __result = try!(__state41(krate, input, __lookbehind, __tokens, __sym2));
+                __result = try!(__state43(krate, input, __lookbehind, __tokens, __sym2));
             }
             Some((_, (8, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym2 = &mut Some((__tok0));
-                __result = try!(__state42(krate, input, __lookbehind, __tokens, __sym2));
+                __result = try!(__state44(krate, input, __lookbehind, __tokens, __sym2));
             }
             Some((_, (13, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym2 = &mut Some((__tok0));
-                __result = try!(__state43(krate, input, __lookbehind, __tokens, __sym2));
+                __result = try!(__state45(krate, input, __lookbehind, __tokens, __sym2));
             }
             _ => {
                 return Err(__ParseError::UnrecognizedToken {
@@ -2235,11 +2248,11 @@ mod __parse__Krate {
             match __nt {
                 __Nonterminal::Id(__nt) => {
                     let __sym2 = &mut Some(__nt);
-                    __result = try!(__state39(krate, input, __lookbehind, __tokens, __lookahead, __sym2));
+                    __result = try!(__state41(krate, input, __lookbehind, __tokens, __lookahead, __sym2));
                 }
                 __Nonterminal::Path(__nt) => {
                     let __sym2 = &mut Some(__nt);
-                    __result = try!(__state40(krate, input, __lookbehind, __tokens, __lookahead, __sym0, __sym1, __sym2));
+                    __result = try!(__state42(krate, input, __lookbehind, __tokens, __lookahead, __sym0, __sym1, __sym2));
                 }
                 _ => {
                     return Ok((__lookbehind, __lookahead, __nt));
@@ -2250,6 +2263,99 @@ mod __parse__Krate {
     }
 
     // State 26
+    //   Path = "::" Id (*) ["!"]
+    //   Path = "::" Id (*) ["::"]
+    //
+    //   "!" -> Reduce(Path = "::", Id => ActionFn(17);)
+    //   "::" -> Reduce(Path = "::", Id => ActionFn(17);)
+    //
+    pub fn __state26<
+        'input,
+        __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
+    >(
+        krate: &mut Krate,
+        input: &'input str,
+        __lookbehind: Option<usize>,
+        __tokens: &mut __TOKENS,
+        __lookahead: Option<(usize, (usize, &'input str), usize)>,
+        __sym0: &mut Option<&'input str>,
+        __sym1: &mut Option<InternedString>,
+    ) -> Result<(Option<usize>, Option<(usize, (usize, &'input str), usize)>, __Nonterminal<>), __ParseError<usize,(usize, &'input str),()>>
+    {
+        let mut __result: (Option<usize>, Option<(usize, (usize, &'input str), usize)>, __Nonterminal<>);
+        match __lookahead {
+            Some((_, (0, _), _)) |
+            Some((_, (2, _), _)) => {
+                let __sym0 = __sym0.take().unwrap();
+                let __sym1 = __sym1.take().unwrap();
+                let __nt = super::__action17(krate, input, __sym0, __sym1, &__lookbehind, &__lookahead);
+                return Ok((__lookbehind, __lookahead, __Nonterminal::Path(__nt)));
+            }
+            _ => {
+                return Err(__ParseError::UnrecognizedToken {
+                    token: __lookahead,
+                    expected: vec![],
+                });
+            }
+        }
+    }
+
+    // State 27
+    //   Id = (*) r#"[a-zA-Z_][a-zA-Z0-9_]*"# ["!"]
+    //   Id = (*) r#"[a-zA-Z_][a-zA-Z0-9_]*"# ["::"]
+    //   Path = "self" "::" (*) Id ["!"]
+    //   Path = "self" "::" (*) Id ["::"]
+    //
+    //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Shift(S18)
+    //
+    //   Id -> S46
+    pub fn __state27<
+        'input,
+        __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
+    >(
+        krate: &mut Krate,
+        input: &'input str,
+        __lookbehind: Option<usize>,
+        __tokens: &mut __TOKENS,
+        __sym0: &mut Option<&'input str>,
+        __sym1: &mut Option<&'input str>,
+    ) -> Result<(Option<usize>, Option<(usize, (usize, &'input str), usize)>, __Nonterminal<>), __ParseError<usize,(usize, &'input str),()>>
+    {
+        let mut __result: (Option<usize>, Option<(usize, (usize, &'input str), usize)>, __Nonterminal<>);
+        let __lookahead = match __tokens.next() {
+            Some(Ok(v)) => Some(v),
+            None => None,
+            Some(Err(e)) => return Err(e),
+        };
+        match __lookahead {
+            Some((_, (13, __tok0), __loc)) => {
+                let mut __lookbehind = Some(__loc);
+                let mut __sym2 = &mut Some((__tok0));
+                __result = try!(__state18(krate, input, __lookbehind, __tokens, __sym2));
+            }
+            _ => {
+                return Err(__ParseError::UnrecognizedToken {
+                    token: __lookahead,
+                    expected: vec![],
+                });
+            }
+        }
+        while __sym1.is_some() {
+            let (__lookbehind, __lookahead, __nt) = __result;
+            match __nt {
+                __Nonterminal::Id(__nt) => {
+                    let __sym2 = &mut Some(__nt);
+                    __result = try!(__state46(krate, input, __lookbehind, __tokens, __lookahead, __sym0, __sym1, __sym2));
+                }
+                _ => {
+                    return Ok((__lookbehind, __lookahead, __nt));
+                }
+            }
+        }
+        return Ok(__result);
+    }
+
+    // State 28
     //   (<Path> ";")+ = (<Path> ";")+ (*) Path ";" ["::"]
     //   (<Path> ";")+ = (<Path> ";")+ (*) Path ";" ["self"]
     //   (<Path> ";")+ = (<Path> ";")+ (*) Path ";" ["}"]
@@ -2270,19 +2376,19 @@ mod __parse__Krate {
     //   Path = (*) Id [";"]
     //   Path = (*) Path "::" Id ["::"]
     //   Path = (*) Path "::" Id [";"]
-    //   Path = (*) "::" ["::"]
-    //   Path = (*) "::" [";"]
-    //   Path = (*) "self" ["::"]
-    //   Path = (*) "self" [";"]
+    //   Path = (*) "::" Id ["::"]
+    //   Path = (*) "::" Id [";"]
+    //   Path = (*) "self" "::" Id ["::"]
+    //   Path = (*) "self" "::" Id [";"]
     //
-    //   "::" -> Shift(S29)
-    //   "self" -> Shift(S30)
-    //   "}" -> Shift(S45)
-    //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Shift(S32)
+    //   "::" -> Shift(S31)
+    //   "self" -> Shift(S32)
+    //   "}" -> Shift(S48)
+    //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Shift(S34)
     //
-    //   Id -> S27
-    //   Path -> S44
-    pub fn __state26<
+    //   Id -> S29
+    //   Path -> S47
+    pub fn __state28<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -2300,22 +2406,22 @@ mod __parse__Krate {
             Some((_, (2, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym2 = &mut Some((__tok0));
-                __result = try!(__state29(krate, input, __lookbehind, __tokens, __sym2));
+                __result = try!(__state31(krate, input, __lookbehind, __tokens, __sym2));
             }
             Some((_, (8, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym2 = &mut Some((__tok0));
-                __result = try!(__state30(krate, input, __lookbehind, __tokens, __sym2));
+                __result = try!(__state32(krate, input, __lookbehind, __tokens, __sym2));
             }
             Some((_, (12, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym2 = &mut Some((__tok0));
-                __result = try!(__state45(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2));
+                __result = try!(__state48(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2));
             }
             Some((_, (13, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym2 = &mut Some((__tok0));
-                __result = try!(__state32(krate, input, __lookbehind, __tokens, __sym2));
+                __result = try!(__state34(krate, input, __lookbehind, __tokens, __sym2));
             }
             _ => {
                 return Err(__ParseError::UnrecognizedToken {
@@ -2329,11 +2435,11 @@ mod __parse__Krate {
             match __nt {
                 __Nonterminal::Id(__nt) => {
                     let __sym2 = &mut Some(__nt);
-                    __result = try!(__state27(krate, input, __lookbehind, __tokens, __lookahead, __sym2));
+                    __result = try!(__state29(krate, input, __lookbehind, __tokens, __lookahead, __sym2));
                 }
                 __Nonterminal::Path(__nt) => {
                     let __sym2 = &mut Some(__nt);
-                    __result = try!(__state44(krate, input, __lookbehind, __tokens, __lookahead, __sym1, __sym2));
+                    __result = try!(__state47(krate, input, __lookbehind, __tokens, __lookahead, __sym1, __sym2));
                 }
                 _ => {
                     return Ok((__lookbehind, __lookahead, __nt));
@@ -2343,14 +2449,14 @@ mod __parse__Krate {
         return Ok(__result);
     }
 
-    // State 27
+    // State 29
     //   Path = Id (*) ["::"]
     //   Path = Id (*) [";"]
     //
     //   "::" -> Reduce(Path = Id => ActionFn(18);)
     //   ";" -> Reduce(Path = Id => ActionFn(18);)
     //
-    pub fn __state27<
+    pub fn __state29<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -2379,7 +2485,7 @@ mod __parse__Krate {
         }
     }
 
-    // State 28
+    // State 30
     //   (<Path> ";")+ = Path (*) ";" ["::"]
     //   (<Path> ";")+ = Path (*) ";" ["self"]
     //   (<Path> ";")+ = Path (*) ";" ["}"]
@@ -2387,10 +2493,10 @@ mod __parse__Krate {
     //   Path = Path (*) "::" Id ["::"]
     //   Path = Path (*) "::" Id [";"]
     //
-    //   "::" -> Shift(S46)
-    //   ";" -> Shift(S47)
+    //   "::" -> Shift(S49)
+    //   ";" -> Shift(S50)
     //
-    pub fn __state28<
+    pub fn __state30<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -2407,12 +2513,12 @@ mod __parse__Krate {
             Some((_, (2, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym1 = &mut Some((__tok0));
-                __result = try!(__state46(krate, input, __lookbehind, __tokens, __sym0, __sym1));
+                __result = try!(__state49(krate, input, __lookbehind, __tokens, __sym0, __sym1));
             }
             Some((_, (3, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym1 = &mut Some((__tok0));
-                __result = try!(__state47(krate, input, __lookbehind, __tokens, __sym0, __sym1));
+                __result = try!(__state50(krate, input, __lookbehind, __tokens, __sym0, __sym1));
             }
             _ => {
                 return Err(__ParseError::UnrecognizedToken {
@@ -2424,87 +2530,100 @@ mod __parse__Krate {
         return Ok(__result);
     }
 
-    // State 29
-    //   Path = "::" (*) ["::"]
-    //   Path = "::" (*) [";"]
-    //
-    //   "::" -> Reduce(Path = "::" => ActionFn(17);)
-    //   ";" -> Reduce(Path = "::" => ActionFn(17);)
-    //
-    pub fn __state29<
-        'input,
-        __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
-    >(
-        krate: &mut Krate,
-        input: &'input str,
-        __lookbehind: Option<usize>,
-        __tokens: &mut __TOKENS,
-        __sym0: &mut Option<&'input str>,
-    ) -> Result<(Option<usize>, Option<(usize, (usize, &'input str), usize)>, __Nonterminal<>), __ParseError<usize,(usize, &'input str),()>>
-    {
-        let mut __result: (Option<usize>, Option<(usize, (usize, &'input str), usize)>, __Nonterminal<>);
-        let __lookahead = match __tokens.next() {
-            Some(Ok(v)) => Some(v),
-            None => None,
-            Some(Err(e)) => return Err(e),
-        };
-        match __lookahead {
-            Some((_, (2, _), _)) |
-            Some((_, (3, _), _)) => {
-                let __sym0 = __sym0.take().unwrap();
-                let __nt = super::__action17(krate, input, __sym0, &__lookbehind, &__lookahead);
-                return Ok((__lookbehind, __lookahead, __Nonterminal::Path(__nt)));
-            }
-            _ => {
-                return Err(__ParseError::UnrecognizedToken {
-                    token: __lookahead,
-                    expected: vec![],
-                });
-            }
-        }
-    }
-
-    // State 30
-    //   Path = "self" (*) ["::"]
-    //   Path = "self" (*) [";"]
-    //
-    //   "::" -> Reduce(Path = "self" => ActionFn(16);)
-    //   ";" -> Reduce(Path = "self" => ActionFn(16);)
-    //
-    pub fn __state30<
-        'input,
-        __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
-    >(
-        krate: &mut Krate,
-        input: &'input str,
-        __lookbehind: Option<usize>,
-        __tokens: &mut __TOKENS,
-        __sym0: &mut Option<&'input str>,
-    ) -> Result<(Option<usize>, Option<(usize, (usize, &'input str), usize)>, __Nonterminal<>), __ParseError<usize,(usize, &'input str),()>>
-    {
-        let mut __result: (Option<usize>, Option<(usize, (usize, &'input str), usize)>, __Nonterminal<>);
-        let __lookahead = match __tokens.next() {
-            Some(Ok(v)) => Some(v),
-            None => None,
-            Some(Err(e)) => return Err(e),
-        };
-        match __lookahead {
-            Some((_, (2, _), _)) |
-            Some((_, (3, _), _)) => {
-                let __sym0 = __sym0.take().unwrap();
-                let __nt = super::__action16(krate, input, __sym0, &__lookbehind, &__lookahead);
-                return Ok((__lookbehind, __lookahead, __Nonterminal::Path(__nt)));
-            }
-            _ => {
-                return Err(__ParseError::UnrecognizedToken {
-                    token: __lookahead,
-                    expected: vec![],
-                });
-            }
-        }
-    }
-
     // State 31
+    //   Id = (*) r#"[a-zA-Z_][a-zA-Z0-9_]*"# ["::"]
+    //   Id = (*) r#"[a-zA-Z_][a-zA-Z0-9_]*"# [";"]
+    //   Path = "::" (*) Id ["::"]
+    //   Path = "::" (*) Id [";"]
+    //
+    //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Shift(S34)
+    //
+    //   Id -> S51
+    pub fn __state31<
+        'input,
+        __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
+    >(
+        krate: &mut Krate,
+        input: &'input str,
+        __lookbehind: Option<usize>,
+        __tokens: &mut __TOKENS,
+        __sym0: &mut Option<&'input str>,
+    ) -> Result<(Option<usize>, Option<(usize, (usize, &'input str), usize)>, __Nonterminal<>), __ParseError<usize,(usize, &'input str),()>>
+    {
+        let mut __result: (Option<usize>, Option<(usize, (usize, &'input str), usize)>, __Nonterminal<>);
+        let __lookahead = match __tokens.next() {
+            Some(Ok(v)) => Some(v),
+            None => None,
+            Some(Err(e)) => return Err(e),
+        };
+        match __lookahead {
+            Some((_, (13, __tok0), __loc)) => {
+                let mut __lookbehind = Some(__loc);
+                let mut __sym1 = &mut Some((__tok0));
+                __result = try!(__state34(krate, input, __lookbehind, __tokens, __sym1));
+            }
+            _ => {
+                return Err(__ParseError::UnrecognizedToken {
+                    token: __lookahead,
+                    expected: vec![],
+                });
+            }
+        }
+        while __sym0.is_some() {
+            let (__lookbehind, __lookahead, __nt) = __result;
+            match __nt {
+                __Nonterminal::Id(__nt) => {
+                    let __sym1 = &mut Some(__nt);
+                    __result = try!(__state51(krate, input, __lookbehind, __tokens, __lookahead, __sym0, __sym1));
+                }
+                _ => {
+                    return Ok((__lookbehind, __lookahead, __nt));
+                }
+            }
+        }
+        return Ok(__result);
+    }
+
+    // State 32
+    //   Path = "self" (*) "::" Id ["::"]
+    //   Path = "self" (*) "::" Id [";"]
+    //
+    //   "::" -> Shift(S52)
+    //
+    pub fn __state32<
+        'input,
+        __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
+    >(
+        krate: &mut Krate,
+        input: &'input str,
+        __lookbehind: Option<usize>,
+        __tokens: &mut __TOKENS,
+        __sym0: &mut Option<&'input str>,
+    ) -> Result<(Option<usize>, Option<(usize, (usize, &'input str), usize)>, __Nonterminal<>), __ParseError<usize,(usize, &'input str),()>>
+    {
+        let mut __result: (Option<usize>, Option<(usize, (usize, &'input str), usize)>, __Nonterminal<>);
+        let __lookahead = match __tokens.next() {
+            Some(Ok(v)) => Some(v),
+            None => None,
+            Some(Err(e)) => return Err(e),
+        };
+        match __lookahead {
+            Some((_, (2, __tok0), __loc)) => {
+                let mut __lookbehind = Some(__loc);
+                let mut __sym1 = &mut Some((__tok0));
+                __result = try!(__state52(krate, input, __lookbehind, __tokens, __sym0, __sym1));
+            }
+            _ => {
+                return Err(__ParseError::UnrecognizedToken {
+                    token: __lookahead,
+                    expected: vec![],
+                });
+            }
+        }
+        return Ok(__result);
+    }
+
+    // State 33
     //   Code = "{" "}" (*) [EOF]
     //   Code = "{" "}" (*) ["::"]
     //   Code = "{" "}" (*) ["macro_rules"]
@@ -2527,7 +2646,7 @@ mod __parse__Krate {
     //   "{" -> Reduce(Code = "{", "}" => ActionFn(42);)
     //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Reduce(Code = "{", "}" => ActionFn(42);)
     //
-    pub fn __state31<
+    pub fn __state33<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -2570,14 +2689,14 @@ mod __parse__Krate {
         }
     }
 
-    // State 32
+    // State 34
     //   Id = r#"[a-zA-Z_][a-zA-Z0-9_]*"# (*) ["::"]
     //   Id = r#"[a-zA-Z_][a-zA-Z0-9_]*"# (*) [";"]
     //
     //   "::" -> Reduce(Id = r#"[a-zA-Z_][a-zA-Z0-9_]*"# => ActionFn(22);)
     //   ";" -> Reduce(Id = r#"[a-zA-Z_][a-zA-Z0-9_]*"# => ActionFn(22);)
     //
-    pub fn __state32<
+    pub fn __state34<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -2610,7 +2729,7 @@ mod __parse__Krate {
         }
     }
 
-    // State 33
+    // State 35
     //   MacroRef = Path "!" ";" (*) [EOF]
     //   MacroRef = Path "!" ";" (*) ["::"]
     //   MacroRef = Path "!" ";" (*) ["macro_rules"]
@@ -2633,7 +2752,7 @@ mod __parse__Krate {
     //   "{" -> Reduce(MacroRef = Path, "!", ";" => ActionFn(14);)
     //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Reduce(MacroRef = Path, "!", ";" => ActionFn(14);)
     //
-    pub fn __state33<
+    pub fn __state35<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -2678,14 +2797,14 @@ mod __parse__Krate {
         }
     }
 
-    // State 34
+    // State 36
     //   Path = Path "::" Id (*) ["!"]
     //   Path = Path "::" Id (*) ["::"]
     //
     //   "!" -> Reduce(Path = Path, "::", Id => ActionFn(19);)
     //   "::" -> Reduce(Path = Path, "::", Id => ActionFn(19);)
     //
-    pub fn __state34<
+    pub fn __state36<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -2718,7 +2837,7 @@ mod __parse__Krate {
         }
     }
 
-    // State 35
+    // State 37
     //   Id = (*) r#"[a-zA-Z_][a-zA-Z0-9_]*"# ["{"]
     //   MacroDef = Privacy "macro_rules" "!" (*) Id "{" Item+ "}" [EOF]
     //   MacroDef = Privacy "macro_rules" "!" (*) Id "{" Item+ "}" ["::"]
@@ -2741,10 +2860,10 @@ mod __parse__Krate {
     //   MacroDef = Privacy "macro_rules" "!" (*) Id "{" "}" ["{"]
     //   MacroDef = Privacy "macro_rules" "!" (*) Id "{" "}" [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
     //
-    //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Shift(S37)
+    //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Shift(S39)
     //
-    //   Id -> S48
-    pub fn __state35<
+    //   Id -> S53
+    pub fn __state37<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -2767,7 +2886,7 @@ mod __parse__Krate {
             Some((_, (13, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym3 = &mut Some((__tok0));
-                __result = try!(__state37(krate, input, __lookbehind, __tokens, __sym3));
+                __result = try!(__state39(krate, input, __lookbehind, __tokens, __sym3));
             }
             _ => {
                 return Err(__ParseError::UnrecognizedToken {
@@ -2781,7 +2900,7 @@ mod __parse__Krate {
             match __nt {
                 __Nonterminal::Id(__nt) => {
                     let __sym3 = &mut Some(__nt);
-                    __result = try!(__state48(krate, input, __lookbehind, __tokens, __lookahead, __sym0, __sym1, __sym2, __sym3));
+                    __result = try!(__state53(krate, input, __lookbehind, __tokens, __lookahead, __sym0, __sym1, __sym2, __sym3));
                 }
                 _ => {
                     return Ok((__lookbehind, __lookahead, __nt));
@@ -2791,7 +2910,7 @@ mod __parse__Krate {
         return Ok(__result);
     }
 
-    // State 36
+    // State 38
     //   Module = Privacy "mod" Id (*) "{" Item+ "}" [EOF]
     //   Module = Privacy "mod" Id (*) "{" Item+ "}" ["::"]
     //   Module = Privacy "mod" Id (*) "{" Item+ "}" ["macro_rules"]
@@ -2813,9 +2932,9 @@ mod __parse__Krate {
     //   Module = Privacy "mod" Id (*) "{" "}" ["{"]
     //   Module = Privacy "mod" Id (*) "{" "}" [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
     //
-    //   "{" -> Shift(S49)
+    //   "{" -> Shift(S54)
     //
-    pub fn __state36<
+    pub fn __state38<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -2834,7 +2953,7 @@ mod __parse__Krate {
             Some((_, (11, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym3 = &mut Some((__tok0));
-                __result = try!(__state49(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3));
+                __result = try!(__state54(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3));
             }
             _ => {
                 return Err(__ParseError::UnrecognizedToken {
@@ -2846,12 +2965,12 @@ mod __parse__Krate {
         return Ok(__result);
     }
 
-    // State 37
+    // State 39
     //   Id = r#"[a-zA-Z_][a-zA-Z0-9_]*"# (*) ["{"]
     //
     //   "{" -> Reduce(Id = r#"[a-zA-Z_][a-zA-Z0-9_]*"# => ActionFn(22);)
     //
-    pub fn __state37<
+    pub fn __state39<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -2883,7 +3002,7 @@ mod __parse__Krate {
         }
     }
 
-    // State 38
+    // State 40
     //   Structure = Privacy "struct" Id (*) "{" "}" [EOF]
     //   Structure = Privacy "struct" Id (*) "{" "}" ["::"]
     //   Structure = Privacy "struct" Id (*) "{" "}" ["macro_rules"]
@@ -2895,9 +3014,9 @@ mod __parse__Krate {
     //   Structure = Privacy "struct" Id (*) "{" "}" ["{"]
     //   Structure = Privacy "struct" Id (*) "{" "}" [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
     //
-    //   "{" -> Shift(S50)
+    //   "{" -> Shift(S55)
     //
-    pub fn __state38<
+    pub fn __state40<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -2916,7 +3035,7 @@ mod __parse__Krate {
             Some((_, (11, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym3 = &mut Some((__tok0));
-                __result = try!(__state50(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3));
+                __result = try!(__state55(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3));
             }
             _ => {
                 return Err(__ParseError::UnrecognizedToken {
@@ -2928,7 +3047,7 @@ mod __parse__Krate {
         return Ok(__result);
     }
 
-    // State 39
+    // State 41
     //   Path = Id (*) ["::"]
     //   Path = Id (*) [";"]
     //   Path = Id (*) ["as"]
@@ -2937,7 +3056,7 @@ mod __parse__Krate {
     //   ";" -> Reduce(Path = Id => ActionFn(18);)
     //   "as" -> Reduce(Path = Id => ActionFn(18);)
     //
-    pub fn __state39<
+    pub fn __state41<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -2967,7 +3086,7 @@ mod __parse__Krate {
         }
     }
 
-    // State 40
+    // State 42
     //   Glob = Privacy "use" Path (*) "::" "*" ";" [EOF]
     //   Glob = Privacy "use" Path (*) "::" "*" ";" ["::"]
     //   Glob = Privacy "use" Path (*) "::" "*" ";" ["macro_rules"]
@@ -3002,11 +3121,11 @@ mod __parse__Krate {
     //   Path = Path (*) "::" Id [";"]
     //   Path = Path (*) "::" Id ["as"]
     //
-    //   "::" -> Shift(S51)
-    //   ";" -> Shift(S52)
-    //   "as" -> Shift(S53)
+    //   "::" -> Shift(S56)
+    //   ";" -> Shift(S57)
+    //   "as" -> Shift(S58)
     //
-    pub fn __state40<
+    pub fn __state42<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -3025,17 +3144,17 @@ mod __parse__Krate {
             Some((_, (2, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym3 = &mut Some((__tok0));
-                __result = try!(__state51(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3));
+                __result = try!(__state56(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3));
             }
             Some((_, (3, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym3 = &mut Some((__tok0));
-                __result = try!(__state52(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3));
+                __result = try!(__state57(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3));
             }
             Some((_, (4, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym3 = &mut Some((__tok0));
-                __result = try!(__state53(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3));
+                __result = try!(__state58(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3));
             }
             _ => {
                 return Err(__ParseError::UnrecognizedToken {
@@ -3047,93 +3166,103 @@ mod __parse__Krate {
         return Ok(__result);
     }
 
-    // State 41
-    //   Path = "::" (*) ["::"]
-    //   Path = "::" (*) [";"]
-    //   Path = "::" (*) ["as"]
-    //
-    //   "::" -> Reduce(Path = "::" => ActionFn(17);)
-    //   ";" -> Reduce(Path = "::" => ActionFn(17);)
-    //   "as" -> Reduce(Path = "::" => ActionFn(17);)
-    //
-    pub fn __state41<
-        'input,
-        __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
-    >(
-        krate: &mut Krate,
-        input: &'input str,
-        __lookbehind: Option<usize>,
-        __tokens: &mut __TOKENS,
-        __sym0: &mut Option<&'input str>,
-    ) -> Result<(Option<usize>, Option<(usize, (usize, &'input str), usize)>, __Nonterminal<>), __ParseError<usize,(usize, &'input str),()>>
-    {
-        let mut __result: (Option<usize>, Option<(usize, (usize, &'input str), usize)>, __Nonterminal<>);
-        let __lookahead = match __tokens.next() {
-            Some(Ok(v)) => Some(v),
-            None => None,
-            Some(Err(e)) => return Err(e),
-        };
-        match __lookahead {
-            Some((_, (2, _), _)) |
-            Some((_, (3, _), _)) |
-            Some((_, (4, _), _)) => {
-                let __sym0 = __sym0.take().unwrap();
-                let __nt = super::__action17(krate, input, __sym0, &__lookbehind, &__lookahead);
-                return Ok((__lookbehind, __lookahead, __Nonterminal::Path(__nt)));
-            }
-            _ => {
-                return Err(__ParseError::UnrecognizedToken {
-                    token: __lookahead,
-                    expected: vec![],
-                });
-            }
-        }
-    }
-
-    // State 42
-    //   Path = "self" (*) ["::"]
-    //   Path = "self" (*) [";"]
-    //   Path = "self" (*) ["as"]
-    //
-    //   "::" -> Reduce(Path = "self" => ActionFn(16);)
-    //   ";" -> Reduce(Path = "self" => ActionFn(16);)
-    //   "as" -> Reduce(Path = "self" => ActionFn(16);)
-    //
-    pub fn __state42<
-        'input,
-        __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
-    >(
-        krate: &mut Krate,
-        input: &'input str,
-        __lookbehind: Option<usize>,
-        __tokens: &mut __TOKENS,
-        __sym0: &mut Option<&'input str>,
-    ) -> Result<(Option<usize>, Option<(usize, (usize, &'input str), usize)>, __Nonterminal<>), __ParseError<usize,(usize, &'input str),()>>
-    {
-        let mut __result: (Option<usize>, Option<(usize, (usize, &'input str), usize)>, __Nonterminal<>);
-        let __lookahead = match __tokens.next() {
-            Some(Ok(v)) => Some(v),
-            None => None,
-            Some(Err(e)) => return Err(e),
-        };
-        match __lookahead {
-            Some((_, (2, _), _)) |
-            Some((_, (3, _), _)) |
-            Some((_, (4, _), _)) => {
-                let __sym0 = __sym0.take().unwrap();
-                let __nt = super::__action16(krate, input, __sym0, &__lookbehind, &__lookahead);
-                return Ok((__lookbehind, __lookahead, __Nonterminal::Path(__nt)));
-            }
-            _ => {
-                return Err(__ParseError::UnrecognizedToken {
-                    token: __lookahead,
-                    expected: vec![],
-                });
-            }
-        }
-    }
-
     // State 43
+    //   Id = (*) r#"[a-zA-Z_][a-zA-Z0-9_]*"# ["::"]
+    //   Id = (*) r#"[a-zA-Z_][a-zA-Z0-9_]*"# [";"]
+    //   Id = (*) r#"[a-zA-Z_][a-zA-Z0-9_]*"# ["as"]
+    //   Path = "::" (*) Id ["::"]
+    //   Path = "::" (*) Id [";"]
+    //   Path = "::" (*) Id ["as"]
+    //
+    //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Shift(S45)
+    //
+    //   Id -> S59
+    pub fn __state43<
+        'input,
+        __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
+    >(
+        krate: &mut Krate,
+        input: &'input str,
+        __lookbehind: Option<usize>,
+        __tokens: &mut __TOKENS,
+        __sym0: &mut Option<&'input str>,
+    ) -> Result<(Option<usize>, Option<(usize, (usize, &'input str), usize)>, __Nonterminal<>), __ParseError<usize,(usize, &'input str),()>>
+    {
+        let mut __result: (Option<usize>, Option<(usize, (usize, &'input str), usize)>, __Nonterminal<>);
+        let __lookahead = match __tokens.next() {
+            Some(Ok(v)) => Some(v),
+            None => None,
+            Some(Err(e)) => return Err(e),
+        };
+        match __lookahead {
+            Some((_, (13, __tok0), __loc)) => {
+                let mut __lookbehind = Some(__loc);
+                let mut __sym1 = &mut Some((__tok0));
+                __result = try!(__state45(krate, input, __lookbehind, __tokens, __sym1));
+            }
+            _ => {
+                return Err(__ParseError::UnrecognizedToken {
+                    token: __lookahead,
+                    expected: vec![],
+                });
+            }
+        }
+        while __sym0.is_some() {
+            let (__lookbehind, __lookahead, __nt) = __result;
+            match __nt {
+                __Nonterminal::Id(__nt) => {
+                    let __sym1 = &mut Some(__nt);
+                    __result = try!(__state59(krate, input, __lookbehind, __tokens, __lookahead, __sym0, __sym1));
+                }
+                _ => {
+                    return Ok((__lookbehind, __lookahead, __nt));
+                }
+            }
+        }
+        return Ok(__result);
+    }
+
+    // State 44
+    //   Path = "self" (*) "::" Id ["::"]
+    //   Path = "self" (*) "::" Id [";"]
+    //   Path = "self" (*) "::" Id ["as"]
+    //
+    //   "::" -> Shift(S60)
+    //
+    pub fn __state44<
+        'input,
+        __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
+    >(
+        krate: &mut Krate,
+        input: &'input str,
+        __lookbehind: Option<usize>,
+        __tokens: &mut __TOKENS,
+        __sym0: &mut Option<&'input str>,
+    ) -> Result<(Option<usize>, Option<(usize, (usize, &'input str), usize)>, __Nonterminal<>), __ParseError<usize,(usize, &'input str),()>>
+    {
+        let mut __result: (Option<usize>, Option<(usize, (usize, &'input str), usize)>, __Nonterminal<>);
+        let __lookahead = match __tokens.next() {
+            Some(Ok(v)) => Some(v),
+            None => None,
+            Some(Err(e)) => return Err(e),
+        };
+        match __lookahead {
+            Some((_, (2, __tok0), __loc)) => {
+                let mut __lookbehind = Some(__loc);
+                let mut __sym1 = &mut Some((__tok0));
+                __result = try!(__state60(krate, input, __lookbehind, __tokens, __sym0, __sym1));
+            }
+            _ => {
+                return Err(__ParseError::UnrecognizedToken {
+                    token: __lookahead,
+                    expected: vec![],
+                });
+            }
+        }
+        return Ok(__result);
+    }
+
+    // State 45
     //   Id = r#"[a-zA-Z_][a-zA-Z0-9_]*"# (*) ["::"]
     //   Id = r#"[a-zA-Z_][a-zA-Z0-9_]*"# (*) [";"]
     //   Id = r#"[a-zA-Z_][a-zA-Z0-9_]*"# (*) ["as"]
@@ -3142,7 +3271,7 @@ mod __parse__Krate {
     //   ";" -> Reduce(Id = r#"[a-zA-Z_][a-zA-Z0-9_]*"# => ActionFn(22);)
     //   "as" -> Reduce(Id = r#"[a-zA-Z_][a-zA-Z0-9_]*"# => ActionFn(22);)
     //
-    pub fn __state43<
+    pub fn __state45<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -3176,7 +3305,47 @@ mod __parse__Krate {
         }
     }
 
-    // State 44
+    // State 46
+    //   Path = "self" "::" Id (*) ["!"]
+    //   Path = "self" "::" Id (*) ["::"]
+    //
+    //   "!" -> Reduce(Path = "self", "::", Id => ActionFn(16);)
+    //   "::" -> Reduce(Path = "self", "::", Id => ActionFn(16);)
+    //
+    pub fn __state46<
+        'input,
+        __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
+    >(
+        krate: &mut Krate,
+        input: &'input str,
+        __lookbehind: Option<usize>,
+        __tokens: &mut __TOKENS,
+        __lookahead: Option<(usize, (usize, &'input str), usize)>,
+        __sym0: &mut Option<&'input str>,
+        __sym1: &mut Option<&'input str>,
+        __sym2: &mut Option<InternedString>,
+    ) -> Result<(Option<usize>, Option<(usize, (usize, &'input str), usize)>, __Nonterminal<>), __ParseError<usize,(usize, &'input str),()>>
+    {
+        let mut __result: (Option<usize>, Option<(usize, (usize, &'input str), usize)>, __Nonterminal<>);
+        match __lookahead {
+            Some((_, (0, _), _)) |
+            Some((_, (2, _), _)) => {
+                let __sym0 = __sym0.take().unwrap();
+                let __sym1 = __sym1.take().unwrap();
+                let __sym2 = __sym2.take().unwrap();
+                let __nt = super::__action16(krate, input, __sym0, __sym1, __sym2, &__lookbehind, &__lookahead);
+                return Ok((__lookbehind, __lookahead, __Nonterminal::Path(__nt)));
+            }
+            _ => {
+                return Err(__ParseError::UnrecognizedToken {
+                    token: __lookahead,
+                    expected: vec![],
+                });
+            }
+        }
+    }
+
+    // State 47
     //   (<Path> ";")+ = (<Path> ";")+ Path (*) ";" ["::"]
     //   (<Path> ";")+ = (<Path> ";")+ Path (*) ";" ["self"]
     //   (<Path> ";")+ = (<Path> ";")+ Path (*) ";" ["}"]
@@ -3184,10 +3353,10 @@ mod __parse__Krate {
     //   Path = Path (*) "::" Id ["::"]
     //   Path = Path (*) "::" Id [";"]
     //
-    //   "::" -> Shift(S46)
-    //   ";" -> Shift(S54)
+    //   "::" -> Shift(S49)
+    //   ";" -> Shift(S61)
     //
-    pub fn __state44<
+    pub fn __state47<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -3205,12 +3374,12 @@ mod __parse__Krate {
             Some((_, (2, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym2 = &mut Some((__tok0));
-                __result = try!(__state46(krate, input, __lookbehind, __tokens, __sym1, __sym2));
+                __result = try!(__state49(krate, input, __lookbehind, __tokens, __sym1, __sym2));
             }
             Some((_, (3, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym2 = &mut Some((__tok0));
-                __result = try!(__state54(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2));
+                __result = try!(__state61(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2));
             }
             _ => {
                 return Err(__ParseError::UnrecognizedToken {
@@ -3222,7 +3391,7 @@ mod __parse__Krate {
         return Ok(__result);
     }
 
-    // State 45
+    // State 48
     //   Code = "{" (<Path> ";")+ "}" (*) [EOF]
     //   Code = "{" (<Path> ";")+ "}" (*) ["::"]
     //   Code = "{" (<Path> ";")+ "}" (*) ["macro_rules"]
@@ -3245,7 +3414,7 @@ mod __parse__Krate {
     //   "{" -> Reduce(Code = "{", (<Path> ";")+, "}" => ActionFn(43);)
     //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Reduce(Code = "{", (<Path> ";")+, "}" => ActionFn(43);)
     //
-    pub fn __state45<
+    pub fn __state48<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -3290,16 +3459,16 @@ mod __parse__Krate {
         }
     }
 
-    // State 46
+    // State 49
     //   Id = (*) r#"[a-zA-Z_][a-zA-Z0-9_]*"# ["::"]
     //   Id = (*) r#"[a-zA-Z_][a-zA-Z0-9_]*"# [";"]
     //   Path = Path "::" (*) Id ["::"]
     //   Path = Path "::" (*) Id [";"]
     //
-    //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Shift(S32)
+    //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Shift(S34)
     //
-    //   Id -> S55
-    pub fn __state46<
+    //   Id -> S62
+    pub fn __state49<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -3321,7 +3490,7 @@ mod __parse__Krate {
             Some((_, (13, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym2 = &mut Some((__tok0));
-                __result = try!(__state32(krate, input, __lookbehind, __tokens, __sym2));
+                __result = try!(__state34(krate, input, __lookbehind, __tokens, __sym2));
             }
             _ => {
                 return Err(__ParseError::UnrecognizedToken {
@@ -3335,7 +3504,7 @@ mod __parse__Krate {
             match __nt {
                 __Nonterminal::Id(__nt) => {
                     let __sym2 = &mut Some(__nt);
-                    __result = try!(__state55(krate, input, __lookbehind, __tokens, __lookahead, __sym0, __sym1, __sym2));
+                    __result = try!(__state62(krate, input, __lookbehind, __tokens, __lookahead, __sym0, __sym1, __sym2));
                 }
                 _ => {
                     return Ok((__lookbehind, __lookahead, __nt));
@@ -3345,7 +3514,7 @@ mod __parse__Krate {
         return Ok(__result);
     }
 
-    // State 47
+    // State 50
     //   (<Path> ";")+ = Path ";" (*) ["::"]
     //   (<Path> ";")+ = Path ";" (*) ["self"]
     //   (<Path> ";")+ = Path ";" (*) ["}"]
@@ -3356,7 +3525,7 @@ mod __parse__Krate {
     //   "}" -> Reduce((<Path> ";")+ = Path, ";" => ActionFn(40);)
     //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Reduce((<Path> ";")+ = Path, ";" => ActionFn(40);)
     //
-    pub fn __state47<
+    pub fn __state50<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -3393,7 +3562,100 @@ mod __parse__Krate {
         }
     }
 
-    // State 48
+    // State 51
+    //   Path = "::" Id (*) ["::"]
+    //   Path = "::" Id (*) [";"]
+    //
+    //   "::" -> Reduce(Path = "::", Id => ActionFn(17);)
+    //   ";" -> Reduce(Path = "::", Id => ActionFn(17);)
+    //
+    pub fn __state51<
+        'input,
+        __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
+    >(
+        krate: &mut Krate,
+        input: &'input str,
+        __lookbehind: Option<usize>,
+        __tokens: &mut __TOKENS,
+        __lookahead: Option<(usize, (usize, &'input str), usize)>,
+        __sym0: &mut Option<&'input str>,
+        __sym1: &mut Option<InternedString>,
+    ) -> Result<(Option<usize>, Option<(usize, (usize, &'input str), usize)>, __Nonterminal<>), __ParseError<usize,(usize, &'input str),()>>
+    {
+        let mut __result: (Option<usize>, Option<(usize, (usize, &'input str), usize)>, __Nonterminal<>);
+        match __lookahead {
+            Some((_, (2, _), _)) |
+            Some((_, (3, _), _)) => {
+                let __sym0 = __sym0.take().unwrap();
+                let __sym1 = __sym1.take().unwrap();
+                let __nt = super::__action17(krate, input, __sym0, __sym1, &__lookbehind, &__lookahead);
+                return Ok((__lookbehind, __lookahead, __Nonterminal::Path(__nt)));
+            }
+            _ => {
+                return Err(__ParseError::UnrecognizedToken {
+                    token: __lookahead,
+                    expected: vec![],
+                });
+            }
+        }
+    }
+
+    // State 52
+    //   Id = (*) r#"[a-zA-Z_][a-zA-Z0-9_]*"# ["::"]
+    //   Id = (*) r#"[a-zA-Z_][a-zA-Z0-9_]*"# [";"]
+    //   Path = "self" "::" (*) Id ["::"]
+    //   Path = "self" "::" (*) Id [";"]
+    //
+    //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Shift(S34)
+    //
+    //   Id -> S63
+    pub fn __state52<
+        'input,
+        __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
+    >(
+        krate: &mut Krate,
+        input: &'input str,
+        __lookbehind: Option<usize>,
+        __tokens: &mut __TOKENS,
+        __sym0: &mut Option<&'input str>,
+        __sym1: &mut Option<&'input str>,
+    ) -> Result<(Option<usize>, Option<(usize, (usize, &'input str), usize)>, __Nonterminal<>), __ParseError<usize,(usize, &'input str),()>>
+    {
+        let mut __result: (Option<usize>, Option<(usize, (usize, &'input str), usize)>, __Nonterminal<>);
+        let __lookahead = match __tokens.next() {
+            Some(Ok(v)) => Some(v),
+            None => None,
+            Some(Err(e)) => return Err(e),
+        };
+        match __lookahead {
+            Some((_, (13, __tok0), __loc)) => {
+                let mut __lookbehind = Some(__loc);
+                let mut __sym2 = &mut Some((__tok0));
+                __result = try!(__state34(krate, input, __lookbehind, __tokens, __sym2));
+            }
+            _ => {
+                return Err(__ParseError::UnrecognizedToken {
+                    token: __lookahead,
+                    expected: vec![],
+                });
+            }
+        }
+        while __sym1.is_some() {
+            let (__lookbehind, __lookahead, __nt) = __result;
+            match __nt {
+                __Nonterminal::Id(__nt) => {
+                    let __sym2 = &mut Some(__nt);
+                    __result = try!(__state63(krate, input, __lookbehind, __tokens, __lookahead, __sym0, __sym1, __sym2));
+                }
+                _ => {
+                    return Ok((__lookbehind, __lookahead, __nt));
+                }
+            }
+        }
+        return Ok(__result);
+    }
+
+    // State 53
     //   MacroDef = Privacy "macro_rules" "!" Id (*) "{" Item+ "}" [EOF]
     //   MacroDef = Privacy "macro_rules" "!" Id (*) "{" Item+ "}" ["::"]
     //   MacroDef = Privacy "macro_rules" "!" Id (*) "{" Item+ "}" ["macro_rules"]
@@ -3415,9 +3677,9 @@ mod __parse__Krate {
     //   MacroDef = Privacy "macro_rules" "!" Id (*) "{" "}" ["{"]
     //   MacroDef = Privacy "macro_rules" "!" Id (*) "{" "}" [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
     //
-    //   "{" -> Shift(S56)
+    //   "{" -> Shift(S64)
     //
-    pub fn __state48<
+    pub fn __state53<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -3437,7 +3699,7 @@ mod __parse__Krate {
             Some((_, (11, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym4 = &mut Some((__tok0));
-                __result = try!(__state56(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3, __sym4));
+                __result = try!(__state64(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3, __sym4));
             }
             _ => {
                 return Err(__ParseError::UnrecognizedToken {
@@ -3449,7 +3711,7 @@ mod __parse__Krate {
         return Ok(__result);
     }
 
-    // State 49
+    // State 54
     //   Code = (*) "{" (<Path> ";")+ "}" ["::"]
     //   Code = (*) "{" (<Path> ";")+ "}" ["macro_rules"]
     //   Code = (*) "{" (<Path> ";")+ "}" ["mod"]
@@ -3666,10 +3928,10 @@ mod __parse__Krate {
     //   Path = (*) Id ["::"]
     //   Path = (*) Path "::" Id ["!"]
     //   Path = (*) Path "::" Id ["::"]
-    //   Path = (*) "::" ["!"]
-    //   Path = (*) "::" ["::"]
-    //   Path = (*) "self" ["!"]
-    //   Path = (*) "self" ["::"]
+    //   Path = (*) "::" Id ["!"]
+    //   Path = (*) "::" Id ["::"]
+    //   Path = (*) "self" "::" Id ["!"]
+    //   Path = (*) "self" "::" Id ["::"]
     //   Privacy = (*) ["macro_rules"]
     //   Privacy = (*) ["mod"]
     //   Privacy = (*) ["struct"]
@@ -3696,23 +3958,23 @@ mod __parse__Krate {
     //   "self" -> Shift(S16)
     //   "struct" -> Reduce(Privacy =  => ActionFn(39);)
     //   "use" -> Reduce(Privacy =  => ActionFn(39);)
-    //   "{" -> Shift(S68)
-    //   "}" -> Shift(S69)
+    //   "{" -> Shift(S76)
+    //   "}" -> Shift(S77)
     //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Shift(S18)
     //
-    //   Code -> S57
-    //   Glob -> S58
+    //   Code -> S65
+    //   Glob -> S66
     //   Id -> S3
-    //   Import -> S59
-    //   Item -> S60
-    //   Item+ -> S61
-    //   MacroDef -> S62
-    //   MacroRef -> S63
-    //   Module -> S64
-    //   Path -> S65
-    //   Privacy -> S66
-    //   Structure -> S67
-    pub fn __state49<
+    //   Import -> S67
+    //   Item -> S68
+    //   Item+ -> S69
+    //   MacroDef -> S70
+    //   MacroRef -> S71
+    //   Module -> S72
+    //   Path -> S73
+    //   Privacy -> S74
+    //   Structure -> S75
+    pub fn __state54<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -3751,12 +4013,12 @@ mod __parse__Krate {
             Some((_, (11, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym4 = &mut Some((__tok0));
-                __result = try!(__state68(krate, input, __lookbehind, __tokens, __sym4));
+                __result = try!(__state76(krate, input, __lookbehind, __tokens, __sym4));
             }
             Some((_, (12, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym4 = &mut Some((__tok0));
-                __result = try!(__state69(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3, __sym4));
+                __result = try!(__state77(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3, __sym4));
             }
             Some((_, (13, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
@@ -3782,11 +4044,11 @@ mod __parse__Krate {
             match __nt {
                 __Nonterminal::Code(__nt) => {
                     let __sym4 = &mut Some(__nt);
-                    __result = try!(__state57(krate, input, __lookbehind, __tokens, __lookahead, __sym4));
+                    __result = try!(__state65(krate, input, __lookbehind, __tokens, __lookahead, __sym4));
                 }
                 __Nonterminal::Glob(__nt) => {
                     let __sym4 = &mut Some(__nt);
-                    __result = try!(__state58(krate, input, __lookbehind, __tokens, __lookahead, __sym4));
+                    __result = try!(__state66(krate, input, __lookbehind, __tokens, __lookahead, __sym4));
                 }
                 __Nonterminal::Id(__nt) => {
                     let __sym4 = &mut Some(__nt);
@@ -3794,39 +4056,39 @@ mod __parse__Krate {
                 }
                 __Nonterminal::Import(__nt) => {
                     let __sym4 = &mut Some(__nt);
-                    __result = try!(__state59(krate, input, __lookbehind, __tokens, __lookahead, __sym4));
+                    __result = try!(__state67(krate, input, __lookbehind, __tokens, __lookahead, __sym4));
                 }
                 __Nonterminal::Item(__nt) => {
                     let __sym4 = &mut Some(__nt);
-                    __result = try!(__state60(krate, input, __lookbehind, __tokens, __lookahead, __sym4));
+                    __result = try!(__state68(krate, input, __lookbehind, __tokens, __lookahead, __sym4));
                 }
                 __Nonterminal::Item_2b(__nt) => {
                     let __sym4 = &mut Some(__nt);
-                    __result = try!(__state61(krate, input, __lookbehind, __tokens, __lookahead, __sym0, __sym1, __sym2, __sym3, __sym4));
+                    __result = try!(__state69(krate, input, __lookbehind, __tokens, __lookahead, __sym0, __sym1, __sym2, __sym3, __sym4));
                 }
                 __Nonterminal::MacroDef(__nt) => {
                     let __sym4 = &mut Some(__nt);
-                    __result = try!(__state62(krate, input, __lookbehind, __tokens, __lookahead, __sym4));
+                    __result = try!(__state70(krate, input, __lookbehind, __tokens, __lookahead, __sym4));
                 }
                 __Nonterminal::MacroRef(__nt) => {
                     let __sym4 = &mut Some(__nt);
-                    __result = try!(__state63(krate, input, __lookbehind, __tokens, __lookahead, __sym4));
+                    __result = try!(__state71(krate, input, __lookbehind, __tokens, __lookahead, __sym4));
                 }
                 __Nonterminal::Module(__nt) => {
                     let __sym4 = &mut Some(__nt);
-                    __result = try!(__state64(krate, input, __lookbehind, __tokens, __lookahead, __sym4));
+                    __result = try!(__state72(krate, input, __lookbehind, __tokens, __lookahead, __sym4));
                 }
                 __Nonterminal::Path(__nt) => {
                     let __sym4 = &mut Some(__nt);
-                    __result = try!(__state65(krate, input, __lookbehind, __tokens, __lookahead, __sym4));
+                    __result = try!(__state73(krate, input, __lookbehind, __tokens, __lookahead, __sym4));
                 }
                 __Nonterminal::Privacy(__nt) => {
                     let __sym4 = &mut Some(__nt);
-                    __result = try!(__state66(krate, input, __lookbehind, __tokens, __lookahead, __sym4));
+                    __result = try!(__state74(krate, input, __lookbehind, __tokens, __lookahead, __sym4));
                 }
                 __Nonterminal::Structure(__nt) => {
                     let __sym4 = &mut Some(__nt);
-                    __result = try!(__state67(krate, input, __lookbehind, __tokens, __lookahead, __sym4));
+                    __result = try!(__state75(krate, input, __lookbehind, __tokens, __lookahead, __sym4));
                 }
                 _ => {
                     return Ok((__lookbehind, __lookahead, __nt));
@@ -3836,7 +4098,7 @@ mod __parse__Krate {
         return Ok(__result);
     }
 
-    // State 50
+    // State 55
     //   Structure = Privacy "struct" Id "{" (*) "}" [EOF]
     //   Structure = Privacy "struct" Id "{" (*) "}" ["::"]
     //   Structure = Privacy "struct" Id "{" (*) "}" ["macro_rules"]
@@ -3848,9 +4110,9 @@ mod __parse__Krate {
     //   Structure = Privacy "struct" Id "{" (*) "}" ["{"]
     //   Structure = Privacy "struct" Id "{" (*) "}" [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
     //
-    //   "}" -> Shift(S70)
+    //   "}" -> Shift(S78)
     //
-    pub fn __state50<
+    pub fn __state55<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -3874,7 +4136,7 @@ mod __parse__Krate {
             Some((_, (12, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym4 = &mut Some((__tok0));
-                __result = try!(__state70(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3, __sym4));
+                __result = try!(__state78(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3, __sym4));
             }
             _ => {
                 return Err(__ParseError::UnrecognizedToken {
@@ -3886,7 +4148,7 @@ mod __parse__Krate {
         return Ok(__result);
     }
 
-    // State 51
+    // State 56
     //   Glob = Privacy "use" Path "::" (*) "*" ";" [EOF]
     //   Glob = Privacy "use" Path "::" (*) "*" ";" ["::"]
     //   Glob = Privacy "use" Path "::" (*) "*" ";" ["macro_rules"]
@@ -3904,11 +4166,11 @@ mod __parse__Krate {
     //   Path = Path "::" (*) Id [";"]
     //   Path = Path "::" (*) Id ["as"]
     //
-    //   "*" -> Shift(S72)
-    //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Shift(S43)
+    //   "*" -> Shift(S80)
+    //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Shift(S45)
     //
-    //   Id -> S71
-    pub fn __state51<
+    //   Id -> S79
+    pub fn __state56<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -3932,12 +4194,12 @@ mod __parse__Krate {
             Some((_, (1, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym4 = &mut Some((__tok0));
-                __result = try!(__state72(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3, __sym4));
+                __result = try!(__state80(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3, __sym4));
             }
             Some((_, (13, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym4 = &mut Some((__tok0));
-                __result = try!(__state43(krate, input, __lookbehind, __tokens, __sym4));
+                __result = try!(__state45(krate, input, __lookbehind, __tokens, __sym4));
             }
             _ => {
                 return Err(__ParseError::UnrecognizedToken {
@@ -3951,7 +4213,7 @@ mod __parse__Krate {
             match __nt {
                 __Nonterminal::Id(__nt) => {
                     let __sym4 = &mut Some(__nt);
-                    __result = try!(__state71(krate, input, __lookbehind, __tokens, __lookahead, __sym2, __sym3, __sym4));
+                    __result = try!(__state79(krate, input, __lookbehind, __tokens, __lookahead, __sym2, __sym3, __sym4));
                 }
                 _ => {
                     return Ok((__lookbehind, __lookahead, __nt));
@@ -3961,7 +4223,7 @@ mod __parse__Krate {
         return Ok(__result);
     }
 
-    // State 52
+    // State 57
     //   Import = Privacy "use" Path ";" (*) [EOF]
     //   Import = Privacy "use" Path ";" (*) ["::"]
     //   Import = Privacy "use" Path ";" (*) ["macro_rules"]
@@ -3984,7 +4246,7 @@ mod __parse__Krate {
     //   "{" -> Reduce(Import = Privacy, "use", Path, ";" => ActionFn(38);)
     //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Reduce(Import = Privacy, "use", Path, ";" => ActionFn(38);)
     //
-    pub fn __state52<
+    pub fn __state57<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -4031,7 +4293,7 @@ mod __parse__Krate {
         }
     }
 
-    // State 53
+    // State 58
     //   Id = (*) r#"[a-zA-Z_][a-zA-Z0-9_]*"# [";"]
     //   Import = Privacy "use" Path "as" (*) Id ";" [EOF]
     //   Import = Privacy "use" Path "as" (*) Id ";" ["::"]
@@ -4044,10 +4306,10 @@ mod __parse__Krate {
     //   Import = Privacy "use" Path "as" (*) Id ";" ["{"]
     //   Import = Privacy "use" Path "as" (*) Id ";" [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
     //
-    //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Shift(S74)
+    //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Shift(S82)
     //
-    //   Id -> S73
-    pub fn __state53<
+    //   Id -> S81
+    pub fn __state58<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -4071,7 +4333,7 @@ mod __parse__Krate {
             Some((_, (13, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym4 = &mut Some((__tok0));
-                __result = try!(__state74(krate, input, __lookbehind, __tokens, __sym4));
+                __result = try!(__state82(krate, input, __lookbehind, __tokens, __sym4));
             }
             _ => {
                 return Err(__ParseError::UnrecognizedToken {
@@ -4085,7 +4347,7 @@ mod __parse__Krate {
             match __nt {
                 __Nonterminal::Id(__nt) => {
                     let __sym4 = &mut Some(__nt);
-                    __result = try!(__state73(krate, input, __lookbehind, __tokens, __lookahead, __sym0, __sym1, __sym2, __sym3, __sym4));
+                    __result = try!(__state81(krate, input, __lookbehind, __tokens, __lookahead, __sym0, __sym1, __sym2, __sym3, __sym4));
                 }
                 _ => {
                     return Ok((__lookbehind, __lookahead, __nt));
@@ -4095,7 +4357,105 @@ mod __parse__Krate {
         return Ok(__result);
     }
 
-    // State 54
+    // State 59
+    //   Path = "::" Id (*) ["::"]
+    //   Path = "::" Id (*) [";"]
+    //   Path = "::" Id (*) ["as"]
+    //
+    //   "::" -> Reduce(Path = "::", Id => ActionFn(17);)
+    //   ";" -> Reduce(Path = "::", Id => ActionFn(17);)
+    //   "as" -> Reduce(Path = "::", Id => ActionFn(17);)
+    //
+    pub fn __state59<
+        'input,
+        __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
+    >(
+        krate: &mut Krate,
+        input: &'input str,
+        __lookbehind: Option<usize>,
+        __tokens: &mut __TOKENS,
+        __lookahead: Option<(usize, (usize, &'input str), usize)>,
+        __sym0: &mut Option<&'input str>,
+        __sym1: &mut Option<InternedString>,
+    ) -> Result<(Option<usize>, Option<(usize, (usize, &'input str), usize)>, __Nonterminal<>), __ParseError<usize,(usize, &'input str),()>>
+    {
+        let mut __result: (Option<usize>, Option<(usize, (usize, &'input str), usize)>, __Nonterminal<>);
+        match __lookahead {
+            Some((_, (2, _), _)) |
+            Some((_, (3, _), _)) |
+            Some((_, (4, _), _)) => {
+                let __sym0 = __sym0.take().unwrap();
+                let __sym1 = __sym1.take().unwrap();
+                let __nt = super::__action17(krate, input, __sym0, __sym1, &__lookbehind, &__lookahead);
+                return Ok((__lookbehind, __lookahead, __Nonterminal::Path(__nt)));
+            }
+            _ => {
+                return Err(__ParseError::UnrecognizedToken {
+                    token: __lookahead,
+                    expected: vec![],
+                });
+            }
+        }
+    }
+
+    // State 60
+    //   Id = (*) r#"[a-zA-Z_][a-zA-Z0-9_]*"# ["::"]
+    //   Id = (*) r#"[a-zA-Z_][a-zA-Z0-9_]*"# [";"]
+    //   Id = (*) r#"[a-zA-Z_][a-zA-Z0-9_]*"# ["as"]
+    //   Path = "self" "::" (*) Id ["::"]
+    //   Path = "self" "::" (*) Id [";"]
+    //   Path = "self" "::" (*) Id ["as"]
+    //
+    //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Shift(S45)
+    //
+    //   Id -> S83
+    pub fn __state60<
+        'input,
+        __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
+    >(
+        krate: &mut Krate,
+        input: &'input str,
+        __lookbehind: Option<usize>,
+        __tokens: &mut __TOKENS,
+        __sym0: &mut Option<&'input str>,
+        __sym1: &mut Option<&'input str>,
+    ) -> Result<(Option<usize>, Option<(usize, (usize, &'input str), usize)>, __Nonterminal<>), __ParseError<usize,(usize, &'input str),()>>
+    {
+        let mut __result: (Option<usize>, Option<(usize, (usize, &'input str), usize)>, __Nonterminal<>);
+        let __lookahead = match __tokens.next() {
+            Some(Ok(v)) => Some(v),
+            None => None,
+            Some(Err(e)) => return Err(e),
+        };
+        match __lookahead {
+            Some((_, (13, __tok0), __loc)) => {
+                let mut __lookbehind = Some(__loc);
+                let mut __sym2 = &mut Some((__tok0));
+                __result = try!(__state45(krate, input, __lookbehind, __tokens, __sym2));
+            }
+            _ => {
+                return Err(__ParseError::UnrecognizedToken {
+                    token: __lookahead,
+                    expected: vec![],
+                });
+            }
+        }
+        while __sym1.is_some() {
+            let (__lookbehind, __lookahead, __nt) = __result;
+            match __nt {
+                __Nonterminal::Id(__nt) => {
+                    let __sym2 = &mut Some(__nt);
+                    __result = try!(__state83(krate, input, __lookbehind, __tokens, __lookahead, __sym0, __sym1, __sym2));
+                }
+                _ => {
+                    return Ok((__lookbehind, __lookahead, __nt));
+                }
+            }
+        }
+        return Ok(__result);
+    }
+
+    // State 61
     //   (<Path> ";")+ = (<Path> ";")+ Path ";" (*) ["::"]
     //   (<Path> ";")+ = (<Path> ";")+ Path ";" (*) ["self"]
     //   (<Path> ";")+ = (<Path> ";")+ Path ";" (*) ["}"]
@@ -4106,7 +4466,7 @@ mod __parse__Krate {
     //   "}" -> Reduce((<Path> ";")+ = (<Path> ";")+, Path, ";" => ActionFn(41);)
     //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Reduce((<Path> ";")+ = (<Path> ";")+, Path, ";" => ActionFn(41);)
     //
-    pub fn __state54<
+    pub fn __state61<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -4145,14 +4505,14 @@ mod __parse__Krate {
         }
     }
 
-    // State 55
+    // State 62
     //   Path = Path "::" Id (*) ["::"]
     //   Path = Path "::" Id (*) [";"]
     //
     //   "::" -> Reduce(Path = Path, "::", Id => ActionFn(19);)
     //   ";" -> Reduce(Path = Path, "::", Id => ActionFn(19);)
     //
-    pub fn __state55<
+    pub fn __state62<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -4185,7 +4545,47 @@ mod __parse__Krate {
         }
     }
 
-    // State 56
+    // State 63
+    //   Path = "self" "::" Id (*) ["::"]
+    //   Path = "self" "::" Id (*) [";"]
+    //
+    //   "::" -> Reduce(Path = "self", "::", Id => ActionFn(16);)
+    //   ";" -> Reduce(Path = "self", "::", Id => ActionFn(16);)
+    //
+    pub fn __state63<
+        'input,
+        __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
+    >(
+        krate: &mut Krate,
+        input: &'input str,
+        __lookbehind: Option<usize>,
+        __tokens: &mut __TOKENS,
+        __lookahead: Option<(usize, (usize, &'input str), usize)>,
+        __sym0: &mut Option<&'input str>,
+        __sym1: &mut Option<&'input str>,
+        __sym2: &mut Option<InternedString>,
+    ) -> Result<(Option<usize>, Option<(usize, (usize, &'input str), usize)>, __Nonterminal<>), __ParseError<usize,(usize, &'input str),()>>
+    {
+        let mut __result: (Option<usize>, Option<(usize, (usize, &'input str), usize)>, __Nonterminal<>);
+        match __lookahead {
+            Some((_, (2, _), _)) |
+            Some((_, (3, _), _)) => {
+                let __sym0 = __sym0.take().unwrap();
+                let __sym1 = __sym1.take().unwrap();
+                let __sym2 = __sym2.take().unwrap();
+                let __nt = super::__action16(krate, input, __sym0, __sym1, __sym2, &__lookbehind, &__lookahead);
+                return Ok((__lookbehind, __lookahead, __Nonterminal::Path(__nt)));
+            }
+            _ => {
+                return Err(__ParseError::UnrecognizedToken {
+                    token: __lookahead,
+                    expected: vec![],
+                });
+            }
+        }
+    }
+
+    // State 64
     //   Code = (*) "{" (<Path> ";")+ "}" ["::"]
     //   Code = (*) "{" (<Path> ";")+ "}" ["macro_rules"]
     //   Code = (*) "{" (<Path> ";")+ "}" ["mod"]
@@ -4402,10 +4802,10 @@ mod __parse__Krate {
     //   Path = (*) Id ["::"]
     //   Path = (*) Path "::" Id ["!"]
     //   Path = (*) Path "::" Id ["::"]
-    //   Path = (*) "::" ["!"]
-    //   Path = (*) "::" ["::"]
-    //   Path = (*) "self" ["!"]
-    //   Path = (*) "self" ["::"]
+    //   Path = (*) "::" Id ["!"]
+    //   Path = (*) "::" Id ["::"]
+    //   Path = (*) "self" "::" Id ["!"]
+    //   Path = (*) "self" "::" Id ["::"]
     //   Privacy = (*) ["macro_rules"]
     //   Privacy = (*) ["mod"]
     //   Privacy = (*) ["struct"]
@@ -4432,23 +4832,23 @@ mod __parse__Krate {
     //   "self" -> Shift(S16)
     //   "struct" -> Reduce(Privacy =  => ActionFn(39);)
     //   "use" -> Reduce(Privacy =  => ActionFn(39);)
-    //   "{" -> Shift(S68)
-    //   "}" -> Shift(S76)
+    //   "{" -> Shift(S76)
+    //   "}" -> Shift(S85)
     //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Shift(S18)
     //
-    //   Code -> S57
-    //   Glob -> S58
+    //   Code -> S65
+    //   Glob -> S66
     //   Id -> S3
-    //   Import -> S59
-    //   Item -> S60
-    //   Item+ -> S75
-    //   MacroDef -> S62
-    //   MacroRef -> S63
-    //   Module -> S64
-    //   Path -> S65
-    //   Privacy -> S66
-    //   Structure -> S67
-    pub fn __state56<
+    //   Import -> S67
+    //   Item -> S68
+    //   Item+ -> S84
+    //   MacroDef -> S70
+    //   MacroRef -> S71
+    //   Module -> S72
+    //   Path -> S73
+    //   Privacy -> S74
+    //   Structure -> S75
+    pub fn __state64<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -4488,12 +4888,12 @@ mod __parse__Krate {
             Some((_, (11, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym5 = &mut Some((__tok0));
-                __result = try!(__state68(krate, input, __lookbehind, __tokens, __sym5));
+                __result = try!(__state76(krate, input, __lookbehind, __tokens, __sym5));
             }
             Some((_, (12, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym5 = &mut Some((__tok0));
-                __result = try!(__state76(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3, __sym4, __sym5));
+                __result = try!(__state85(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3, __sym4, __sym5));
             }
             Some((_, (13, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
@@ -4519,11 +4919,11 @@ mod __parse__Krate {
             match __nt {
                 __Nonterminal::Code(__nt) => {
                     let __sym5 = &mut Some(__nt);
-                    __result = try!(__state57(krate, input, __lookbehind, __tokens, __lookahead, __sym5));
+                    __result = try!(__state65(krate, input, __lookbehind, __tokens, __lookahead, __sym5));
                 }
                 __Nonterminal::Glob(__nt) => {
                     let __sym5 = &mut Some(__nt);
-                    __result = try!(__state58(krate, input, __lookbehind, __tokens, __lookahead, __sym5));
+                    __result = try!(__state66(krate, input, __lookbehind, __tokens, __lookahead, __sym5));
                 }
                 __Nonterminal::Id(__nt) => {
                     let __sym5 = &mut Some(__nt);
@@ -4531,39 +4931,39 @@ mod __parse__Krate {
                 }
                 __Nonterminal::Import(__nt) => {
                     let __sym5 = &mut Some(__nt);
-                    __result = try!(__state59(krate, input, __lookbehind, __tokens, __lookahead, __sym5));
+                    __result = try!(__state67(krate, input, __lookbehind, __tokens, __lookahead, __sym5));
                 }
                 __Nonterminal::Item(__nt) => {
                     let __sym5 = &mut Some(__nt);
-                    __result = try!(__state60(krate, input, __lookbehind, __tokens, __lookahead, __sym5));
+                    __result = try!(__state68(krate, input, __lookbehind, __tokens, __lookahead, __sym5));
                 }
                 __Nonterminal::Item_2b(__nt) => {
                     let __sym5 = &mut Some(__nt);
-                    __result = try!(__state75(krate, input, __lookbehind, __tokens, __lookahead, __sym0, __sym1, __sym2, __sym3, __sym4, __sym5));
+                    __result = try!(__state84(krate, input, __lookbehind, __tokens, __lookahead, __sym0, __sym1, __sym2, __sym3, __sym4, __sym5));
                 }
                 __Nonterminal::MacroDef(__nt) => {
                     let __sym5 = &mut Some(__nt);
-                    __result = try!(__state62(krate, input, __lookbehind, __tokens, __lookahead, __sym5));
+                    __result = try!(__state70(krate, input, __lookbehind, __tokens, __lookahead, __sym5));
                 }
                 __Nonterminal::MacroRef(__nt) => {
                     let __sym5 = &mut Some(__nt);
-                    __result = try!(__state63(krate, input, __lookbehind, __tokens, __lookahead, __sym5));
+                    __result = try!(__state71(krate, input, __lookbehind, __tokens, __lookahead, __sym5));
                 }
                 __Nonterminal::Module(__nt) => {
                     let __sym5 = &mut Some(__nt);
-                    __result = try!(__state64(krate, input, __lookbehind, __tokens, __lookahead, __sym5));
+                    __result = try!(__state72(krate, input, __lookbehind, __tokens, __lookahead, __sym5));
                 }
                 __Nonterminal::Path(__nt) => {
                     let __sym5 = &mut Some(__nt);
-                    __result = try!(__state65(krate, input, __lookbehind, __tokens, __lookahead, __sym5));
+                    __result = try!(__state73(krate, input, __lookbehind, __tokens, __lookahead, __sym5));
                 }
                 __Nonterminal::Privacy(__nt) => {
                     let __sym5 = &mut Some(__nt);
-                    __result = try!(__state66(krate, input, __lookbehind, __tokens, __lookahead, __sym5));
+                    __result = try!(__state74(krate, input, __lookbehind, __tokens, __lookahead, __sym5));
                 }
                 __Nonterminal::Structure(__nt) => {
                     let __sym5 = &mut Some(__nt);
-                    __result = try!(__state67(krate, input, __lookbehind, __tokens, __lookahead, __sym5));
+                    __result = try!(__state75(krate, input, __lookbehind, __tokens, __lookahead, __sym5));
                 }
                 _ => {
                     return Ok((__lookbehind, __lookahead, __nt));
@@ -4573,7 +4973,7 @@ mod __parse__Krate {
         return Ok(__result);
     }
 
-    // State 57
+    // State 65
     //   Item = Code (*) ["::"]
     //   Item = Code (*) ["macro_rules"]
     //   Item = Code (*) ["mod"]
@@ -4596,7 +4996,7 @@ mod __parse__Krate {
     //   "}" -> Reduce(Item = Code => ActionFn(8);)
     //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Reduce(Item = Code => ActionFn(8);)
     //
-    pub fn __state57<
+    pub fn __state65<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -4633,7 +5033,7 @@ mod __parse__Krate {
         }
     }
 
-    // State 58
+    // State 66
     //   Item = Glob (*) ["::"]
     //   Item = Glob (*) ["macro_rules"]
     //   Item = Glob (*) ["mod"]
@@ -4656,7 +5056,7 @@ mod __parse__Krate {
     //   "}" -> Reduce(Item = Glob => ActionFn(5);)
     //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Reduce(Item = Glob => ActionFn(5);)
     //
-    pub fn __state58<
+    pub fn __state66<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -4693,7 +5093,7 @@ mod __parse__Krate {
         }
     }
 
-    // State 59
+    // State 67
     //   Item = Import (*) ["::"]
     //   Item = Import (*) ["macro_rules"]
     //   Item = Import (*) ["mod"]
@@ -4716,7 +5116,7 @@ mod __parse__Krate {
     //   "}" -> Reduce(Item = Import => ActionFn(4);)
     //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Reduce(Item = Import => ActionFn(4);)
     //
-    pub fn __state59<
+    pub fn __state67<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -4753,7 +5153,7 @@ mod __parse__Krate {
         }
     }
 
-    // State 60
+    // State 68
     //   Item+ = Item (*) ["::"]
     //   Item+ = Item (*) ["macro_rules"]
     //   Item+ = Item (*) ["mod"]
@@ -4776,7 +5176,7 @@ mod __parse__Krate {
     //   "}" -> Reduce(Item+ = Item => ActionFn(32);)
     //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Reduce(Item+ = Item => ActionFn(32);)
     //
-    pub fn __state60<
+    pub fn __state68<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -4813,7 +5213,7 @@ mod __parse__Krate {
         }
     }
 
-    // State 61
+    // State 69
     //   Code = (*) "{" (<Path> ";")+ "}" ["::"]
     //   Code = (*) "{" (<Path> ";")+ "}" ["macro_rules"]
     //   Code = (*) "{" (<Path> ";")+ "}" ["mod"]
@@ -5010,10 +5410,10 @@ mod __parse__Krate {
     //   Path = (*) Id ["::"]
     //   Path = (*) Path "::" Id ["!"]
     //   Path = (*) Path "::" Id ["::"]
-    //   Path = (*) "::" ["!"]
-    //   Path = (*) "::" ["::"]
-    //   Path = (*) "self" ["!"]
-    //   Path = (*) "self" ["::"]
+    //   Path = (*) "::" Id ["!"]
+    //   Path = (*) "::" Id ["::"]
+    //   Path = (*) "self" "::" Id ["!"]
+    //   Path = (*) "self" "::" Id ["::"]
     //   Privacy = (*) ["macro_rules"]
     //   Privacy = (*) ["mod"]
     //   Privacy = (*) ["struct"]
@@ -5040,22 +5440,22 @@ mod __parse__Krate {
     //   "self" -> Shift(S16)
     //   "struct" -> Reduce(Privacy =  => ActionFn(39);)
     //   "use" -> Reduce(Privacy =  => ActionFn(39);)
-    //   "{" -> Shift(S68)
-    //   "}" -> Shift(S78)
+    //   "{" -> Shift(S76)
+    //   "}" -> Shift(S87)
     //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Shift(S18)
     //
-    //   Code -> S57
-    //   Glob -> S58
+    //   Code -> S65
+    //   Glob -> S66
     //   Id -> S3
-    //   Import -> S59
-    //   Item -> S77
-    //   MacroDef -> S62
-    //   MacroRef -> S63
-    //   Module -> S64
-    //   Path -> S65
-    //   Privacy -> S66
-    //   Structure -> S67
-    pub fn __state61<
+    //   Import -> S67
+    //   Item -> S86
+    //   MacroDef -> S70
+    //   MacroRef -> S71
+    //   Module -> S72
+    //   Path -> S73
+    //   Privacy -> S74
+    //   Structure -> S75
+    pub fn __state69<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -5091,12 +5491,12 @@ mod __parse__Krate {
             Some((_, (11, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym5 = &mut Some((__tok0));
-                __result = try!(__state68(krate, input, __lookbehind, __tokens, __sym5));
+                __result = try!(__state76(krate, input, __lookbehind, __tokens, __sym5));
             }
             Some((_, (12, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym5 = &mut Some((__tok0));
-                __result = try!(__state78(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3, __sym4, __sym5));
+                __result = try!(__state87(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3, __sym4, __sym5));
             }
             Some((_, (13, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
@@ -5122,11 +5522,11 @@ mod __parse__Krate {
             match __nt {
                 __Nonterminal::Code(__nt) => {
                     let __sym5 = &mut Some(__nt);
-                    __result = try!(__state57(krate, input, __lookbehind, __tokens, __lookahead, __sym5));
+                    __result = try!(__state65(krate, input, __lookbehind, __tokens, __lookahead, __sym5));
                 }
                 __Nonterminal::Glob(__nt) => {
                     let __sym5 = &mut Some(__nt);
-                    __result = try!(__state58(krate, input, __lookbehind, __tokens, __lookahead, __sym5));
+                    __result = try!(__state66(krate, input, __lookbehind, __tokens, __lookahead, __sym5));
                 }
                 __Nonterminal::Id(__nt) => {
                     let __sym5 = &mut Some(__nt);
@@ -5134,35 +5534,35 @@ mod __parse__Krate {
                 }
                 __Nonterminal::Import(__nt) => {
                     let __sym5 = &mut Some(__nt);
-                    __result = try!(__state59(krate, input, __lookbehind, __tokens, __lookahead, __sym5));
+                    __result = try!(__state67(krate, input, __lookbehind, __tokens, __lookahead, __sym5));
                 }
                 __Nonterminal::Item(__nt) => {
                     let __sym5 = &mut Some(__nt);
-                    __result = try!(__state77(krate, input, __lookbehind, __tokens, __lookahead, __sym4, __sym5));
+                    __result = try!(__state86(krate, input, __lookbehind, __tokens, __lookahead, __sym4, __sym5));
                 }
                 __Nonterminal::MacroDef(__nt) => {
                     let __sym5 = &mut Some(__nt);
-                    __result = try!(__state62(krate, input, __lookbehind, __tokens, __lookahead, __sym5));
+                    __result = try!(__state70(krate, input, __lookbehind, __tokens, __lookahead, __sym5));
                 }
                 __Nonterminal::MacroRef(__nt) => {
                     let __sym5 = &mut Some(__nt);
-                    __result = try!(__state63(krate, input, __lookbehind, __tokens, __lookahead, __sym5));
+                    __result = try!(__state71(krate, input, __lookbehind, __tokens, __lookahead, __sym5));
                 }
                 __Nonterminal::Module(__nt) => {
                     let __sym5 = &mut Some(__nt);
-                    __result = try!(__state64(krate, input, __lookbehind, __tokens, __lookahead, __sym5));
+                    __result = try!(__state72(krate, input, __lookbehind, __tokens, __lookahead, __sym5));
                 }
                 __Nonterminal::Path(__nt) => {
                     let __sym5 = &mut Some(__nt);
-                    __result = try!(__state65(krate, input, __lookbehind, __tokens, __lookahead, __sym5));
+                    __result = try!(__state73(krate, input, __lookbehind, __tokens, __lookahead, __sym5));
                 }
                 __Nonterminal::Privacy(__nt) => {
                     let __sym5 = &mut Some(__nt);
-                    __result = try!(__state66(krate, input, __lookbehind, __tokens, __lookahead, __sym5));
+                    __result = try!(__state74(krate, input, __lookbehind, __tokens, __lookahead, __sym5));
                 }
                 __Nonterminal::Structure(__nt) => {
                     let __sym5 = &mut Some(__nt);
-                    __result = try!(__state67(krate, input, __lookbehind, __tokens, __lookahead, __sym5));
+                    __result = try!(__state75(krate, input, __lookbehind, __tokens, __lookahead, __sym5));
                 }
                 _ => {
                     return Ok((__lookbehind, __lookahead, __nt));
@@ -5172,7 +5572,7 @@ mod __parse__Krate {
         return Ok(__result);
     }
 
-    // State 62
+    // State 70
     //   Item = MacroDef (*) ["::"]
     //   Item = MacroDef (*) ["macro_rules"]
     //   Item = MacroDef (*) ["mod"]
@@ -5195,7 +5595,7 @@ mod __parse__Krate {
     //   "}" -> Reduce(Item = MacroDef => ActionFn(6);)
     //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Reduce(Item = MacroDef => ActionFn(6);)
     //
-    pub fn __state62<
+    pub fn __state70<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -5232,7 +5632,7 @@ mod __parse__Krate {
         }
     }
 
-    // State 63
+    // State 71
     //   Item = MacroRef (*) ["::"]
     //   Item = MacroRef (*) ["macro_rules"]
     //   Item = MacroRef (*) ["mod"]
@@ -5255,7 +5655,7 @@ mod __parse__Krate {
     //   "}" -> Reduce(Item = MacroRef => ActionFn(7);)
     //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Reduce(Item = MacroRef => ActionFn(7);)
     //
-    pub fn __state63<
+    pub fn __state71<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -5292,7 +5692,7 @@ mod __parse__Krate {
         }
     }
 
-    // State 64
+    // State 72
     //   Item = Module (*) ["::"]
     //   Item = Module (*) ["macro_rules"]
     //   Item = Module (*) ["mod"]
@@ -5315,7 +5715,7 @@ mod __parse__Krate {
     //   "}" -> Reduce(Item = Module => ActionFn(2);)
     //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Reduce(Item = Module => ActionFn(2);)
     //
-    pub fn __state64<
+    pub fn __state72<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -5352,7 +5752,7 @@ mod __parse__Krate {
         }
     }
 
-    // State 65
+    // State 73
     //   MacroRef = Path (*) "!" ";" ["::"]
     //   MacroRef = Path (*) "!" ";" ["macro_rules"]
     //   MacroRef = Path (*) "!" ";" ["mod"]
@@ -5366,10 +5766,10 @@ mod __parse__Krate {
     //   Path = Path (*) "::" Id ["!"]
     //   Path = Path (*) "::" Id ["::"]
     //
-    //   "!" -> Shift(S79)
+    //   "!" -> Shift(S88)
     //   "::" -> Shift(S21)
     //
-    pub fn __state65<
+    pub fn __state73<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -5386,7 +5786,7 @@ mod __parse__Krate {
             Some((_, (0, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym1 = &mut Some((__tok0));
-                __result = try!(__state79(krate, input, __lookbehind, __tokens, __sym0, __sym1));
+                __result = try!(__state88(krate, input, __lookbehind, __tokens, __sym0, __sym1));
             }
             Some((_, (2, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
@@ -5403,7 +5803,7 @@ mod __parse__Krate {
         return Ok(__result);
     }
 
-    // State 66
+    // State 74
     //   Glob = Privacy (*) "use" Path "::" "*" ";" ["::"]
     //   Glob = Privacy (*) "use" Path "::" "*" ";" ["macro_rules"]
     //   Glob = Privacy (*) "use" Path "::" "*" ";" ["mod"]
@@ -5485,12 +5885,12 @@ mod __parse__Krate {
     //   Structure = Privacy (*) "struct" Id "{" "}" ["}"]
     //   Structure = Privacy (*) "struct" Id "{" "}" [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
     //
-    //   "macro_rules" -> Shift(S80)
-    //   "mod" -> Shift(S81)
-    //   "struct" -> Shift(S82)
-    //   "use" -> Shift(S83)
+    //   "macro_rules" -> Shift(S89)
+    //   "mod" -> Shift(S90)
+    //   "struct" -> Shift(S91)
+    //   "use" -> Shift(S92)
     //
-    pub fn __state66<
+    pub fn __state74<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -5507,22 +5907,22 @@ mod __parse__Krate {
             Some((_, (5, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym1 = &mut Some((__tok0));
-                __result = try!(__state80(krate, input, __lookbehind, __tokens, __sym0, __sym1));
+                __result = try!(__state89(krate, input, __lookbehind, __tokens, __sym0, __sym1));
             }
             Some((_, (6, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym1 = &mut Some((__tok0));
-                __result = try!(__state81(krate, input, __lookbehind, __tokens, __sym0, __sym1));
+                __result = try!(__state90(krate, input, __lookbehind, __tokens, __sym0, __sym1));
             }
             Some((_, (9, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym1 = &mut Some((__tok0));
-                __result = try!(__state82(krate, input, __lookbehind, __tokens, __sym0, __sym1));
+                __result = try!(__state91(krate, input, __lookbehind, __tokens, __sym0, __sym1));
             }
             Some((_, (10, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym1 = &mut Some((__tok0));
-                __result = try!(__state83(krate, input, __lookbehind, __tokens, __sym0, __sym1));
+                __result = try!(__state92(krate, input, __lookbehind, __tokens, __sym0, __sym1));
             }
             _ => {
                 return Err(__ParseError::UnrecognizedToken {
@@ -5534,7 +5934,7 @@ mod __parse__Krate {
         return Ok(__result);
     }
 
-    // State 67
+    // State 75
     //   Item = Structure (*) ["::"]
     //   Item = Structure (*) ["macro_rules"]
     //   Item = Structure (*) ["mod"]
@@ -5557,7 +5957,7 @@ mod __parse__Krate {
     //   "}" -> Reduce(Item = Structure => ActionFn(3);)
     //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Reduce(Item = Structure => ActionFn(3);)
     //
-    pub fn __state67<
+    pub fn __state75<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -5594,7 +5994,7 @@ mod __parse__Krate {
         }
     }
 
-    // State 68
+    // State 76
     //   (<Path> ";")+ = (*) (<Path> ";")+ Path ";" ["::"]
     //   (<Path> ";")+ = (*) (<Path> ";")+ Path ";" ["self"]
     //   (<Path> ";")+ = (*) (<Path> ";")+ Path ";" ["}"]
@@ -5629,20 +6029,20 @@ mod __parse__Krate {
     //   Path = (*) Id [";"]
     //   Path = (*) Path "::" Id ["::"]
     //   Path = (*) Path "::" Id [";"]
-    //   Path = (*) "::" ["::"]
-    //   Path = (*) "::" [";"]
-    //   Path = (*) "self" ["::"]
-    //   Path = (*) "self" [";"]
+    //   Path = (*) "::" Id ["::"]
+    //   Path = (*) "::" Id [";"]
+    //   Path = (*) "self" "::" Id ["::"]
+    //   Path = (*) "self" "::" Id [";"]
     //
-    //   "::" -> Shift(S29)
-    //   "self" -> Shift(S30)
-    //   "}" -> Shift(S85)
-    //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Shift(S32)
+    //   "::" -> Shift(S31)
+    //   "self" -> Shift(S32)
+    //   "}" -> Shift(S94)
+    //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Shift(S34)
     //
-    //   (<Path> ";")+ -> S84
-    //   Id -> S27
-    //   Path -> S28
-    pub fn __state68<
+    //   (<Path> ";")+ -> S93
+    //   Id -> S29
+    //   Path -> S30
+    pub fn __state76<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -5663,22 +6063,22 @@ mod __parse__Krate {
             Some((_, (2, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym1 = &mut Some((__tok0));
-                __result = try!(__state29(krate, input, __lookbehind, __tokens, __sym1));
+                __result = try!(__state31(krate, input, __lookbehind, __tokens, __sym1));
             }
             Some((_, (8, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym1 = &mut Some((__tok0));
-                __result = try!(__state30(krate, input, __lookbehind, __tokens, __sym1));
+                __result = try!(__state32(krate, input, __lookbehind, __tokens, __sym1));
             }
             Some((_, (12, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym1 = &mut Some((__tok0));
-                __result = try!(__state85(krate, input, __lookbehind, __tokens, __sym0, __sym1));
+                __result = try!(__state94(krate, input, __lookbehind, __tokens, __sym0, __sym1));
             }
             Some((_, (13, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym1 = &mut Some((__tok0));
-                __result = try!(__state32(krate, input, __lookbehind, __tokens, __sym1));
+                __result = try!(__state34(krate, input, __lookbehind, __tokens, __sym1));
             }
             _ => {
                 return Err(__ParseError::UnrecognizedToken {
@@ -5692,15 +6092,15 @@ mod __parse__Krate {
             match __nt {
                 __Nonterminal::_28_3cPath_3e_20_22_3b_22_29_2b(__nt) => {
                     let __sym1 = &mut Some(__nt);
-                    __result = try!(__state84(krate, input, __lookbehind, __tokens, __lookahead, __sym0, __sym1));
+                    __result = try!(__state93(krate, input, __lookbehind, __tokens, __lookahead, __sym0, __sym1));
                 }
                 __Nonterminal::Id(__nt) => {
                     let __sym1 = &mut Some(__nt);
-                    __result = try!(__state27(krate, input, __lookbehind, __tokens, __lookahead, __sym1));
+                    __result = try!(__state29(krate, input, __lookbehind, __tokens, __lookahead, __sym1));
                 }
                 __Nonterminal::Path(__nt) => {
                     let __sym1 = &mut Some(__nt);
-                    __result = try!(__state28(krate, input, __lookbehind, __tokens, __lookahead, __sym1));
+                    __result = try!(__state30(krate, input, __lookbehind, __tokens, __lookahead, __sym1));
                 }
                 _ => {
                     return Ok((__lookbehind, __lookahead, __nt));
@@ -5710,7 +6110,7 @@ mod __parse__Krate {
         return Ok(__result);
     }
 
-    // State 69
+    // State 77
     //   Module = Privacy "mod" Id "{" "}" (*) [EOF]
     //   Module = Privacy "mod" Id "{" "}" (*) ["::"]
     //   Module = Privacy "mod" Id "{" "}" (*) ["macro_rules"]
@@ -5733,7 +6133,7 @@ mod __parse__Krate {
     //   "{" -> Reduce(Module = Privacy, "mod", Id, "{", "}" => ActionFn(46);)
     //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Reduce(Module = Privacy, "mod", Id, "{", "}" => ActionFn(46);)
     //
-    pub fn __state69<
+    pub fn __state77<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -5782,7 +6182,7 @@ mod __parse__Krate {
         }
     }
 
-    // State 70
+    // State 78
     //   Structure = Privacy "struct" Id "{" "}" (*) [EOF]
     //   Structure = Privacy "struct" Id "{" "}" (*) ["::"]
     //   Structure = Privacy "struct" Id "{" "}" (*) ["macro_rules"]
@@ -5805,7 +6205,7 @@ mod __parse__Krate {
     //   "{" -> Reduce(Structure = Privacy, "struct", Id, "{", "}" => ActionFn(10);)
     //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Reduce(Structure = Privacy, "struct", Id, "{", "}" => ActionFn(10);)
     //
-    pub fn __state70<
+    pub fn __state78<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -5854,7 +6254,7 @@ mod __parse__Krate {
         }
     }
 
-    // State 71
+    // State 79
     //   Path = Path "::" Id (*) ["::"]
     //   Path = Path "::" Id (*) [";"]
     //   Path = Path "::" Id (*) ["as"]
@@ -5863,7 +6263,7 @@ mod __parse__Krate {
     //   ";" -> Reduce(Path = Path, "::", Id => ActionFn(19);)
     //   "as" -> Reduce(Path = Path, "::", Id => ActionFn(19);)
     //
-    pub fn __state71<
+    pub fn __state79<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -5897,7 +6297,7 @@ mod __parse__Krate {
         }
     }
 
-    // State 72
+    // State 80
     //   Glob = Privacy "use" Path "::" "*" (*) ";" [EOF]
     //   Glob = Privacy "use" Path "::" "*" (*) ";" ["::"]
     //   Glob = Privacy "use" Path "::" "*" (*) ";" ["macro_rules"]
@@ -5909,9 +6309,9 @@ mod __parse__Krate {
     //   Glob = Privacy "use" Path "::" "*" (*) ";" ["{"]
     //   Glob = Privacy "use" Path "::" "*" (*) ";" [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
     //
-    //   ";" -> Shift(S86)
+    //   ";" -> Shift(S95)
     //
-    pub fn __state72<
+    pub fn __state80<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -5936,7 +6336,7 @@ mod __parse__Krate {
             Some((_, (3, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym5 = &mut Some((__tok0));
-                __result = try!(__state86(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3, __sym4, __sym5));
+                __result = try!(__state95(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3, __sym4, __sym5));
             }
             _ => {
                 return Err(__ParseError::UnrecognizedToken {
@@ -5948,7 +6348,7 @@ mod __parse__Krate {
         return Ok(__result);
     }
 
-    // State 73
+    // State 81
     //   Import = Privacy "use" Path "as" Id (*) ";" [EOF]
     //   Import = Privacy "use" Path "as" Id (*) ";" ["::"]
     //   Import = Privacy "use" Path "as" Id (*) ";" ["macro_rules"]
@@ -5960,9 +6360,9 @@ mod __parse__Krate {
     //   Import = Privacy "use" Path "as" Id (*) ";" ["{"]
     //   Import = Privacy "use" Path "as" Id (*) ";" [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
     //
-    //   ";" -> Shift(S87)
+    //   ";" -> Shift(S96)
     //
-    pub fn __state73<
+    pub fn __state81<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -5983,7 +6383,7 @@ mod __parse__Krate {
             Some((_, (3, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym5 = &mut Some((__tok0));
-                __result = try!(__state87(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3, __sym4, __sym5));
+                __result = try!(__state96(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3, __sym4, __sym5));
             }
             _ => {
                 return Err(__ParseError::UnrecognizedToken {
@@ -5995,12 +6395,12 @@ mod __parse__Krate {
         return Ok(__result);
     }
 
-    // State 74
+    // State 82
     //   Id = r#"[a-zA-Z_][a-zA-Z0-9_]*"# (*) [";"]
     //
     //   ";" -> Reduce(Id = r#"[a-zA-Z_][a-zA-Z0-9_]*"# => ActionFn(22);)
     //
-    pub fn __state74<
+    pub fn __state82<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -6032,7 +6432,50 @@ mod __parse__Krate {
         }
     }
 
-    // State 75
+    // State 83
+    //   Path = "self" "::" Id (*) ["::"]
+    //   Path = "self" "::" Id (*) [";"]
+    //   Path = "self" "::" Id (*) ["as"]
+    //
+    //   "::" -> Reduce(Path = "self", "::", Id => ActionFn(16);)
+    //   ";" -> Reduce(Path = "self", "::", Id => ActionFn(16);)
+    //   "as" -> Reduce(Path = "self", "::", Id => ActionFn(16);)
+    //
+    pub fn __state83<
+        'input,
+        __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
+    >(
+        krate: &mut Krate,
+        input: &'input str,
+        __lookbehind: Option<usize>,
+        __tokens: &mut __TOKENS,
+        __lookahead: Option<(usize, (usize, &'input str), usize)>,
+        __sym0: &mut Option<&'input str>,
+        __sym1: &mut Option<&'input str>,
+        __sym2: &mut Option<InternedString>,
+    ) -> Result<(Option<usize>, Option<(usize, (usize, &'input str), usize)>, __Nonterminal<>), __ParseError<usize,(usize, &'input str),()>>
+    {
+        let mut __result: (Option<usize>, Option<(usize, (usize, &'input str), usize)>, __Nonterminal<>);
+        match __lookahead {
+            Some((_, (2, _), _)) |
+            Some((_, (3, _), _)) |
+            Some((_, (4, _), _)) => {
+                let __sym0 = __sym0.take().unwrap();
+                let __sym1 = __sym1.take().unwrap();
+                let __sym2 = __sym2.take().unwrap();
+                let __nt = super::__action16(krate, input, __sym0, __sym1, __sym2, &__lookbehind, &__lookahead);
+                return Ok((__lookbehind, __lookahead, __Nonterminal::Path(__nt)));
+            }
+            _ => {
+                return Err(__ParseError::UnrecognizedToken {
+                    token: __lookahead,
+                    expected: vec![],
+                });
+            }
+        }
+    }
+
+    // State 84
     //   Code = (*) "{" (<Path> ";")+ "}" ["::"]
     //   Code = (*) "{" (<Path> ";")+ "}" ["macro_rules"]
     //   Code = (*) "{" (<Path> ";")+ "}" ["mod"]
@@ -6229,10 +6672,10 @@ mod __parse__Krate {
     //   Path = (*) Id ["::"]
     //   Path = (*) Path "::" Id ["!"]
     //   Path = (*) Path "::" Id ["::"]
-    //   Path = (*) "::" ["!"]
-    //   Path = (*) "::" ["::"]
-    //   Path = (*) "self" ["!"]
-    //   Path = (*) "self" ["::"]
+    //   Path = (*) "::" Id ["!"]
+    //   Path = (*) "::" Id ["::"]
+    //   Path = (*) "self" "::" Id ["!"]
+    //   Path = (*) "self" "::" Id ["::"]
     //   Privacy = (*) ["macro_rules"]
     //   Privacy = (*) ["mod"]
     //   Privacy = (*) ["struct"]
@@ -6259,22 +6702,22 @@ mod __parse__Krate {
     //   "self" -> Shift(S16)
     //   "struct" -> Reduce(Privacy =  => ActionFn(39);)
     //   "use" -> Reduce(Privacy =  => ActionFn(39);)
-    //   "{" -> Shift(S68)
-    //   "}" -> Shift(S88)
+    //   "{" -> Shift(S76)
+    //   "}" -> Shift(S97)
     //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Shift(S18)
     //
-    //   Code -> S57
-    //   Glob -> S58
+    //   Code -> S65
+    //   Glob -> S66
     //   Id -> S3
-    //   Import -> S59
-    //   Item -> S77
-    //   MacroDef -> S62
-    //   MacroRef -> S63
-    //   Module -> S64
-    //   Path -> S65
-    //   Privacy -> S66
-    //   Structure -> S67
-    pub fn __state75<
+    //   Import -> S67
+    //   Item -> S86
+    //   MacroDef -> S70
+    //   MacroRef -> S71
+    //   Module -> S72
+    //   Path -> S73
+    //   Privacy -> S74
+    //   Structure -> S75
+    pub fn __state84<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -6311,12 +6754,12 @@ mod __parse__Krate {
             Some((_, (11, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym6 = &mut Some((__tok0));
-                __result = try!(__state68(krate, input, __lookbehind, __tokens, __sym6));
+                __result = try!(__state76(krate, input, __lookbehind, __tokens, __sym6));
             }
             Some((_, (12, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym6 = &mut Some((__tok0));
-                __result = try!(__state88(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3, __sym4, __sym5, __sym6));
+                __result = try!(__state97(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3, __sym4, __sym5, __sym6));
             }
             Some((_, (13, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
@@ -6342,11 +6785,11 @@ mod __parse__Krate {
             match __nt {
                 __Nonterminal::Code(__nt) => {
                     let __sym6 = &mut Some(__nt);
-                    __result = try!(__state57(krate, input, __lookbehind, __tokens, __lookahead, __sym6));
+                    __result = try!(__state65(krate, input, __lookbehind, __tokens, __lookahead, __sym6));
                 }
                 __Nonterminal::Glob(__nt) => {
                     let __sym6 = &mut Some(__nt);
-                    __result = try!(__state58(krate, input, __lookbehind, __tokens, __lookahead, __sym6));
+                    __result = try!(__state66(krate, input, __lookbehind, __tokens, __lookahead, __sym6));
                 }
                 __Nonterminal::Id(__nt) => {
                     let __sym6 = &mut Some(__nt);
@@ -6354,35 +6797,35 @@ mod __parse__Krate {
                 }
                 __Nonterminal::Import(__nt) => {
                     let __sym6 = &mut Some(__nt);
-                    __result = try!(__state59(krate, input, __lookbehind, __tokens, __lookahead, __sym6));
+                    __result = try!(__state67(krate, input, __lookbehind, __tokens, __lookahead, __sym6));
                 }
                 __Nonterminal::Item(__nt) => {
                     let __sym6 = &mut Some(__nt);
-                    __result = try!(__state77(krate, input, __lookbehind, __tokens, __lookahead, __sym5, __sym6));
+                    __result = try!(__state86(krate, input, __lookbehind, __tokens, __lookahead, __sym5, __sym6));
                 }
                 __Nonterminal::MacroDef(__nt) => {
                     let __sym6 = &mut Some(__nt);
-                    __result = try!(__state62(krate, input, __lookbehind, __tokens, __lookahead, __sym6));
+                    __result = try!(__state70(krate, input, __lookbehind, __tokens, __lookahead, __sym6));
                 }
                 __Nonterminal::MacroRef(__nt) => {
                     let __sym6 = &mut Some(__nt);
-                    __result = try!(__state63(krate, input, __lookbehind, __tokens, __lookahead, __sym6));
+                    __result = try!(__state71(krate, input, __lookbehind, __tokens, __lookahead, __sym6));
                 }
                 __Nonterminal::Module(__nt) => {
                     let __sym6 = &mut Some(__nt);
-                    __result = try!(__state64(krate, input, __lookbehind, __tokens, __lookahead, __sym6));
+                    __result = try!(__state72(krate, input, __lookbehind, __tokens, __lookahead, __sym6));
                 }
                 __Nonterminal::Path(__nt) => {
                     let __sym6 = &mut Some(__nt);
-                    __result = try!(__state65(krate, input, __lookbehind, __tokens, __lookahead, __sym6));
+                    __result = try!(__state73(krate, input, __lookbehind, __tokens, __lookahead, __sym6));
                 }
                 __Nonterminal::Privacy(__nt) => {
                     let __sym6 = &mut Some(__nt);
-                    __result = try!(__state66(krate, input, __lookbehind, __tokens, __lookahead, __sym6));
+                    __result = try!(__state74(krate, input, __lookbehind, __tokens, __lookahead, __sym6));
                 }
                 __Nonterminal::Structure(__nt) => {
                     let __sym6 = &mut Some(__nt);
-                    __result = try!(__state67(krate, input, __lookbehind, __tokens, __lookahead, __sym6));
+                    __result = try!(__state75(krate, input, __lookbehind, __tokens, __lookahead, __sym6));
                 }
                 _ => {
                     return Ok((__lookbehind, __lookahead, __nt));
@@ -6392,7 +6835,7 @@ mod __parse__Krate {
         return Ok(__result);
     }
 
-    // State 76
+    // State 85
     //   MacroDef = Privacy "macro_rules" "!" Id "{" "}" (*) [EOF]
     //   MacroDef = Privacy "macro_rules" "!" Id "{" "}" (*) ["::"]
     //   MacroDef = Privacy "macro_rules" "!" Id "{" "}" (*) ["macro_rules"]
@@ -6415,7 +6858,7 @@ mod __parse__Krate {
     //   "{" -> Reduce(MacroDef = Privacy, "macro_rules", "!", Id, "{", "}" => ActionFn(44);)
     //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Reduce(MacroDef = Privacy, "macro_rules", "!", Id, "{", "}" => ActionFn(44);)
     //
-    pub fn __state76<
+    pub fn __state85<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -6466,7 +6909,7 @@ mod __parse__Krate {
         }
     }
 
-    // State 77
+    // State 86
     //   Item+ = Item+ Item (*) ["::"]
     //   Item+ = Item+ Item (*) ["macro_rules"]
     //   Item+ = Item+ Item (*) ["mod"]
@@ -6489,7 +6932,7 @@ mod __parse__Krate {
     //   "}" -> Reduce(Item+ = Item+, Item => ActionFn(33);)
     //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Reduce(Item+ = Item+, Item => ActionFn(33);)
     //
-    pub fn __state77<
+    pub fn __state86<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -6528,7 +6971,7 @@ mod __parse__Krate {
         }
     }
 
-    // State 78
+    // State 87
     //   Module = Privacy "mod" Id "{" Item+ "}" (*) [EOF]
     //   Module = Privacy "mod" Id "{" Item+ "}" (*) ["::"]
     //   Module = Privacy "mod" Id "{" Item+ "}" (*) ["macro_rules"]
@@ -6551,7 +6994,7 @@ mod __parse__Krate {
     //   "{" -> Reduce(Module = Privacy, "mod", Id, "{", Item+, "}" => ActionFn(47);)
     //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Reduce(Module = Privacy, "mod", Id, "{", Item+, "}" => ActionFn(47);)
     //
-    pub fn __state78<
+    pub fn __state87<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -6602,7 +7045,7 @@ mod __parse__Krate {
         }
     }
 
-    // State 79
+    // State 88
     //   MacroRef = Path "!" (*) ";" ["::"]
     //   MacroRef = Path "!" (*) ";" ["macro_rules"]
     //   MacroRef = Path "!" (*) ";" ["mod"]
@@ -6614,9 +7057,9 @@ mod __parse__Krate {
     //   MacroRef = Path "!" (*) ";" ["}"]
     //   MacroRef = Path "!" (*) ";" [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
     //
-    //   ";" -> Shift(S89)
+    //   ";" -> Shift(S98)
     //
-    pub fn __state79<
+    pub fn __state88<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -6638,7 +7081,7 @@ mod __parse__Krate {
             Some((_, (3, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym2 = &mut Some((__tok0));
-                __result = try!(__state89(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2));
+                __result = try!(__state98(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2));
             }
             _ => {
                 return Err(__ParseError::UnrecognizedToken {
@@ -6650,7 +7093,7 @@ mod __parse__Krate {
         return Ok(__result);
     }
 
-    // State 80
+    // State 89
     //   MacroDef = Privacy "macro_rules" (*) "!" Id "{" Item+ "}" ["::"]
     //   MacroDef = Privacy "macro_rules" (*) "!" Id "{" Item+ "}" ["macro_rules"]
     //   MacroDef = Privacy "macro_rules" (*) "!" Id "{" Item+ "}" ["mod"]
@@ -6672,9 +7115,9 @@ mod __parse__Krate {
     //   MacroDef = Privacy "macro_rules" (*) "!" Id "{" "}" ["}"]
     //   MacroDef = Privacy "macro_rules" (*) "!" Id "{" "}" [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
     //
-    //   "!" -> Shift(S90)
+    //   "!" -> Shift(S99)
     //
-    pub fn __state80<
+    pub fn __state89<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -6696,7 +7139,7 @@ mod __parse__Krate {
             Some((_, (0, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym2 = &mut Some((__tok0));
-                __result = try!(__state90(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2));
+                __result = try!(__state99(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2));
             }
             _ => {
                 return Err(__ParseError::UnrecognizedToken {
@@ -6708,7 +7151,7 @@ mod __parse__Krate {
         return Ok(__result);
     }
 
-    // State 81
+    // State 90
     //   Id = (*) r#"[a-zA-Z_][a-zA-Z0-9_]*"# ["{"]
     //   Module = Privacy "mod" (*) Id "{" Item+ "}" ["::"]
     //   Module = Privacy "mod" (*) Id "{" Item+ "}" ["macro_rules"]
@@ -6731,10 +7174,10 @@ mod __parse__Krate {
     //   Module = Privacy "mod" (*) Id "{" "}" ["}"]
     //   Module = Privacy "mod" (*) Id "{" "}" [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
     //
-    //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Shift(S37)
+    //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Shift(S39)
     //
-    //   Id -> S91
-    pub fn __state81<
+    //   Id -> S100
+    pub fn __state90<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -6756,7 +7199,7 @@ mod __parse__Krate {
             Some((_, (13, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym2 = &mut Some((__tok0));
-                __result = try!(__state37(krate, input, __lookbehind, __tokens, __sym2));
+                __result = try!(__state39(krate, input, __lookbehind, __tokens, __sym2));
             }
             _ => {
                 return Err(__ParseError::UnrecognizedToken {
@@ -6770,7 +7213,7 @@ mod __parse__Krate {
             match __nt {
                 __Nonterminal::Id(__nt) => {
                     let __sym2 = &mut Some(__nt);
-                    __result = try!(__state91(krate, input, __lookbehind, __tokens, __lookahead, __sym0, __sym1, __sym2));
+                    __result = try!(__state100(krate, input, __lookbehind, __tokens, __lookahead, __sym0, __sym1, __sym2));
                 }
                 _ => {
                     return Ok((__lookbehind, __lookahead, __nt));
@@ -6780,7 +7223,7 @@ mod __parse__Krate {
         return Ok(__result);
     }
 
-    // State 82
+    // State 91
     //   Id = (*) r#"[a-zA-Z_][a-zA-Z0-9_]*"# ["{"]
     //   Structure = Privacy "struct" (*) Id "{" "}" ["::"]
     //   Structure = Privacy "struct" (*) Id "{" "}" ["macro_rules"]
@@ -6793,10 +7236,10 @@ mod __parse__Krate {
     //   Structure = Privacy "struct" (*) Id "{" "}" ["}"]
     //   Structure = Privacy "struct" (*) Id "{" "}" [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
     //
-    //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Shift(S37)
+    //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Shift(S39)
     //
-    //   Id -> S92
-    pub fn __state82<
+    //   Id -> S101
+    pub fn __state91<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -6818,7 +7261,7 @@ mod __parse__Krate {
             Some((_, (13, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym2 = &mut Some((__tok0));
-                __result = try!(__state37(krate, input, __lookbehind, __tokens, __sym2));
+                __result = try!(__state39(krate, input, __lookbehind, __tokens, __sym2));
             }
             _ => {
                 return Err(__ParseError::UnrecognizedToken {
@@ -6832,7 +7275,7 @@ mod __parse__Krate {
             match __nt {
                 __Nonterminal::Id(__nt) => {
                     let __sym2 = &mut Some(__nt);
-                    __result = try!(__state92(krate, input, __lookbehind, __tokens, __lookahead, __sym0, __sym1, __sym2));
+                    __result = try!(__state101(krate, input, __lookbehind, __tokens, __lookahead, __sym0, __sym1, __sym2));
                 }
                 _ => {
                     return Ok((__lookbehind, __lookahead, __nt));
@@ -6842,7 +7285,7 @@ mod __parse__Krate {
         return Ok(__result);
     }
 
-    // State 83
+    // State 92
     //   Glob = Privacy "use" (*) Path "::" "*" ";" ["::"]
     //   Glob = Privacy "use" (*) Path "::" "*" ";" ["macro_rules"]
     //   Glob = Privacy "use" (*) Path "::" "*" ";" ["mod"]
@@ -6882,20 +7325,20 @@ mod __parse__Krate {
     //   Path = (*) Path "::" Id ["::"]
     //   Path = (*) Path "::" Id [";"]
     //   Path = (*) Path "::" Id ["as"]
-    //   Path = (*) "::" ["::"]
-    //   Path = (*) "::" [";"]
-    //   Path = (*) "::" ["as"]
-    //   Path = (*) "self" ["::"]
-    //   Path = (*) "self" [";"]
-    //   Path = (*) "self" ["as"]
+    //   Path = (*) "::" Id ["::"]
+    //   Path = (*) "::" Id [";"]
+    //   Path = (*) "::" Id ["as"]
+    //   Path = (*) "self" "::" Id ["::"]
+    //   Path = (*) "self" "::" Id [";"]
+    //   Path = (*) "self" "::" Id ["as"]
     //
-    //   "::" -> Shift(S41)
-    //   "self" -> Shift(S42)
-    //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Shift(S43)
+    //   "::" -> Shift(S43)
+    //   "self" -> Shift(S44)
+    //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Shift(S45)
     //
-    //   Id -> S39
-    //   Path -> S93
-    pub fn __state83<
+    //   Id -> S41
+    //   Path -> S102
+    pub fn __state92<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -6917,17 +7360,17 @@ mod __parse__Krate {
             Some((_, (2, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym2 = &mut Some((__tok0));
-                __result = try!(__state41(krate, input, __lookbehind, __tokens, __sym2));
+                __result = try!(__state43(krate, input, __lookbehind, __tokens, __sym2));
             }
             Some((_, (8, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym2 = &mut Some((__tok0));
-                __result = try!(__state42(krate, input, __lookbehind, __tokens, __sym2));
+                __result = try!(__state44(krate, input, __lookbehind, __tokens, __sym2));
             }
             Some((_, (13, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym2 = &mut Some((__tok0));
-                __result = try!(__state43(krate, input, __lookbehind, __tokens, __sym2));
+                __result = try!(__state45(krate, input, __lookbehind, __tokens, __sym2));
             }
             _ => {
                 return Err(__ParseError::UnrecognizedToken {
@@ -6941,11 +7384,11 @@ mod __parse__Krate {
             match __nt {
                 __Nonterminal::Id(__nt) => {
                     let __sym2 = &mut Some(__nt);
-                    __result = try!(__state39(krate, input, __lookbehind, __tokens, __lookahead, __sym2));
+                    __result = try!(__state41(krate, input, __lookbehind, __tokens, __lookahead, __sym2));
                 }
                 __Nonterminal::Path(__nt) => {
                     let __sym2 = &mut Some(__nt);
-                    __result = try!(__state93(krate, input, __lookbehind, __tokens, __lookahead, __sym0, __sym1, __sym2));
+                    __result = try!(__state102(krate, input, __lookbehind, __tokens, __lookahead, __sym0, __sym1, __sym2));
                 }
                 _ => {
                     return Ok((__lookbehind, __lookahead, __nt));
@@ -6955,7 +7398,7 @@ mod __parse__Krate {
         return Ok(__result);
     }
 
-    // State 84
+    // State 93
     //   (<Path> ";")+ = (<Path> ";")+ (*) Path ";" ["::"]
     //   (<Path> ";")+ = (<Path> ";")+ (*) Path ";" ["self"]
     //   (<Path> ";")+ = (<Path> ";")+ (*) Path ";" ["}"]
@@ -6976,19 +7419,19 @@ mod __parse__Krate {
     //   Path = (*) Id [";"]
     //   Path = (*) Path "::" Id ["::"]
     //   Path = (*) Path "::" Id [";"]
-    //   Path = (*) "::" ["::"]
-    //   Path = (*) "::" [";"]
-    //   Path = (*) "self" ["::"]
-    //   Path = (*) "self" [";"]
+    //   Path = (*) "::" Id ["::"]
+    //   Path = (*) "::" Id [";"]
+    //   Path = (*) "self" "::" Id ["::"]
+    //   Path = (*) "self" "::" Id [";"]
     //
-    //   "::" -> Shift(S29)
-    //   "self" -> Shift(S30)
-    //   "}" -> Shift(S94)
-    //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Shift(S32)
+    //   "::" -> Shift(S31)
+    //   "self" -> Shift(S32)
+    //   "}" -> Shift(S103)
+    //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Shift(S34)
     //
-    //   Id -> S27
-    //   Path -> S44
-    pub fn __state84<
+    //   Id -> S29
+    //   Path -> S47
+    pub fn __state93<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -7006,22 +7449,22 @@ mod __parse__Krate {
             Some((_, (2, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym2 = &mut Some((__tok0));
-                __result = try!(__state29(krate, input, __lookbehind, __tokens, __sym2));
+                __result = try!(__state31(krate, input, __lookbehind, __tokens, __sym2));
             }
             Some((_, (8, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym2 = &mut Some((__tok0));
-                __result = try!(__state30(krate, input, __lookbehind, __tokens, __sym2));
+                __result = try!(__state32(krate, input, __lookbehind, __tokens, __sym2));
             }
             Some((_, (12, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym2 = &mut Some((__tok0));
-                __result = try!(__state94(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2));
+                __result = try!(__state103(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2));
             }
             Some((_, (13, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym2 = &mut Some((__tok0));
-                __result = try!(__state32(krate, input, __lookbehind, __tokens, __sym2));
+                __result = try!(__state34(krate, input, __lookbehind, __tokens, __sym2));
             }
             _ => {
                 return Err(__ParseError::UnrecognizedToken {
@@ -7035,11 +7478,11 @@ mod __parse__Krate {
             match __nt {
                 __Nonterminal::Id(__nt) => {
                     let __sym2 = &mut Some(__nt);
-                    __result = try!(__state27(krate, input, __lookbehind, __tokens, __lookahead, __sym2));
+                    __result = try!(__state29(krate, input, __lookbehind, __tokens, __lookahead, __sym2));
                 }
                 __Nonterminal::Path(__nt) => {
                     let __sym2 = &mut Some(__nt);
-                    __result = try!(__state44(krate, input, __lookbehind, __tokens, __lookahead, __sym1, __sym2));
+                    __result = try!(__state47(krate, input, __lookbehind, __tokens, __lookahead, __sym1, __sym2));
                 }
                 _ => {
                     return Ok((__lookbehind, __lookahead, __nt));
@@ -7049,7 +7492,7 @@ mod __parse__Krate {
         return Ok(__result);
     }
 
-    // State 85
+    // State 94
     //   Code = "{" "}" (*) ["::"]
     //   Code = "{" "}" (*) ["macro_rules"]
     //   Code = "{" "}" (*) ["mod"]
@@ -7072,7 +7515,7 @@ mod __parse__Krate {
     //   "}" -> Reduce(Code = "{", "}" => ActionFn(42);)
     //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Reduce(Code = "{", "}" => ActionFn(42);)
     //
-    pub fn __state85<
+    pub fn __state94<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -7115,7 +7558,7 @@ mod __parse__Krate {
         }
     }
 
-    // State 86
+    // State 95
     //   Glob = Privacy "use" Path "::" "*" ";" (*) [EOF]
     //   Glob = Privacy "use" Path "::" "*" ";" (*) ["::"]
     //   Glob = Privacy "use" Path "::" "*" ";" (*) ["macro_rules"]
@@ -7138,7 +7581,7 @@ mod __parse__Krate {
     //   "{" -> Reduce(Glob = Privacy, "use", Path, "::", "*", ";" => ActionFn(12);)
     //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Reduce(Glob = Privacy, "use", Path, "::", "*", ";" => ActionFn(12);)
     //
-    pub fn __state86<
+    pub fn __state95<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -7189,7 +7632,7 @@ mod __parse__Krate {
         }
     }
 
-    // State 87
+    // State 96
     //   Import = Privacy "use" Path "as" Id ";" (*) [EOF]
     //   Import = Privacy "use" Path "as" Id ";" (*) ["::"]
     //   Import = Privacy "use" Path "as" Id ";" (*) ["macro_rules"]
@@ -7212,7 +7655,7 @@ mod __parse__Krate {
     //   "{" -> Reduce(Import = Privacy, "use", Path, "as", Id, ";" => ActionFn(37);)
     //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Reduce(Import = Privacy, "use", Path, "as", Id, ";" => ActionFn(37);)
     //
-    pub fn __state87<
+    pub fn __state96<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -7263,7 +7706,7 @@ mod __parse__Krate {
         }
     }
 
-    // State 88
+    // State 97
     //   MacroDef = Privacy "macro_rules" "!" Id "{" Item+ "}" (*) [EOF]
     //   MacroDef = Privacy "macro_rules" "!" Id "{" Item+ "}" (*) ["::"]
     //   MacroDef = Privacy "macro_rules" "!" Id "{" Item+ "}" (*) ["macro_rules"]
@@ -7286,7 +7729,7 @@ mod __parse__Krate {
     //   "{" -> Reduce(MacroDef = Privacy, "macro_rules", "!", Id, "{", Item+, "}" => ActionFn(45);)
     //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Reduce(MacroDef = Privacy, "macro_rules", "!", Id, "{", Item+, "}" => ActionFn(45);)
     //
-    pub fn __state88<
+    pub fn __state97<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -7339,7 +7782,7 @@ mod __parse__Krate {
         }
     }
 
-    // State 89
+    // State 98
     //   MacroRef = Path "!" ";" (*) ["::"]
     //   MacroRef = Path "!" ";" (*) ["macro_rules"]
     //   MacroRef = Path "!" ";" (*) ["mod"]
@@ -7362,7 +7805,7 @@ mod __parse__Krate {
     //   "}" -> Reduce(MacroRef = Path, "!", ";" => ActionFn(14);)
     //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Reduce(MacroRef = Path, "!", ";" => ActionFn(14);)
     //
-    pub fn __state89<
+    pub fn __state98<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -7407,7 +7850,7 @@ mod __parse__Krate {
         }
     }
 
-    // State 90
+    // State 99
     //   Id = (*) r#"[a-zA-Z_][a-zA-Z0-9_]*"# ["{"]
     //   MacroDef = Privacy "macro_rules" "!" (*) Id "{" Item+ "}" ["::"]
     //   MacroDef = Privacy "macro_rules" "!" (*) Id "{" Item+ "}" ["macro_rules"]
@@ -7430,10 +7873,10 @@ mod __parse__Krate {
     //   MacroDef = Privacy "macro_rules" "!" (*) Id "{" "}" ["}"]
     //   MacroDef = Privacy "macro_rules" "!" (*) Id "{" "}" [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
     //
-    //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Shift(S37)
+    //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Shift(S39)
     //
-    //   Id -> S95
-    pub fn __state90<
+    //   Id -> S104
+    pub fn __state99<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -7456,7 +7899,7 @@ mod __parse__Krate {
             Some((_, (13, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym3 = &mut Some((__tok0));
-                __result = try!(__state37(krate, input, __lookbehind, __tokens, __sym3));
+                __result = try!(__state39(krate, input, __lookbehind, __tokens, __sym3));
             }
             _ => {
                 return Err(__ParseError::UnrecognizedToken {
@@ -7470,7 +7913,7 @@ mod __parse__Krate {
             match __nt {
                 __Nonterminal::Id(__nt) => {
                     let __sym3 = &mut Some(__nt);
-                    __result = try!(__state95(krate, input, __lookbehind, __tokens, __lookahead, __sym0, __sym1, __sym2, __sym3));
+                    __result = try!(__state104(krate, input, __lookbehind, __tokens, __lookahead, __sym0, __sym1, __sym2, __sym3));
                 }
                 _ => {
                     return Ok((__lookbehind, __lookahead, __nt));
@@ -7480,7 +7923,7 @@ mod __parse__Krate {
         return Ok(__result);
     }
 
-    // State 91
+    // State 100
     //   Module = Privacy "mod" Id (*) "{" Item+ "}" ["::"]
     //   Module = Privacy "mod" Id (*) "{" Item+ "}" ["macro_rules"]
     //   Module = Privacy "mod" Id (*) "{" Item+ "}" ["mod"]
@@ -7502,9 +7945,9 @@ mod __parse__Krate {
     //   Module = Privacy "mod" Id (*) "{" "}" ["}"]
     //   Module = Privacy "mod" Id (*) "{" "}" [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
     //
-    //   "{" -> Shift(S96)
+    //   "{" -> Shift(S105)
     //
-    pub fn __state91<
+    pub fn __state100<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -7523,7 +7966,7 @@ mod __parse__Krate {
             Some((_, (11, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym3 = &mut Some((__tok0));
-                __result = try!(__state96(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3));
+                __result = try!(__state105(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3));
             }
             _ => {
                 return Err(__ParseError::UnrecognizedToken {
@@ -7535,7 +7978,7 @@ mod __parse__Krate {
         return Ok(__result);
     }
 
-    // State 92
+    // State 101
     //   Structure = Privacy "struct" Id (*) "{" "}" ["::"]
     //   Structure = Privacy "struct" Id (*) "{" "}" ["macro_rules"]
     //   Structure = Privacy "struct" Id (*) "{" "}" ["mod"]
@@ -7547,9 +7990,9 @@ mod __parse__Krate {
     //   Structure = Privacy "struct" Id (*) "{" "}" ["}"]
     //   Structure = Privacy "struct" Id (*) "{" "}" [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
     //
-    //   "{" -> Shift(S97)
+    //   "{" -> Shift(S106)
     //
-    pub fn __state92<
+    pub fn __state101<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -7568,7 +8011,7 @@ mod __parse__Krate {
             Some((_, (11, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym3 = &mut Some((__tok0));
-                __result = try!(__state97(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3));
+                __result = try!(__state106(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3));
             }
             _ => {
                 return Err(__ParseError::UnrecognizedToken {
@@ -7580,7 +8023,7 @@ mod __parse__Krate {
         return Ok(__result);
     }
 
-    // State 93
+    // State 102
     //   Glob = Privacy "use" Path (*) "::" "*" ";" ["::"]
     //   Glob = Privacy "use" Path (*) "::" "*" ";" ["macro_rules"]
     //   Glob = Privacy "use" Path (*) "::" "*" ";" ["mod"]
@@ -7615,11 +8058,11 @@ mod __parse__Krate {
     //   Path = Path (*) "::" Id [";"]
     //   Path = Path (*) "::" Id ["as"]
     //
-    //   "::" -> Shift(S98)
-    //   ";" -> Shift(S99)
-    //   "as" -> Shift(S100)
+    //   "::" -> Shift(S107)
+    //   ";" -> Shift(S108)
+    //   "as" -> Shift(S109)
     //
-    pub fn __state93<
+    pub fn __state102<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -7638,17 +8081,17 @@ mod __parse__Krate {
             Some((_, (2, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym3 = &mut Some((__tok0));
-                __result = try!(__state98(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3));
+                __result = try!(__state107(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3));
             }
             Some((_, (3, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym3 = &mut Some((__tok0));
-                __result = try!(__state99(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3));
+                __result = try!(__state108(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3));
             }
             Some((_, (4, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym3 = &mut Some((__tok0));
-                __result = try!(__state100(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3));
+                __result = try!(__state109(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3));
             }
             _ => {
                 return Err(__ParseError::UnrecognizedToken {
@@ -7660,7 +8103,7 @@ mod __parse__Krate {
         return Ok(__result);
     }
 
-    // State 94
+    // State 103
     //   Code = "{" (<Path> ";")+ "}" (*) ["::"]
     //   Code = "{" (<Path> ";")+ "}" (*) ["macro_rules"]
     //   Code = "{" (<Path> ";")+ "}" (*) ["mod"]
@@ -7683,7 +8126,7 @@ mod __parse__Krate {
     //   "}" -> Reduce(Code = "{", (<Path> ";")+, "}" => ActionFn(43);)
     //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Reduce(Code = "{", (<Path> ";")+, "}" => ActionFn(43);)
     //
-    pub fn __state94<
+    pub fn __state103<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -7728,7 +8171,7 @@ mod __parse__Krate {
         }
     }
 
-    // State 95
+    // State 104
     //   MacroDef = Privacy "macro_rules" "!" Id (*) "{" Item+ "}" ["::"]
     //   MacroDef = Privacy "macro_rules" "!" Id (*) "{" Item+ "}" ["macro_rules"]
     //   MacroDef = Privacy "macro_rules" "!" Id (*) "{" Item+ "}" ["mod"]
@@ -7750,9 +8193,9 @@ mod __parse__Krate {
     //   MacroDef = Privacy "macro_rules" "!" Id (*) "{" "}" ["}"]
     //   MacroDef = Privacy "macro_rules" "!" Id (*) "{" "}" [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
     //
-    //   "{" -> Shift(S101)
+    //   "{" -> Shift(S110)
     //
-    pub fn __state95<
+    pub fn __state104<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -7772,7 +8215,7 @@ mod __parse__Krate {
             Some((_, (11, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym4 = &mut Some((__tok0));
-                __result = try!(__state101(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3, __sym4));
+                __result = try!(__state110(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3, __sym4));
             }
             _ => {
                 return Err(__ParseError::UnrecognizedToken {
@@ -7784,7 +8227,7 @@ mod __parse__Krate {
         return Ok(__result);
     }
 
-    // State 96
+    // State 105
     //   Code = (*) "{" (<Path> ";")+ "}" ["::"]
     //   Code = (*) "{" (<Path> ";")+ "}" ["macro_rules"]
     //   Code = (*) "{" (<Path> ";")+ "}" ["mod"]
@@ -8001,10 +8444,10 @@ mod __parse__Krate {
     //   Path = (*) Id ["::"]
     //   Path = (*) Path "::" Id ["!"]
     //   Path = (*) Path "::" Id ["::"]
-    //   Path = (*) "::" ["!"]
-    //   Path = (*) "::" ["::"]
-    //   Path = (*) "self" ["!"]
-    //   Path = (*) "self" ["::"]
+    //   Path = (*) "::" Id ["!"]
+    //   Path = (*) "::" Id ["::"]
+    //   Path = (*) "self" "::" Id ["!"]
+    //   Path = (*) "self" "::" Id ["::"]
     //   Privacy = (*) ["macro_rules"]
     //   Privacy = (*) ["mod"]
     //   Privacy = (*) ["struct"]
@@ -8031,23 +8474,23 @@ mod __parse__Krate {
     //   "self" -> Shift(S16)
     //   "struct" -> Reduce(Privacy =  => ActionFn(39);)
     //   "use" -> Reduce(Privacy =  => ActionFn(39);)
-    //   "{" -> Shift(S68)
-    //   "}" -> Shift(S103)
+    //   "{" -> Shift(S76)
+    //   "}" -> Shift(S112)
     //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Shift(S18)
     //
-    //   Code -> S57
-    //   Glob -> S58
+    //   Code -> S65
+    //   Glob -> S66
     //   Id -> S3
-    //   Import -> S59
-    //   Item -> S60
-    //   Item+ -> S102
-    //   MacroDef -> S62
-    //   MacroRef -> S63
-    //   Module -> S64
-    //   Path -> S65
-    //   Privacy -> S66
-    //   Structure -> S67
-    pub fn __state96<
+    //   Import -> S67
+    //   Item -> S68
+    //   Item+ -> S111
+    //   MacroDef -> S70
+    //   MacroRef -> S71
+    //   Module -> S72
+    //   Path -> S73
+    //   Privacy -> S74
+    //   Structure -> S75
+    pub fn __state105<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -8086,12 +8529,12 @@ mod __parse__Krate {
             Some((_, (11, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym4 = &mut Some((__tok0));
-                __result = try!(__state68(krate, input, __lookbehind, __tokens, __sym4));
+                __result = try!(__state76(krate, input, __lookbehind, __tokens, __sym4));
             }
             Some((_, (12, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym4 = &mut Some((__tok0));
-                __result = try!(__state103(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3, __sym4));
+                __result = try!(__state112(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3, __sym4));
             }
             Some((_, (13, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
@@ -8117,11 +8560,11 @@ mod __parse__Krate {
             match __nt {
                 __Nonterminal::Code(__nt) => {
                     let __sym4 = &mut Some(__nt);
-                    __result = try!(__state57(krate, input, __lookbehind, __tokens, __lookahead, __sym4));
+                    __result = try!(__state65(krate, input, __lookbehind, __tokens, __lookahead, __sym4));
                 }
                 __Nonterminal::Glob(__nt) => {
                     let __sym4 = &mut Some(__nt);
-                    __result = try!(__state58(krate, input, __lookbehind, __tokens, __lookahead, __sym4));
+                    __result = try!(__state66(krate, input, __lookbehind, __tokens, __lookahead, __sym4));
                 }
                 __Nonterminal::Id(__nt) => {
                     let __sym4 = &mut Some(__nt);
@@ -8129,39 +8572,39 @@ mod __parse__Krate {
                 }
                 __Nonterminal::Import(__nt) => {
                     let __sym4 = &mut Some(__nt);
-                    __result = try!(__state59(krate, input, __lookbehind, __tokens, __lookahead, __sym4));
+                    __result = try!(__state67(krate, input, __lookbehind, __tokens, __lookahead, __sym4));
                 }
                 __Nonterminal::Item(__nt) => {
                     let __sym4 = &mut Some(__nt);
-                    __result = try!(__state60(krate, input, __lookbehind, __tokens, __lookahead, __sym4));
+                    __result = try!(__state68(krate, input, __lookbehind, __tokens, __lookahead, __sym4));
                 }
                 __Nonterminal::Item_2b(__nt) => {
                     let __sym4 = &mut Some(__nt);
-                    __result = try!(__state102(krate, input, __lookbehind, __tokens, __lookahead, __sym0, __sym1, __sym2, __sym3, __sym4));
+                    __result = try!(__state111(krate, input, __lookbehind, __tokens, __lookahead, __sym0, __sym1, __sym2, __sym3, __sym4));
                 }
                 __Nonterminal::MacroDef(__nt) => {
                     let __sym4 = &mut Some(__nt);
-                    __result = try!(__state62(krate, input, __lookbehind, __tokens, __lookahead, __sym4));
+                    __result = try!(__state70(krate, input, __lookbehind, __tokens, __lookahead, __sym4));
                 }
                 __Nonterminal::MacroRef(__nt) => {
                     let __sym4 = &mut Some(__nt);
-                    __result = try!(__state63(krate, input, __lookbehind, __tokens, __lookahead, __sym4));
+                    __result = try!(__state71(krate, input, __lookbehind, __tokens, __lookahead, __sym4));
                 }
                 __Nonterminal::Module(__nt) => {
                     let __sym4 = &mut Some(__nt);
-                    __result = try!(__state64(krate, input, __lookbehind, __tokens, __lookahead, __sym4));
+                    __result = try!(__state72(krate, input, __lookbehind, __tokens, __lookahead, __sym4));
                 }
                 __Nonterminal::Path(__nt) => {
                     let __sym4 = &mut Some(__nt);
-                    __result = try!(__state65(krate, input, __lookbehind, __tokens, __lookahead, __sym4));
+                    __result = try!(__state73(krate, input, __lookbehind, __tokens, __lookahead, __sym4));
                 }
                 __Nonterminal::Privacy(__nt) => {
                     let __sym4 = &mut Some(__nt);
-                    __result = try!(__state66(krate, input, __lookbehind, __tokens, __lookahead, __sym4));
+                    __result = try!(__state74(krate, input, __lookbehind, __tokens, __lookahead, __sym4));
                 }
                 __Nonterminal::Structure(__nt) => {
                     let __sym4 = &mut Some(__nt);
-                    __result = try!(__state67(krate, input, __lookbehind, __tokens, __lookahead, __sym4));
+                    __result = try!(__state75(krate, input, __lookbehind, __tokens, __lookahead, __sym4));
                 }
                 _ => {
                     return Ok((__lookbehind, __lookahead, __nt));
@@ -8171,7 +8614,7 @@ mod __parse__Krate {
         return Ok(__result);
     }
 
-    // State 97
+    // State 106
     //   Structure = Privacy "struct" Id "{" (*) "}" ["::"]
     //   Structure = Privacy "struct" Id "{" (*) "}" ["macro_rules"]
     //   Structure = Privacy "struct" Id "{" (*) "}" ["mod"]
@@ -8183,9 +8626,9 @@ mod __parse__Krate {
     //   Structure = Privacy "struct" Id "{" (*) "}" ["}"]
     //   Structure = Privacy "struct" Id "{" (*) "}" [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
     //
-    //   "}" -> Shift(S104)
+    //   "}" -> Shift(S113)
     //
-    pub fn __state97<
+    pub fn __state106<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -8209,7 +8652,7 @@ mod __parse__Krate {
             Some((_, (12, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym4 = &mut Some((__tok0));
-                __result = try!(__state104(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3, __sym4));
+                __result = try!(__state113(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3, __sym4));
             }
             _ => {
                 return Err(__ParseError::UnrecognizedToken {
@@ -8221,7 +8664,7 @@ mod __parse__Krate {
         return Ok(__result);
     }
 
-    // State 98
+    // State 107
     //   Glob = Privacy "use" Path "::" (*) "*" ";" ["::"]
     //   Glob = Privacy "use" Path "::" (*) "*" ";" ["macro_rules"]
     //   Glob = Privacy "use" Path "::" (*) "*" ";" ["mod"]
@@ -8239,11 +8682,11 @@ mod __parse__Krate {
     //   Path = Path "::" (*) Id [";"]
     //   Path = Path "::" (*) Id ["as"]
     //
-    //   "*" -> Shift(S105)
-    //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Shift(S43)
+    //   "*" -> Shift(S114)
+    //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Shift(S45)
     //
-    //   Id -> S71
-    pub fn __state98<
+    //   Id -> S79
+    pub fn __state107<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -8267,12 +8710,12 @@ mod __parse__Krate {
             Some((_, (1, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym4 = &mut Some((__tok0));
-                __result = try!(__state105(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3, __sym4));
+                __result = try!(__state114(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3, __sym4));
             }
             Some((_, (13, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym4 = &mut Some((__tok0));
-                __result = try!(__state43(krate, input, __lookbehind, __tokens, __sym4));
+                __result = try!(__state45(krate, input, __lookbehind, __tokens, __sym4));
             }
             _ => {
                 return Err(__ParseError::UnrecognizedToken {
@@ -8286,7 +8729,7 @@ mod __parse__Krate {
             match __nt {
                 __Nonterminal::Id(__nt) => {
                     let __sym4 = &mut Some(__nt);
-                    __result = try!(__state71(krate, input, __lookbehind, __tokens, __lookahead, __sym2, __sym3, __sym4));
+                    __result = try!(__state79(krate, input, __lookbehind, __tokens, __lookahead, __sym2, __sym3, __sym4));
                 }
                 _ => {
                     return Ok((__lookbehind, __lookahead, __nt));
@@ -8296,7 +8739,7 @@ mod __parse__Krate {
         return Ok(__result);
     }
 
-    // State 99
+    // State 108
     //   Import = Privacy "use" Path ";" (*) ["::"]
     //   Import = Privacy "use" Path ";" (*) ["macro_rules"]
     //   Import = Privacy "use" Path ";" (*) ["mod"]
@@ -8319,7 +8762,7 @@ mod __parse__Krate {
     //   "}" -> Reduce(Import = Privacy, "use", Path, ";" => ActionFn(38);)
     //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Reduce(Import = Privacy, "use", Path, ";" => ActionFn(38);)
     //
-    pub fn __state99<
+    pub fn __state108<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -8366,7 +8809,7 @@ mod __parse__Krate {
         }
     }
 
-    // State 100
+    // State 109
     //   Id = (*) r#"[a-zA-Z_][a-zA-Z0-9_]*"# [";"]
     //   Import = Privacy "use" Path "as" (*) Id ";" ["::"]
     //   Import = Privacy "use" Path "as" (*) Id ";" ["macro_rules"]
@@ -8379,10 +8822,10 @@ mod __parse__Krate {
     //   Import = Privacy "use" Path "as" (*) Id ";" ["}"]
     //   Import = Privacy "use" Path "as" (*) Id ";" [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
     //
-    //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Shift(S74)
+    //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Shift(S82)
     //
-    //   Id -> S106
-    pub fn __state100<
+    //   Id -> S115
+    pub fn __state109<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -8406,7 +8849,7 @@ mod __parse__Krate {
             Some((_, (13, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym4 = &mut Some((__tok0));
-                __result = try!(__state74(krate, input, __lookbehind, __tokens, __sym4));
+                __result = try!(__state82(krate, input, __lookbehind, __tokens, __sym4));
             }
             _ => {
                 return Err(__ParseError::UnrecognizedToken {
@@ -8420,7 +8863,7 @@ mod __parse__Krate {
             match __nt {
                 __Nonterminal::Id(__nt) => {
                     let __sym4 = &mut Some(__nt);
-                    __result = try!(__state106(krate, input, __lookbehind, __tokens, __lookahead, __sym0, __sym1, __sym2, __sym3, __sym4));
+                    __result = try!(__state115(krate, input, __lookbehind, __tokens, __lookahead, __sym0, __sym1, __sym2, __sym3, __sym4));
                 }
                 _ => {
                     return Ok((__lookbehind, __lookahead, __nt));
@@ -8430,7 +8873,7 @@ mod __parse__Krate {
         return Ok(__result);
     }
 
-    // State 101
+    // State 110
     //   Code = (*) "{" (<Path> ";")+ "}" ["::"]
     //   Code = (*) "{" (<Path> ";")+ "}" ["macro_rules"]
     //   Code = (*) "{" (<Path> ";")+ "}" ["mod"]
@@ -8647,10 +9090,10 @@ mod __parse__Krate {
     //   Path = (*) Id ["::"]
     //   Path = (*) Path "::" Id ["!"]
     //   Path = (*) Path "::" Id ["::"]
-    //   Path = (*) "::" ["!"]
-    //   Path = (*) "::" ["::"]
-    //   Path = (*) "self" ["!"]
-    //   Path = (*) "self" ["::"]
+    //   Path = (*) "::" Id ["!"]
+    //   Path = (*) "::" Id ["::"]
+    //   Path = (*) "self" "::" Id ["!"]
+    //   Path = (*) "self" "::" Id ["::"]
     //   Privacy = (*) ["macro_rules"]
     //   Privacy = (*) ["mod"]
     //   Privacy = (*) ["struct"]
@@ -8677,23 +9120,23 @@ mod __parse__Krate {
     //   "self" -> Shift(S16)
     //   "struct" -> Reduce(Privacy =  => ActionFn(39);)
     //   "use" -> Reduce(Privacy =  => ActionFn(39);)
-    //   "{" -> Shift(S68)
-    //   "}" -> Shift(S108)
+    //   "{" -> Shift(S76)
+    //   "}" -> Shift(S117)
     //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Shift(S18)
     //
-    //   Code -> S57
-    //   Glob -> S58
+    //   Code -> S65
+    //   Glob -> S66
     //   Id -> S3
-    //   Import -> S59
-    //   Item -> S60
-    //   Item+ -> S107
-    //   MacroDef -> S62
-    //   MacroRef -> S63
-    //   Module -> S64
-    //   Path -> S65
-    //   Privacy -> S66
-    //   Structure -> S67
-    pub fn __state101<
+    //   Import -> S67
+    //   Item -> S68
+    //   Item+ -> S116
+    //   MacroDef -> S70
+    //   MacroRef -> S71
+    //   Module -> S72
+    //   Path -> S73
+    //   Privacy -> S74
+    //   Structure -> S75
+    pub fn __state110<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -8733,12 +9176,12 @@ mod __parse__Krate {
             Some((_, (11, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym5 = &mut Some((__tok0));
-                __result = try!(__state68(krate, input, __lookbehind, __tokens, __sym5));
+                __result = try!(__state76(krate, input, __lookbehind, __tokens, __sym5));
             }
             Some((_, (12, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym5 = &mut Some((__tok0));
-                __result = try!(__state108(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3, __sym4, __sym5));
+                __result = try!(__state117(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3, __sym4, __sym5));
             }
             Some((_, (13, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
@@ -8764,11 +9207,11 @@ mod __parse__Krate {
             match __nt {
                 __Nonterminal::Code(__nt) => {
                     let __sym5 = &mut Some(__nt);
-                    __result = try!(__state57(krate, input, __lookbehind, __tokens, __lookahead, __sym5));
+                    __result = try!(__state65(krate, input, __lookbehind, __tokens, __lookahead, __sym5));
                 }
                 __Nonterminal::Glob(__nt) => {
                     let __sym5 = &mut Some(__nt);
-                    __result = try!(__state58(krate, input, __lookbehind, __tokens, __lookahead, __sym5));
+                    __result = try!(__state66(krate, input, __lookbehind, __tokens, __lookahead, __sym5));
                 }
                 __Nonterminal::Id(__nt) => {
                     let __sym5 = &mut Some(__nt);
@@ -8776,39 +9219,39 @@ mod __parse__Krate {
                 }
                 __Nonterminal::Import(__nt) => {
                     let __sym5 = &mut Some(__nt);
-                    __result = try!(__state59(krate, input, __lookbehind, __tokens, __lookahead, __sym5));
+                    __result = try!(__state67(krate, input, __lookbehind, __tokens, __lookahead, __sym5));
                 }
                 __Nonterminal::Item(__nt) => {
                     let __sym5 = &mut Some(__nt);
-                    __result = try!(__state60(krate, input, __lookbehind, __tokens, __lookahead, __sym5));
+                    __result = try!(__state68(krate, input, __lookbehind, __tokens, __lookahead, __sym5));
                 }
                 __Nonterminal::Item_2b(__nt) => {
                     let __sym5 = &mut Some(__nt);
-                    __result = try!(__state107(krate, input, __lookbehind, __tokens, __lookahead, __sym0, __sym1, __sym2, __sym3, __sym4, __sym5));
+                    __result = try!(__state116(krate, input, __lookbehind, __tokens, __lookahead, __sym0, __sym1, __sym2, __sym3, __sym4, __sym5));
                 }
                 __Nonterminal::MacroDef(__nt) => {
                     let __sym5 = &mut Some(__nt);
-                    __result = try!(__state62(krate, input, __lookbehind, __tokens, __lookahead, __sym5));
+                    __result = try!(__state70(krate, input, __lookbehind, __tokens, __lookahead, __sym5));
                 }
                 __Nonterminal::MacroRef(__nt) => {
                     let __sym5 = &mut Some(__nt);
-                    __result = try!(__state63(krate, input, __lookbehind, __tokens, __lookahead, __sym5));
+                    __result = try!(__state71(krate, input, __lookbehind, __tokens, __lookahead, __sym5));
                 }
                 __Nonterminal::Module(__nt) => {
                     let __sym5 = &mut Some(__nt);
-                    __result = try!(__state64(krate, input, __lookbehind, __tokens, __lookahead, __sym5));
+                    __result = try!(__state72(krate, input, __lookbehind, __tokens, __lookahead, __sym5));
                 }
                 __Nonterminal::Path(__nt) => {
                     let __sym5 = &mut Some(__nt);
-                    __result = try!(__state65(krate, input, __lookbehind, __tokens, __lookahead, __sym5));
+                    __result = try!(__state73(krate, input, __lookbehind, __tokens, __lookahead, __sym5));
                 }
                 __Nonterminal::Privacy(__nt) => {
                     let __sym5 = &mut Some(__nt);
-                    __result = try!(__state66(krate, input, __lookbehind, __tokens, __lookahead, __sym5));
+                    __result = try!(__state74(krate, input, __lookbehind, __tokens, __lookahead, __sym5));
                 }
                 __Nonterminal::Structure(__nt) => {
                     let __sym5 = &mut Some(__nt);
-                    __result = try!(__state67(krate, input, __lookbehind, __tokens, __lookahead, __sym5));
+                    __result = try!(__state75(krate, input, __lookbehind, __tokens, __lookahead, __sym5));
                 }
                 _ => {
                     return Ok((__lookbehind, __lookahead, __nt));
@@ -8818,7 +9261,7 @@ mod __parse__Krate {
         return Ok(__result);
     }
 
-    // State 102
+    // State 111
     //   Code = (*) "{" (<Path> ";")+ "}" ["::"]
     //   Code = (*) "{" (<Path> ";")+ "}" ["macro_rules"]
     //   Code = (*) "{" (<Path> ";")+ "}" ["mod"]
@@ -9015,10 +9458,10 @@ mod __parse__Krate {
     //   Path = (*) Id ["::"]
     //   Path = (*) Path "::" Id ["!"]
     //   Path = (*) Path "::" Id ["::"]
-    //   Path = (*) "::" ["!"]
-    //   Path = (*) "::" ["::"]
-    //   Path = (*) "self" ["!"]
-    //   Path = (*) "self" ["::"]
+    //   Path = (*) "::" Id ["!"]
+    //   Path = (*) "::" Id ["::"]
+    //   Path = (*) "self" "::" Id ["!"]
+    //   Path = (*) "self" "::" Id ["::"]
     //   Privacy = (*) ["macro_rules"]
     //   Privacy = (*) ["mod"]
     //   Privacy = (*) ["struct"]
@@ -9045,22 +9488,22 @@ mod __parse__Krate {
     //   "self" -> Shift(S16)
     //   "struct" -> Reduce(Privacy =  => ActionFn(39);)
     //   "use" -> Reduce(Privacy =  => ActionFn(39);)
-    //   "{" -> Shift(S68)
-    //   "}" -> Shift(S109)
+    //   "{" -> Shift(S76)
+    //   "}" -> Shift(S118)
     //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Shift(S18)
     //
-    //   Code -> S57
-    //   Glob -> S58
+    //   Code -> S65
+    //   Glob -> S66
     //   Id -> S3
-    //   Import -> S59
-    //   Item -> S77
-    //   MacroDef -> S62
-    //   MacroRef -> S63
-    //   Module -> S64
-    //   Path -> S65
-    //   Privacy -> S66
-    //   Structure -> S67
-    pub fn __state102<
+    //   Import -> S67
+    //   Item -> S86
+    //   MacroDef -> S70
+    //   MacroRef -> S71
+    //   Module -> S72
+    //   Path -> S73
+    //   Privacy -> S74
+    //   Structure -> S75
+    pub fn __state111<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -9096,12 +9539,12 @@ mod __parse__Krate {
             Some((_, (11, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym5 = &mut Some((__tok0));
-                __result = try!(__state68(krate, input, __lookbehind, __tokens, __sym5));
+                __result = try!(__state76(krate, input, __lookbehind, __tokens, __sym5));
             }
             Some((_, (12, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym5 = &mut Some((__tok0));
-                __result = try!(__state109(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3, __sym4, __sym5));
+                __result = try!(__state118(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3, __sym4, __sym5));
             }
             Some((_, (13, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
@@ -9127,11 +9570,11 @@ mod __parse__Krate {
             match __nt {
                 __Nonterminal::Code(__nt) => {
                     let __sym5 = &mut Some(__nt);
-                    __result = try!(__state57(krate, input, __lookbehind, __tokens, __lookahead, __sym5));
+                    __result = try!(__state65(krate, input, __lookbehind, __tokens, __lookahead, __sym5));
                 }
                 __Nonterminal::Glob(__nt) => {
                     let __sym5 = &mut Some(__nt);
-                    __result = try!(__state58(krate, input, __lookbehind, __tokens, __lookahead, __sym5));
+                    __result = try!(__state66(krate, input, __lookbehind, __tokens, __lookahead, __sym5));
                 }
                 __Nonterminal::Id(__nt) => {
                     let __sym5 = &mut Some(__nt);
@@ -9139,35 +9582,35 @@ mod __parse__Krate {
                 }
                 __Nonterminal::Import(__nt) => {
                     let __sym5 = &mut Some(__nt);
-                    __result = try!(__state59(krate, input, __lookbehind, __tokens, __lookahead, __sym5));
+                    __result = try!(__state67(krate, input, __lookbehind, __tokens, __lookahead, __sym5));
                 }
                 __Nonterminal::Item(__nt) => {
                     let __sym5 = &mut Some(__nt);
-                    __result = try!(__state77(krate, input, __lookbehind, __tokens, __lookahead, __sym4, __sym5));
+                    __result = try!(__state86(krate, input, __lookbehind, __tokens, __lookahead, __sym4, __sym5));
                 }
                 __Nonterminal::MacroDef(__nt) => {
                     let __sym5 = &mut Some(__nt);
-                    __result = try!(__state62(krate, input, __lookbehind, __tokens, __lookahead, __sym5));
+                    __result = try!(__state70(krate, input, __lookbehind, __tokens, __lookahead, __sym5));
                 }
                 __Nonterminal::MacroRef(__nt) => {
                     let __sym5 = &mut Some(__nt);
-                    __result = try!(__state63(krate, input, __lookbehind, __tokens, __lookahead, __sym5));
+                    __result = try!(__state71(krate, input, __lookbehind, __tokens, __lookahead, __sym5));
                 }
                 __Nonterminal::Module(__nt) => {
                     let __sym5 = &mut Some(__nt);
-                    __result = try!(__state64(krate, input, __lookbehind, __tokens, __lookahead, __sym5));
+                    __result = try!(__state72(krate, input, __lookbehind, __tokens, __lookahead, __sym5));
                 }
                 __Nonterminal::Path(__nt) => {
                     let __sym5 = &mut Some(__nt);
-                    __result = try!(__state65(krate, input, __lookbehind, __tokens, __lookahead, __sym5));
+                    __result = try!(__state73(krate, input, __lookbehind, __tokens, __lookahead, __sym5));
                 }
                 __Nonterminal::Privacy(__nt) => {
                     let __sym5 = &mut Some(__nt);
-                    __result = try!(__state66(krate, input, __lookbehind, __tokens, __lookahead, __sym5));
+                    __result = try!(__state74(krate, input, __lookbehind, __tokens, __lookahead, __sym5));
                 }
                 __Nonterminal::Structure(__nt) => {
                     let __sym5 = &mut Some(__nt);
-                    __result = try!(__state67(krate, input, __lookbehind, __tokens, __lookahead, __sym5));
+                    __result = try!(__state75(krate, input, __lookbehind, __tokens, __lookahead, __sym5));
                 }
                 _ => {
                     return Ok((__lookbehind, __lookahead, __nt));
@@ -9177,7 +9620,7 @@ mod __parse__Krate {
         return Ok(__result);
     }
 
-    // State 103
+    // State 112
     //   Module = Privacy "mod" Id "{" "}" (*) ["::"]
     //   Module = Privacy "mod" Id "{" "}" (*) ["macro_rules"]
     //   Module = Privacy "mod" Id "{" "}" (*) ["mod"]
@@ -9200,7 +9643,7 @@ mod __parse__Krate {
     //   "}" -> Reduce(Module = Privacy, "mod", Id, "{", "}" => ActionFn(46);)
     //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Reduce(Module = Privacy, "mod", Id, "{", "}" => ActionFn(46);)
     //
-    pub fn __state103<
+    pub fn __state112<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -9249,7 +9692,7 @@ mod __parse__Krate {
         }
     }
 
-    // State 104
+    // State 113
     //   Structure = Privacy "struct" Id "{" "}" (*) ["::"]
     //   Structure = Privacy "struct" Id "{" "}" (*) ["macro_rules"]
     //   Structure = Privacy "struct" Id "{" "}" (*) ["mod"]
@@ -9272,7 +9715,7 @@ mod __parse__Krate {
     //   "}" -> Reduce(Structure = Privacy, "struct", Id, "{", "}" => ActionFn(10);)
     //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Reduce(Structure = Privacy, "struct", Id, "{", "}" => ActionFn(10);)
     //
-    pub fn __state104<
+    pub fn __state113<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -9321,7 +9764,7 @@ mod __parse__Krate {
         }
     }
 
-    // State 105
+    // State 114
     //   Glob = Privacy "use" Path "::" "*" (*) ";" ["::"]
     //   Glob = Privacy "use" Path "::" "*" (*) ";" ["macro_rules"]
     //   Glob = Privacy "use" Path "::" "*" (*) ";" ["mod"]
@@ -9333,9 +9776,9 @@ mod __parse__Krate {
     //   Glob = Privacy "use" Path "::" "*" (*) ";" ["}"]
     //   Glob = Privacy "use" Path "::" "*" (*) ";" [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
     //
-    //   ";" -> Shift(S110)
+    //   ";" -> Shift(S119)
     //
-    pub fn __state105<
+    pub fn __state114<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -9360,7 +9803,7 @@ mod __parse__Krate {
             Some((_, (3, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym5 = &mut Some((__tok0));
-                __result = try!(__state110(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3, __sym4, __sym5));
+                __result = try!(__state119(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3, __sym4, __sym5));
             }
             _ => {
                 return Err(__ParseError::UnrecognizedToken {
@@ -9372,7 +9815,7 @@ mod __parse__Krate {
         return Ok(__result);
     }
 
-    // State 106
+    // State 115
     //   Import = Privacy "use" Path "as" Id (*) ";" ["::"]
     //   Import = Privacy "use" Path "as" Id (*) ";" ["macro_rules"]
     //   Import = Privacy "use" Path "as" Id (*) ";" ["mod"]
@@ -9384,9 +9827,9 @@ mod __parse__Krate {
     //   Import = Privacy "use" Path "as" Id (*) ";" ["}"]
     //   Import = Privacy "use" Path "as" Id (*) ";" [r#"[a-zA-Z_][a-zA-Z0-9_]*"#]
     //
-    //   ";" -> Shift(S111)
+    //   ";" -> Shift(S120)
     //
-    pub fn __state106<
+    pub fn __state115<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -9407,7 +9850,7 @@ mod __parse__Krate {
             Some((_, (3, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym5 = &mut Some((__tok0));
-                __result = try!(__state111(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3, __sym4, __sym5));
+                __result = try!(__state120(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3, __sym4, __sym5));
             }
             _ => {
                 return Err(__ParseError::UnrecognizedToken {
@@ -9419,7 +9862,7 @@ mod __parse__Krate {
         return Ok(__result);
     }
 
-    // State 107
+    // State 116
     //   Code = (*) "{" (<Path> ";")+ "}" ["::"]
     //   Code = (*) "{" (<Path> ";")+ "}" ["macro_rules"]
     //   Code = (*) "{" (<Path> ";")+ "}" ["mod"]
@@ -9616,10 +10059,10 @@ mod __parse__Krate {
     //   Path = (*) Id ["::"]
     //   Path = (*) Path "::" Id ["!"]
     //   Path = (*) Path "::" Id ["::"]
-    //   Path = (*) "::" ["!"]
-    //   Path = (*) "::" ["::"]
-    //   Path = (*) "self" ["!"]
-    //   Path = (*) "self" ["::"]
+    //   Path = (*) "::" Id ["!"]
+    //   Path = (*) "::" Id ["::"]
+    //   Path = (*) "self" "::" Id ["!"]
+    //   Path = (*) "self" "::" Id ["::"]
     //   Privacy = (*) ["macro_rules"]
     //   Privacy = (*) ["mod"]
     //   Privacy = (*) ["struct"]
@@ -9646,22 +10089,22 @@ mod __parse__Krate {
     //   "self" -> Shift(S16)
     //   "struct" -> Reduce(Privacy =  => ActionFn(39);)
     //   "use" -> Reduce(Privacy =  => ActionFn(39);)
-    //   "{" -> Shift(S68)
-    //   "}" -> Shift(S112)
+    //   "{" -> Shift(S76)
+    //   "}" -> Shift(S121)
     //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Shift(S18)
     //
-    //   Code -> S57
-    //   Glob -> S58
+    //   Code -> S65
+    //   Glob -> S66
     //   Id -> S3
-    //   Import -> S59
-    //   Item -> S77
-    //   MacroDef -> S62
-    //   MacroRef -> S63
-    //   Module -> S64
-    //   Path -> S65
-    //   Privacy -> S66
-    //   Structure -> S67
-    pub fn __state107<
+    //   Import -> S67
+    //   Item -> S86
+    //   MacroDef -> S70
+    //   MacroRef -> S71
+    //   Module -> S72
+    //   Path -> S73
+    //   Privacy -> S74
+    //   Structure -> S75
+    pub fn __state116<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -9698,12 +10141,12 @@ mod __parse__Krate {
             Some((_, (11, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym6 = &mut Some((__tok0));
-                __result = try!(__state68(krate, input, __lookbehind, __tokens, __sym6));
+                __result = try!(__state76(krate, input, __lookbehind, __tokens, __sym6));
             }
             Some((_, (12, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
                 let mut __sym6 = &mut Some((__tok0));
-                __result = try!(__state112(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3, __sym4, __sym5, __sym6));
+                __result = try!(__state121(krate, input, __lookbehind, __tokens, __sym0, __sym1, __sym2, __sym3, __sym4, __sym5, __sym6));
             }
             Some((_, (13, __tok0), __loc)) => {
                 let mut __lookbehind = Some(__loc);
@@ -9729,11 +10172,11 @@ mod __parse__Krate {
             match __nt {
                 __Nonterminal::Code(__nt) => {
                     let __sym6 = &mut Some(__nt);
-                    __result = try!(__state57(krate, input, __lookbehind, __tokens, __lookahead, __sym6));
+                    __result = try!(__state65(krate, input, __lookbehind, __tokens, __lookahead, __sym6));
                 }
                 __Nonterminal::Glob(__nt) => {
                     let __sym6 = &mut Some(__nt);
-                    __result = try!(__state58(krate, input, __lookbehind, __tokens, __lookahead, __sym6));
+                    __result = try!(__state66(krate, input, __lookbehind, __tokens, __lookahead, __sym6));
                 }
                 __Nonterminal::Id(__nt) => {
                     let __sym6 = &mut Some(__nt);
@@ -9741,35 +10184,35 @@ mod __parse__Krate {
                 }
                 __Nonterminal::Import(__nt) => {
                     let __sym6 = &mut Some(__nt);
-                    __result = try!(__state59(krate, input, __lookbehind, __tokens, __lookahead, __sym6));
+                    __result = try!(__state67(krate, input, __lookbehind, __tokens, __lookahead, __sym6));
                 }
                 __Nonterminal::Item(__nt) => {
                     let __sym6 = &mut Some(__nt);
-                    __result = try!(__state77(krate, input, __lookbehind, __tokens, __lookahead, __sym5, __sym6));
+                    __result = try!(__state86(krate, input, __lookbehind, __tokens, __lookahead, __sym5, __sym6));
                 }
                 __Nonterminal::MacroDef(__nt) => {
                     let __sym6 = &mut Some(__nt);
-                    __result = try!(__state62(krate, input, __lookbehind, __tokens, __lookahead, __sym6));
+                    __result = try!(__state70(krate, input, __lookbehind, __tokens, __lookahead, __sym6));
                 }
                 __Nonterminal::MacroRef(__nt) => {
                     let __sym6 = &mut Some(__nt);
-                    __result = try!(__state63(krate, input, __lookbehind, __tokens, __lookahead, __sym6));
+                    __result = try!(__state71(krate, input, __lookbehind, __tokens, __lookahead, __sym6));
                 }
                 __Nonterminal::Module(__nt) => {
                     let __sym6 = &mut Some(__nt);
-                    __result = try!(__state64(krate, input, __lookbehind, __tokens, __lookahead, __sym6));
+                    __result = try!(__state72(krate, input, __lookbehind, __tokens, __lookahead, __sym6));
                 }
                 __Nonterminal::Path(__nt) => {
                     let __sym6 = &mut Some(__nt);
-                    __result = try!(__state65(krate, input, __lookbehind, __tokens, __lookahead, __sym6));
+                    __result = try!(__state73(krate, input, __lookbehind, __tokens, __lookahead, __sym6));
                 }
                 __Nonterminal::Privacy(__nt) => {
                     let __sym6 = &mut Some(__nt);
-                    __result = try!(__state66(krate, input, __lookbehind, __tokens, __lookahead, __sym6));
+                    __result = try!(__state74(krate, input, __lookbehind, __tokens, __lookahead, __sym6));
                 }
                 __Nonterminal::Structure(__nt) => {
                     let __sym6 = &mut Some(__nt);
-                    __result = try!(__state67(krate, input, __lookbehind, __tokens, __lookahead, __sym6));
+                    __result = try!(__state75(krate, input, __lookbehind, __tokens, __lookahead, __sym6));
                 }
                 _ => {
                     return Ok((__lookbehind, __lookahead, __nt));
@@ -9779,7 +10222,7 @@ mod __parse__Krate {
         return Ok(__result);
     }
 
-    // State 108
+    // State 117
     //   MacroDef = Privacy "macro_rules" "!" Id "{" "}" (*) ["::"]
     //   MacroDef = Privacy "macro_rules" "!" Id "{" "}" (*) ["macro_rules"]
     //   MacroDef = Privacy "macro_rules" "!" Id "{" "}" (*) ["mod"]
@@ -9802,7 +10245,7 @@ mod __parse__Krate {
     //   "}" -> Reduce(MacroDef = Privacy, "macro_rules", "!", Id, "{", "}" => ActionFn(44);)
     //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Reduce(MacroDef = Privacy, "macro_rules", "!", Id, "{", "}" => ActionFn(44);)
     //
-    pub fn __state108<
+    pub fn __state117<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -9853,7 +10296,7 @@ mod __parse__Krate {
         }
     }
 
-    // State 109
+    // State 118
     //   Module = Privacy "mod" Id "{" Item+ "}" (*) ["::"]
     //   Module = Privacy "mod" Id "{" Item+ "}" (*) ["macro_rules"]
     //   Module = Privacy "mod" Id "{" Item+ "}" (*) ["mod"]
@@ -9876,7 +10319,7 @@ mod __parse__Krate {
     //   "}" -> Reduce(Module = Privacy, "mod", Id, "{", Item+, "}" => ActionFn(47);)
     //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Reduce(Module = Privacy, "mod", Id, "{", Item+, "}" => ActionFn(47);)
     //
-    pub fn __state109<
+    pub fn __state118<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -9927,7 +10370,7 @@ mod __parse__Krate {
         }
     }
 
-    // State 110
+    // State 119
     //   Glob = Privacy "use" Path "::" "*" ";" (*) ["::"]
     //   Glob = Privacy "use" Path "::" "*" ";" (*) ["macro_rules"]
     //   Glob = Privacy "use" Path "::" "*" ";" (*) ["mod"]
@@ -9950,7 +10393,7 @@ mod __parse__Krate {
     //   "}" -> Reduce(Glob = Privacy, "use", Path, "::", "*", ";" => ActionFn(12);)
     //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Reduce(Glob = Privacy, "use", Path, "::", "*", ";" => ActionFn(12);)
     //
-    pub fn __state110<
+    pub fn __state119<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -10001,7 +10444,7 @@ mod __parse__Krate {
         }
     }
 
-    // State 111
+    // State 120
     //   Import = Privacy "use" Path "as" Id ";" (*) ["::"]
     //   Import = Privacy "use" Path "as" Id ";" (*) ["macro_rules"]
     //   Import = Privacy "use" Path "as" Id ";" (*) ["mod"]
@@ -10024,7 +10467,7 @@ mod __parse__Krate {
     //   "}" -> Reduce(Import = Privacy, "use", Path, "as", Id, ";" => ActionFn(37);)
     //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Reduce(Import = Privacy, "use", Path, "as", Id, ";" => ActionFn(37);)
     //
-    pub fn __state111<
+    pub fn __state120<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -10075,7 +10518,7 @@ mod __parse__Krate {
         }
     }
 
-    // State 112
+    // State 121
     //   MacroDef = Privacy "macro_rules" "!" Id "{" Item+ "}" (*) ["::"]
     //   MacroDef = Privacy "macro_rules" "!" Id "{" Item+ "}" (*) ["macro_rules"]
     //   MacroDef = Privacy "macro_rules" "!" Id "{" Item+ "}" (*) ["mod"]
@@ -10098,7 +10541,7 @@ mod __parse__Krate {
     //   "}" -> Reduce(MacroDef = Privacy, "macro_rules", "!", Id, "{", Item+, "}" => ActionFn(45);)
     //   r#"[a-zA-Z_][a-zA-Z0-9_]*"# -> Reduce(MacroDef = Privacy, "macro_rules", "!", Id, "{", Item+, "}" => ActionFn(45);)
     //
-    pub fn __state112<
+    pub fn __state121<
         'input,
         __TOKENS: Iterator<Item=Result<(usize, (usize, &'input str), usize),__ParseError<usize,(usize, &'input str),()>>>,
     >(
@@ -20832,12 +21275,14 @@ pub fn __action16<
 >(
     krate: &mut Krate,
     input: &'input str,
-    __0: &'input str,
+    _: &'input str,
+    _: &'input str,
+    __0: InternedString,
     __lookbehind: &Option<usize>,
     __lookahead: &Option<(usize, (usize, &'input str), usize)>,
 ) -> PathId
 {
-    THIS_PATH
+    krate.add_path(Path::Cons(THIS_PATH, __0))
 }
 
 pub fn __action17<
@@ -20845,12 +21290,13 @@ pub fn __action17<
 >(
     krate: &mut Krate,
     input: &'input str,
-    __0: &'input str,
+    _: &'input str,
+    __0: InternedString,
     __lookbehind: &Option<usize>,
     __lookahead: &Option<(usize, (usize, &'input str), usize)>,
 ) -> PathId
 {
-    ROOT_PATH
+    krate.add_path(Path::Cons(ROOT_PATH, __0))
 }
 
 pub fn __action18<

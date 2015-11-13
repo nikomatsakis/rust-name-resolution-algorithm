@@ -67,15 +67,8 @@ fn compute_exclusions(krate: &Krate, resolutions: &mut ModuleContentSets) {
                           Some(krate.modules[module_id.0].name),
                       ItemId::Structure(structure_id) =>
                           Some(krate.structures[structure_id.0].name),
-                      ItemId::Import(import_id) => {
-                          let import = &krate.imports[import_id.0];
-                          Some(import.alt_name.unwrap_or_else(|| {
-                              match krate.paths[import.path.0] {
-                                  Path::Root | Path::This => unreachable!(),
-                                  Path::Cons(_, s) => s,
-                              }
-                          }))
-                      }
+                      ItemId::Import(import_id) =>
+                          Some(krate.import_name(import_id)),
                       ItemId::MacroDef(macro_def_id) =>
                           Some(krate.macro_defs[macro_def_id.0].name),
                       ItemId::MacroRef(_) |
@@ -111,12 +104,7 @@ fn propagate_names(krate: &Krate, resolutions: &mut ModuleContentSets) {
                         let import = &krate.imports[import_id.0];
                         match resolutions.resolve_path(&krate.paths, container_id, import.path) {
                             Resolution::One(target_id) => {
-                                let name = import.alt_name.unwrap_or_else(|| {
-                                    match krate.paths[import.path.0] {
-                                        Path::Root | Path::This => unreachable!(),
-                                        Path::Cons(_, s) => s,
-                                    }
-                                });
+                                let name = krate.import_name(import_id);
                                 changed |= resolutions.add(container_id, name, target_id, item_id);
                             }
                             _ => {
