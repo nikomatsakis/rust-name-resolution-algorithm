@@ -37,7 +37,7 @@ mod bar { struct Struct { } }
 }
 
 #[test]
-fn multiple_names() {
+fn precedence_over_glob() {
     let mut krate = ast::Krate::new();
     parse_Krate(&mut krate, r#"
 mod foo { use bar::*; struct Struct { } }
@@ -45,14 +45,47 @@ mod bar { struct Struct { } }
 "#).unwrap();
     let result = resolve::resolve_and_expand(&mut krate);
     debug!("result = {:?}", result);
-    assert!(match result {
-        Err(resolve::ResolutionError::MultipleNames { module_id, name }) => {
-            module_id == ModuleId(1) && name == intern("Struct")
-        }
-        _ => {
-            false
-        }
-    });
+    assert!(result.is_ok());
+}
+
+#[test]
+fn precedence_over_glob_macro() {
+    let mut krate = ast::Krate::new();
+    // Here the macro m! generates a struct; this conflicts with
+    // the struct we get from the glob, even though an explicit name would not.q
+    parse_Krate(&mut krate, r#"
+mod foo { use bar::*; m!; }
+mod bar { macro_rules! m { struct Struct { } } struct Struct { } }
+"#).unwrap();
+    let result = resolve::resolve_and_expand(&mut krate);
+    debug!("result = {:?}", result);
+    assert!(result.is_err());
+}
+
+#[test]
+fn precedence_over_glob_macro_2() {
+    let mut krate = ast::Krate::new();
+    // Here the macro m! generates a struct; this conflicts with
+    // the struct we get from the glob, even though an explicit name would not.q
+    parse_Krate(&mut krate, r#"
+mod foo { use bar::*; m!; }
+mod bar { macro_rules! m { struct Struct { } } m!; }
+"#).unwrap();
+    let result = resolve::resolve_and_expand(&mut krate);
+    debug!("result = {:?}", result);
+    assert!(result.is_err());
+}
+
+#[test]
+fn multiple_names() {
+    let mut krate = ast::Krate::new();
+    parse_Krate(&mut krate, r#"
+mod foo { use bar::Struct; struct Struct { } }
+mod bar { struct Struct { } }
+"#).unwrap();
+    let result = resolve::resolve_and_expand(&mut krate);
+    debug!("result = {:?}", result);
+    assert!(result.is_err());
 }
 
 #[test]

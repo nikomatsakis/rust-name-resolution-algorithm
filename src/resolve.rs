@@ -6,6 +6,7 @@ use std::mem;
 #[derive(Debug)]
 pub struct ModuleContentSets {
     pub module_contents: HashMap<ModuleId, ModuleContents>,
+    pub module_exclusions: HashMap<ModuleId, Vec<InternedString>>,
 }
 
 #[derive(Clone, Debug)]
@@ -45,12 +46,47 @@ pub enum ResolutionError {
 pub fn resolve_and_expand(krate: &mut Krate) -> Result<ModuleContentSets, ResolutionError> {
     let mut resolutions = ModuleContentSets::new();
     let mut changed = true;
+    compute_exclusions(krate, &mut resolutions);
     while mem::replace(&mut changed, false) {
         propagate_names(krate, &mut resolutions);
         changed |= expand_macros(krate, &resolutions);
     }
     try!(verify_paths(krate, &resolutions));
     Ok(resolutions)
+}
+
+fn compute_exclusions(krate: &Krate, resolutions: &mut ModuleContentSets) {
+    for container_id in krate.module_ids() {
+        let module = &krate.modules[container_id.0];
+        debug!("compute_exclusions({:?}, {:?})", container_id, module.name);
+        let excluded_names =
+            module.items
+                  .iter()
+                  .flat_map(|&item_id| match item_id {
+                      ItemId::Module(module_id) =>
+                          Some(krate.modules[module_id.0].name),
+                      ItemId::Structure(structure_id) =>
+                          Some(krate.structures[structure_id.0].name),
+                      ItemId::Import(import_id) => {
+                          let import = &krate.imports[import_id.0];
+                          Some(import.alt_name.unwrap_or_else(|| {
+                              match krate.paths[import.path.0] {
+                                  Path::Root | Path::This => unreachable!(),
+                                  Path::Cons(_, s) => s,
+                              }
+                          }))
+                      }
+                      ItemId::MacroDef(macro_def_id) =>
+                          Some(krate.macro_defs[macro_def_id.0].name),
+                      ItemId::MacroRef(_) |
+                      ItemId::Glob(_) |
+                      ItemId::Code(_) |
+                      ItemId::MacroHusk(_) =>
+                          None,
+                  })
+                  .collect();
+        resolutions.module_exclusions.insert(container_id, excluded_names);
+    }
 }
 
 fn propagate_names(krate: &Krate, resolutions: &mut ModuleContentSets) {
@@ -95,11 +131,16 @@ fn propagate_names(krate: &Krate, resolutions: &mut ModuleContentSets) {
                             Resolution::One(ItemId::Module(target_id)) => {
                                 let contents = resolutions.module_contents(target_id).clone();
                                 for (name, module_resolutions) in contents.members {
+                                    if resolutions.module_exclusions[&container_id].contains(&name) {
+                                        // do not glob import names explicitly defined in this module
+                                        continue;
+                                    }
+
                                     for resolution in module_resolutions {
                                         changed |= resolutions.add(container_id,
                                                                    name,
                                                                    resolution.target,
-                                                                    item_id);
+                                                                   item_id);
                                     }
                                 }
                             }
@@ -291,7 +332,8 @@ impl ModuleContents {
 impl ModuleContentSets {
     fn new() -> ModuleContentSets {
         ModuleContentSets {
-            module_contents: HashMap::new()
+            module_contents: HashMap::new(),
+            module_exclusions: HashMap::new(),
         }
     }
 
