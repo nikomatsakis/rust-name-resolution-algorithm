@@ -230,6 +230,7 @@ client. In other words, if someone does this:
 ```rust
 use crate_x::*;
 use crate_y::Foo;
+struct Bar(Foo);
 ```
 
 And in the meantime `crate_x` adds a new entry `Foo`, the downstream
@@ -239,9 +240,12 @@ someone might do:
 ```rust
 use crate_x::*;
 use crate_y::*;
+struct Bar(Foo);
 ```
 
-and, in that case, if they tried to use `Foo` there would be an error.
+and, in that case, they will get an error if `crate_x` later adds a
+`Foo` binding. (Note though that if they were not referencing `Foo`,
+there would be no problem.)
 
 **Why do explicit items created by macros NOT shadow globs?**
 
