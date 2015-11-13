@@ -138,14 +138,7 @@ mod baz { use foo::Struct; }
 "#).unwrap();
     let result = resolve::resolve_and_expand(&mut krate);
     debug!("result = {:?}", result);
-    assert!(match result {
-        Err(resolve::ResolutionError::MultipleNames { module_id, name }) => {
-            module_id == ModuleId(1) && name == intern("m")
-        }
-        _ => {
-            false
-        }
-    });
+    assert!(result.is_err());
 }
 
 #[test]
@@ -211,6 +204,24 @@ fn expand_to_conflicting_macro() {
     parse_Krate(&mut krate, r#"
 mod foo { use bar::*; self::m!; }
 mod bar { macro_rules! m { macro_rules! m { struct S { } } } }
+"#).unwrap();
+    let result = resolve::resolve_and_expand(&mut krate);
+    debug!("result = {:?}", result);
+    assert!(result.is_err());
+}
+
+
+#[test]
+fn expand_to_conflicting_globs() {
+    let mut krate = ast::Krate::new();
+
+    // Here the macro m! generates a conflict entry for m!. But we
+    // have to make sure that this results in an error.
+
+    parse_Krate(&mut krate, r#"
+mod foo { use bar::*; self::m!; }
+mod bar { macro_rules! m { use baz::*; } }
+mod baz { macro_rules! m { } }
 "#).unwrap();
     let result = resolve::resolve_and_expand(&mut krate);
     debug!("result = {:?}", result);

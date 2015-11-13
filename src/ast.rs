@@ -9,6 +9,7 @@ pub struct Krate {
     pub globs: Vec<Glob>,
     pub macro_defs: Vec<MacroDef>,
     pub macro_refs: Vec<MacroRef>,
+    pub macro_husks: Vec<MacroHusk>,
     pub paths: Vec<Path>,
     pub codes: Vec<Code>,
 }
@@ -21,6 +22,7 @@ pub enum ItemId {
     Glob(GlobId),
     MacroDef(MacroDefId),
     MacroRef(MacroRefId),
+    MacroHusk(MacroHuskId),
     Code(CodeId),
 }
 
@@ -37,6 +39,7 @@ impl Krate {
             globs: vec![],
             macro_defs: vec![],
             macro_refs: vec![],
+            macro_husks: vec![],
             paths: vec![Path::Root, Path::This],
             codes: vec![],
         }
@@ -74,6 +77,11 @@ impl Krate {
     pub fn add_macro_ref(&mut self, macro_ref: MacroRef) -> MacroRefId {
         self.macro_refs.push(macro_ref);
         MacroRefId(self.macro_refs.len() - 1)
+    }
+
+    pub fn add_macro_husk(&mut self, macro_husk: MacroHusk) -> MacroHuskId {
+        self.macro_husks.push(macro_husk);
+        MacroHuskId(self.macro_husks.len() - 1)
     }
 
     pub fn add_code(&mut self, code: Code) -> CodeId {
@@ -156,6 +164,15 @@ pub struct MacroDef {
 pub struct MacroRefId(pub usize);
 
 pub struct MacroRef {
+    pub path: PathId,
+}
+
+///////////////////////////////////////////////////////////////////////////
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub struct MacroHuskId(pub usize);
+
+pub struct MacroHusk {
     pub path: PathId,
 }
 

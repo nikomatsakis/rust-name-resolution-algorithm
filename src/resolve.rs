@@ -114,7 +114,8 @@ fn propagate_names(krate: &Krate, resolutions: &mut ModuleContentSets) {
                         changed |= resolutions.add(container_id, macro_def.name, item_id, item_id)
                     }
 
-                    ItemId::MacroRef(_) => {
+                    ItemId::MacroRef(_) |
+                    ItemId::MacroHusk(_) => {
                         // This will (maybe) get expanded in the next phase.
                     }
 
@@ -135,6 +136,7 @@ fn expand_macros(krate: &mut Krate, resolutions: &ModuleContentSets) -> bool {
     let macro_defs = &krate.macro_defs;
     let paths = &krate.paths;
     let modules = &mut krate.modules;
+    let macro_husks = &mut krate.macro_husks;
 
     for container_id in module_ids {
         let module = &mut modules[container_id.0];
@@ -147,9 +149,17 @@ fn expand_macros(krate: &mut Krate, resolutions: &ModuleContentSets) -> bool {
                           let macro_path = macro_refs[macro_ref_id.0].path;
                           match resolutions.resolve_path(paths, container_id, macro_path) {
                               Resolution::One(ItemId::MacroDef(macro_def_id)) => {
-                                  let macro_def = &macro_defs[macro_def_id.0];
                                   expanded = true;
-                                  macro_def.items.clone()
+
+                                  let macro_def = &macro_defs[macro_def_id.0];
+
+                                  macro_husks.push(MacroHusk { path: macro_path });
+                                  let macro_husk_id = MacroHuskId(macro_husks.len() - 1);
+
+                                  macro_def.items.iter()
+                                                 .cloned()
+                                                 .chain(Some(ItemId::MacroHusk(macro_husk_id)))
+                                                 .collect()
                               }
                               _ => {
                                   // don't really care about errors
@@ -243,6 +253,11 @@ fn verify_paths(krate: &Krate, resolutions: &ModuleContentSets) -> Result<(), Re
                     // `use self::S` should lead to this macro_def. Check that.
                     let macro_def = &krate.macro_defs[macro_def_id.0];
                     try!(check_decl(krate, resolutions, container_id, item_id, macro_def.name));
+                }
+
+                ItemId::MacroHusk(macro_husk_id) => {
+                    let macro_husk = &krate.macro_husks[macro_husk_id.0];
+                    try!(check_path(krate, resolutions, container_id, item_id, macro_husk.path));
                 }
 
                 ItemId::MacroRef(macro_ref_id) => {
