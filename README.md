@@ -246,29 +246,46 @@ and, in that case, if they tried to use `Foo` there would be an error.
 **Why do explicit items created by macros NOT shadow globs?**
 
 This is to avoid time-travel-like paradoxes that can otherwise occur
-when expanding macros. 
+when expanding macros. The problem case is when we have a macro found
+with a path like `a::b!`. Suppose that the containing module has a
+`use foo::*;` which was the origin of the module `a`. But then the
+macro *generates* a module `a` as well. Now we are in a quandry: to
+load the macro in the first place, we had to use the `a` from the
+glob, but that `a` was shadowed by code that the macro generated. This
+is bad because that shadowed item should have *taken precedence* over
+the `a` we got from the glob, but we can't go back and *undo* the
+macro expansion we already did! So we call it an error.
 
-This is required for the algorithm to support glob
-imports of macros. The problem case is when we have a macro found
-witha path like `self::a::b!`. Suppose that the module has a `use
-foo::*;` which was the origin of the module `a`. But then the
-macro generates a module `b` as well. Now we are in a quandry: to
-load the macro in the first place, we had to use the `b` from the
-glob, but that `b` was shadowed by code that the macro
-generated. There are various ways to resolve this, but banning
-duplicates seems like the simplest and easiest to understand
-solution. Some other possibilities:
-- macros cannot be imported through globs; seems like a shame, I might have a whole
-  family of macros I would like to make use of.
-- macro-generated names have lowest precedence of all; complex
-  and probably not a solution. I suspect you can just concoct
-  examples of macro-generating-macros that get into the same
-  situation.
+Now, there are other ways to resolve this. One would be to take a
+"mutable view" on the set of bindings. That is, when a module expands,
+we only consider the names that were in scope *at the time of
+expansion*, which might later change. I wanted to avoid this because
+it introduces *ordering* between macro expansions -- that is, suppose
+I have to two macro expansions in a row, like `foo!(); bar!();`. Now
+if I expand `foo` first, it may generate names that would conflict
+with expanding `bar` -- but it would have been fine if I had just
+expanded `bar` first! I want to preserve the Rust-y notion that the
+order of declaration for items doesn't matter.
 
-The prototype does also make `use` statements behave more like regular
-items. In particular, a `use` statement in a parent module can be
-referenced by child modules (iow, a `use` is the same as a `pub use`,
-but that it is not public outside the module). This is not how Rust
-works today but is largely backwards compatible I thik. It is also
-probably something we could change in the algorithm if we wanted.
+Another way of looking at is in terms of the expanded form I described
+in the question about correctness: a mutable view means that the
+"correctness" property of this expanded form would be a lot more
+complex, because we would have to reason not about all the bindings we
+see, but the bindings that were visible at the time of expansion.
+
+Another way to go about this would be to define some more complex
+notion of what bindings are visible. For example, perhaps the bindings
+declared by macros are not visible to each other. But this seems bound to lead
+to problems.
+
+That said, the current rule I implemented strikes me as a mild
+refactoring hazard as well. For example, if I have some explicit
+items, and I refactor them into a macro, I may find I now get
+conflicts with globs that were working fine before. To help resolve
+this, it might be nice to support the ability to explicitly exclude
+names from globs by writing something like `use crate_x::{* - Foo -
+Bar}` (this might be nice in any case. But that's for another day.
+Another option might be including annotations on macros to help make
+it clear what names they will define, but this seems likely to be
+quite a burden, particularly if names are defined programmatically.
 
