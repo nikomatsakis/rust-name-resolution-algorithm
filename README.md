@@ -44,7 +44,7 @@ this summary may get out of date):
 
 1. I don't model multiple namespaces yet. I'll get to that.
 2. Privacy is not yet implemented. I may get to that.
-3. Hygiene is not modeled. I may get to that.
+3. Hygiene is not modeled. I probably won't get to that.
 
 I don't foresee any horrible problems with any of these
 things. However, multiple namespaces have surprised me in the past in
