@@ -167,7 +167,7 @@ In [the code], this is the function `verify_paths`.
 
 ### FAQ
 
-**Is this algorithm correct?**
+#### Is this algorithm correct?
 
 Well, correct is naturally a bit hard to define. I believe the
 algorithm meets the expectations of Rust users and does logical
@@ -221,7 +221,7 @@ it may well be that we get errors in cases where the user expected
 success. I discuss this a touch more below, when talking about globs
 and macros.)
 
-**Why do explicit items shadow globs?**
+#### Why do explicit items shadow globs?
 
 Because it's better for forwards compatibility. It makes it less
 likely that adding a public item will accidentally break a downstream
@@ -247,7 +247,7 @@ and, in that case, they will get an error if `crate_x` later adds a
 `Foo` binding. (Note though that if they were not referencing `Foo`,
 there would be no problem.)
 
-**Why do explicit items created by macros NOT shadow globs?**
+#### Why do explicit items created by macros NOT shadow globs?
 
 This is to avoid time-travel-like paradoxes that can otherwise occur
 when expanding macros. The problem case is when we have a macro found
@@ -294,7 +294,7 @@ Another option might be including annotations on macros to help make
 it clear what names they will define, but this seems likely to be
 quite a burden, particularly if names are defined programmatically.
 
-**Can we just remove macros from globs instead?**
+#### Can we just remove macros from globs instead?
 
 It has been proposed that we could keep the full inference rules if we
 just removed macros from globs. But I don't think that works. Consider this
@@ -336,7 +336,7 @@ glob. So we are stuck in that we cannot freely expand macros in any
 order. (Note: this is the test case
 `banning_macro_globs_is_not_enough`.)
 
-**This seems too good to be true. What's the catch?**
+#### This seems too good to be true. What's the catch?
 
 I am nervous about the glob precedence rules, particularly as they
 interact with attributes and decorators. I would like it if attributes
