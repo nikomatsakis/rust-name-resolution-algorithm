@@ -318,10 +318,8 @@ mod b {
 }
 mod c {
     mod d {
-        () => {
-            macro_rules! n {
-                ...
-            }
+        macro_rules! n {
+            ...
         }
     }
 }
