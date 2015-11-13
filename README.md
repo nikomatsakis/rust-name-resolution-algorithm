@@ -196,18 +196,18 @@ selects the only matching one.)
 
 I think of the algorithm as analogous to type inference: it infers all
 this extra information that is elided from the original AST and
-creates an explicit form. Moreover, we want to show that, if this
-inference succeeds, then the final resulting program is guaranteed to
-be "resolve correctly" (in the sense I described in the previous
-paragraph).
-
-Note that the "verify" step checks a lot of the properties I described
-above, but not all. For example, it checks that every path resolves to
-*something* unambiguously, but it doesn't check what it resolves
-to. This is because I believe that it is not necessary to check what
-the path resolves to: if it resolves to just one thing, it MUST be the
-thing we want. But it'd be nice to prove that (or at least argue it in
-a somewhat formal fashion).
+creates an explicit form. I believe that, if this inference succeeds,
+then the final resulting program is guaranteed to be "resolve
+correctly" (in the sense I described in the previous paragraph). You
+can see that the "verify" step comes close to checking most of the
+correctness requirements (and reporting an error if any of them fail).
+For example, it checks that every path resolves to *something*
+unambiguously. But it doesn't check the *full* set of properties,
+because it doesn't check that the result of this resolution is in fact
+the item we expected. This is because I believe that it is not
+necessary to check what the path resolves to: if it resolves to just
+one thing, it MUST be the thing we want. But it'd be nice to prove
+that (or at least argue it in a somewhat formal fashion).
 
 It would also be nice to make an argument that the "inference" step
 preserves the user's *intent*. I am not sure how to *formalize* that,
