@@ -258,7 +258,8 @@ load the macro in the first place, we had to use the `a` from the
 glob, but that `a` was shadowed by code that the macro generated. This
 is bad because that shadowed item should have *taken precedence* over
 the `a` we got from the glob, but we can't go back and *undo* the
-macro expansion we already did! So we call it an error.
+macro expansion we already did (and anyway, if we did so, we wouldn't
+have the new definition for `a` anymore)! So we call it an error.
 
 Now, there are other ways to resolve this. One would be to take a
 "mutable view" on the set of bindings. That is, when a module expands,
