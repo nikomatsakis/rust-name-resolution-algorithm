@@ -8,10 +8,13 @@ imported and used (even via globs).
 
 Here are some of the interesting characteristics:
 
-1. Explicitly defined imports and structs take precedence over globs.
-    - **However,** items defined by macro invocations cannot conflict
-      with a name defined by any other means. This is to avoid a
-      time-travel paradox problem, as described below.
+1. Explicit imports and structs take precedence over globs.
+    - So if I have `use foo::*;` and `use bar::X;`, then the name `X`
+      always resolves to `bar::X`, even if `foo` contains a member
+      named `X`.
+    - **However,** macro names can never conflict, even with a macro
+      imported by a glob. So in the previous example, if `X` should be
+      a macro, an error results.
 2. It is always legal to import the same item through multiple paths
    (e.g., `use foo::X` and `use bar::X` are legal, so long as they
    both ultimately refer to the same `X`).
@@ -44,7 +47,8 @@ this summary may get out of date):
 
 1. I don't model multiple namespaces yet. I'll get to that.
 2. Privacy is not yet implemented. I may get to that.
-3. Hygiene is not modeled. I probably won't get to that.
+3. Hygiene and macro arguments in general are not modeled. I probably
+   won't get to that.
 
 I don't foresee any horrible problems with any of these
 things. However, multiple namespaces have surprised me in the past in
@@ -52,28 +56,57 @@ terms of their complexity, so I do intend to actually implement
 THOSE. The others seem simple enough, I may do it if the whim strikes
 me.
 
-### How the algorithm works a a high level
+### How the algorithm works at a high level
 
 The basic idea is that a fixed point expansion followed by a
-verification step. Here is the algorithm in pseudo-code. Note that
-these steps map quite cleanly to functions in the [actual
-implementation][the code].
+verification step. We basically progressively process the code,
+resolving macros, use statements, and globs until we reach a stable
+state. We then check that the final result was self-consistent and
+free of duplicate names and so forth.
+
+#### Output of the algorithm and intermediate state
+
+The output of the algorithm is a either an error or, upon success, a
+new AST tree (actually, the implementation mutates the existing one in
+place) and a set of bindings `{Name -> ItemId}` for each module.  Here
+`ItemId` is an unambiguous identifier for everything in the AST. So if
+I have a module like `mod foo { struct Bar; struct Baz; }`, then the
+bindings for this module would be something like `{Bar -> 22, Baz ->
+23}`, assuming that the ids assigned to the two structs `Bar` and
+`Baz` were 22 and 23 respectively. Note that there is nothing which
+says that this set of bindings must be unambigious. For example, we
+might have two bindings for the same name, like `{Bar -> 44, Bar ->
+66}`.
+
+*Side note:* The actual implementation gives identifies a bit more
+structure; they carry tags identifying the sort of item they refer to,
+so the id of `Bar` would be something like `ItemId::Struct(22)`. This
+is defined in [`ast.rs`][ast], which is also a kind of experimental
+playground for other ways to struct rustc's own internal AST.
+
+The computation itself is a fixed-point computation that incrementally
+builds up these binding sets. It also carries along a set called
+"fully expanded". This is just a set of modules whose contents are
+fully expanded, meaning that they contain no macro references. It is
+important to know this because it affects when we can start processing
+globs (read on).
+
+#### Algorithm pseudo-code
+
+Here is the algorithm in pseudo-code. Note that this definition maps
+quite cleanly to the function `resolve_and_expand` in the
+[actual implementation][the code].
 
 ```
-compute glob exclusions for each module;
 loop {
-    loop {
-        propagate module bindings;
-    } until fixed point is reached;
-    expand macros;
-} until no more macros are created;
+    expand macros where possible;
+    seed names for all modules;
+    glob names for all modules;
+} until fixed point is reached;
 verify all paths;
 ```
 
-Let's look at each piece:
-
-**Compute glob exclusions for each module.** The first thing we do is collect, for each module,
-the set of names of explicitly defined items and imports. For example:
+To see how the algorithm works, let's consider this example:
 
 ```rust
 mod foo {
@@ -86,12 +119,30 @@ mod foo {
 }    
 ```
 
-In this module, the set of explicitly defined names would be `HashMap`
-and `MyStruct`. We will implicitly exclude these names from globs so
-as to establish the precedence between explicit definitions and glob
-imports.
 
-In [the code], this is the function `compute_exclusions`.
+Let's look at each piece:
+
+**Expand macros where possible.** The first we do is to try and expand
+macros. For every macro reference, e.g. `some_macro! { .. }` in our
+example above, we try to resolve the path (here, `some_macro`). As
+with globs in the previous step, if that fails for any reason, we just
+ignore it. But if it succeeds, and we find a macro, then we can expand
+the macro here.
+
+However, and this is important, when we expand the macro, we don't
+just replace the macro reference completely. Instead, we leave behind
+a "husk" that contains the path of the expanded macro. You can think
+of this as being similar to the "expansion trace" that rustc tracks:
+for each bit of code that resulted from macro expansion, we also
+remember the name of the macro that was used to create it. We'll need
+this path in a later step. (Note that in an actual implementation, you
+might choose to just remember a set of paths for expanded macros,
+rather than leaving a marker in the AST itself.)
+
+In [the code], this is the function `expand_macros`.
+
+
+**Seed names for all modules.** The seed step walk
 
 **Propagate module bindings.** The algorithm computes, for each
 module, a set of bindings `{Name -> ItemId}`, where `ItemId` names
@@ -114,25 +165,6 @@ current module, except for those names that are in the list of
 exclusions we computed before.
 
 In [the code], this is the function `propagate_names`.
-
-**Expand macros.** Once we've propagated module bindings as far as we
-can, we then proceed to try and expand macros. For every macro
-reference, e.g. `some_macro! { .. }` in our example above, we try to
-resolve the path (here, `some_macro`). As with globs in the previous
-step, if that fails for any reason, we just ignore it. But if it
-succeeds, and we find a macro, then we can expand the macro here.
-
-However, and this is important, when we expand the macro, we don't
-just replace the macro reference completely. Instead, we leave behind
-a "husk" that contains the path of the expanded macro. You can think
-of this as being similar to the "expansion trace" that rustc tracks:
-for each bit of code that resulted from macro expansion, we also
-remember the name of the macro that was used to create it. We'll need
-this path in a later step. (Note that in an actual implementation, you
-might choose to just remember a set of paths for expanded macros,
-rather than leaving a marker in the AST itself.)
-
-In [the code], this is the function `expand_macros`.
 
 **Verify all paths.** Ok, once we've fully completed expanding macros
 and propagating names, we proceed to the last step, which is verifying
@@ -164,6 +196,7 @@ example function above:
 In [the code], this is the function `verify_paths`.
 
 [the code]: src/resolve.rs
+[ast]: src/ast.rs
 
 ### FAQ
 

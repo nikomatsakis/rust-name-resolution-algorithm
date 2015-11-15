@@ -295,3 +295,29 @@ mod c {
         _ => false
     });
 }
+
+#[test]
+fn cyclic_macro_defs() {
+    let mut krate = ast::Krate::new();
+
+    // Check that no error results if `a` and `b` use each other's
+    // macros.
+
+    parse_Krate(&mut krate, r#"
+mod a {
+    use b::*;
+    pub macro_rules! n {
+    }
+    self::m!;
+}
+mod b {
+    use a::*;
+    pub macro_rules! m {
+    }
+    self::n!;
+}
+"#).unwrap();
+    let result = resolve::resolve_and_expand(&mut krate);
+    debug!("result = {:?}", result);
+    assert!(result.is_ok());
+}
