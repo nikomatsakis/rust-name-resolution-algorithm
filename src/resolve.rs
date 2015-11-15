@@ -6,8 +6,9 @@ use std::mem;
 
 #[derive(Debug)]
 struct ModuleContentSets {
+    ticker: usize,
     module_contents: HashMap<ModuleId, ModuleContents>,
-    module_state: HashSet<ModuleId>,
+    fully_expanded: HashSet<ModuleId>,
 }
 
 #[derive(Debug, Eq, PartialEq, Ord, PartialOrd)]
@@ -25,17 +26,14 @@ impl Default for ModuleState {
 
 #[derive(Clone, Debug)]
 pub struct ModuleContents {
-    pub members: HashMap<InternedString, Vec<NameResolution>>,
+    pub members: HashMap<InternedString, HashSet<NameResolution>>,
 }
 
-#[derive(Copy, Clone, Debug)]
-pub struct NameResolution {
-    /// Item that name maps to.
-    pub target: ItemId,
-
-    /// Source of mapping. In particular, we need to know if this
-    /// binding derived from a glob or not.
-    pub source: ItemId,
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+pub enum NameResolution {
+    Seed(ItemId),
+    Placeholder,
+    Glob(ItemId),
 }
 
 pub enum Resolution {
@@ -60,109 +58,27 @@ pub enum ResolutionError {
 
 pub fn resolve_and_expand(krate: &mut Krate) -> Result<HashMap<ModuleId, ModuleContents>, ResolutionError> {
     let mut resolutions = ModuleContentSets::new();
-    let mut changed = true;
-    while mem::replace(&mut changed, false) {
-        propagate_names(krate, &mut resolutions);
-        changed |= expand_macros(krate, &mut resolutions);
+    let mut ticker = 0;
+    while resolutions.changed_since(&mut ticker) {
+        expand_macros(krate, &mut resolutions);
+        seed_names(krate, &mut resolutions);
+        glob_names(krate, &mut resolutions);
     }
     try!(verify_paths(krate, &resolutions));
-    Ok(resolutions)
+    Ok(resolutions.module_contents)
 }
 
-fn propagate_names(krate: &Krate, resolutions: &mut ModuleContentSets) {
-    let mut changed = true;
-    while mem::replace(&mut changed, false) {
-        for container_id in krate.module_ids() {
-            let module = &krate.modules[container_id.0];
-            debug!("propagate_names({:?}, {:?})", container_id, module.name);
-            for &item_id in &module.items {
-                match item_id {
-                    ItemId::Module(module_id) => {
-                        let module = &krate.modules[module_id.0];
-                        changed |= resolutions.add(container_id, module.name, item_id, item_id)
-                    }
-
-                    ItemId::Structure(structure_id) => {
-                        let structure = &krate.structures[structure_id.0];
-                        changed |= resolutions.add(container_id, structure.name, item_id, item_id)
-                    }
-
-                    ItemId::Import(import_id) => {
-                        let import = &krate.imports[import_id.0];
-                        match resolutions.resolve_path(&krate.paths, container_id, import.path) {
-                            Resolution::One(target_id) => {
-                                let name = krate.import_name(import_id);
-                                changed |= resolutions.add(container_id, name, target_id, item_id);
-                            }
-                            _ => {
-                                // don't care about invalid or incomplete paths right now
-                            }
-                        }
-                    }
-
-                    ItemId::Glob(glob_id) => {
-                        let glob = &krate.globs[glob_id.0];
-                        match resolutions.resolve_path(&krate.paths, container_id, glob.path) {
-                            Resolution::One(ItemId::Module(target_id)) => {
-                                let contents = resolutions.module_contents(target_id).clone();
-                                for (name, module_resolutions) in contents.members {
-                                    if resolutions.module_exclusions[&container_id].contains(&name) {
-                                        // do not glob import names explicitly defined in this module
-                                        continue;
-                                    }
-
-                                    for resolution in module_resolutions {
-                                        changed |= resolutions.add(container_id,
-                                                                   name,
-                                                                   resolution.target,
-                                                                   item_id);
-                                    }
-                                }
-                            }
-                            _ => {
-                                // don't care about invalid or incomplete paths right now
-                            }
-                        }
-                    }
-
-                    ItemId::MacroDef(macro_def_id) => {
-                        let macro_def = &krate.macro_defs[macro_def_id.0];
-                        changed |= resolutions.add(container_id, macro_def.name, item_id, item_id)
-                    }
-
-                    ItemId::MacroRef(_) => {
-                        // This will (maybe) get expanded in the next phase.
-                        macros_fully_expanded = false;
-                    }
-
-                    ItemId::MacroHusk(_) => {
-                        // This will (maybe) get expanded in the next phase.
-                    }
-
-                    ItemId::Code(_) => {
-                        // Nothing to do here but verify the paths at the end.
-                    }
-                }
-            }
-        }
-    }
-}
-
-fn expand_macros(krate: &mut Krate, resolutions: &mut ModuleContentSets) -> bool {
-    let mut changed = false;
-
+fn expand_macros(krate: &mut Krate, resolutions: &mut ModuleContentSets) {
+    debug!("expand_macros()");
     let module_ids = krate.module_ids();
     for container_id in module_ids {
-        // if we're not done processing imports, then we can't 
-        match resolutions.module_state(container_id) {
-            ModuleState::Start | ModuleState::Expanded => continue,
-            ModuleState::Imported => { }
-        }
-
-        if resolutions.module_exclusions.contains_key(&container_id) {
+        // no point if fully expanded
+        if resolutions.fully_expanded.contains(&container_id) {
+            debug!("expand_macros: {:?} is fully expanded", container_id);
             continue;
         }
 
+        debug!("expand_macros: container_id={:?}", container_id);
         let mut new_items = vec![];
         for &item_id in &krate.modules[container_id.0].items {
             match item_id {
@@ -170,13 +86,11 @@ fn expand_macros(krate: &mut Krate, resolutions: &mut ModuleContentSets) -> bool
                     let macro_path = krate.macro_refs[macro_ref_id.0].path;
                     match resolutions.resolve_path(&krate.paths, container_id, macro_path) {
                         Resolution::One(ItemId::MacroDef(macro_def_id)) => {
-                            changed = true;
-
+                            debug!("expand_macros: macro traced to {:?}", macro_def_id);
+                            resolutions.tick();
                             let macro_def = &krate.macro_defs[macro_def_id.0];
-
                             krate.macro_husks.push(MacroHusk { path: macro_path });
                             let macro_husk_id = MacroHuskId(krate.macro_husks.len() - 1);
-
                             new_items.extend(
                                 macro_def.items.iter()
                                                .cloned()
@@ -196,7 +110,7 @@ fn expand_macros(krate: &mut Krate, resolutions: &mut ModuleContentSets) -> bool
         }
 
         // check whether any unexpanded macro references remain
-        let macros_fully_expanded =
+        let fully_expanded =
             new_items.iter()
                      .all(|item_id| match *item_id {
                          ItemId::MacroRef(_) => false,
@@ -205,12 +119,110 @@ fn expand_macros(krate: &mut Krate, resolutions: &mut ModuleContentSets) -> bool
 
         krate.modules[container_id.0].items = new_items;
 
-        if macros_fully_expanded {
-            compute_exclusions(krate, resolutions, container_id);
-            changed = true;
+        if fully_expanded {
+            resolutions.mark_fully_expanded(container_id);
         }
     }
-    changed
+}
+
+fn seed_names(krate: &Krate, resolutions: &mut ModuleContentSets) {
+    debug!("seed_names()");
+    for container_id in krate.module_ids() {
+        let module = &krate.modules[container_id.0];
+        debug!("seed_names: container_id={:?} module.name={:?}", container_id, module.name);
+        for &item_id in &module.items {
+            match item_id {
+                ItemId::Module(module_id) => {
+                    let module = &krate.modules[module_id.0];
+                    resolutions.seed(container_id, module.name, item_id);
+                }
+
+                ItemId::Structure(structure_id) => {
+                    let structure = &krate.structures[structure_id.0];
+                    resolutions.seed(container_id, structure.name, item_id);
+                }
+
+                ItemId::Import(import_id) => {
+                    let import = &krate.imports[import_id.0];
+                    let name = krate.import_name(import_id);
+                    match resolutions.resolve_path(&krate.paths, container_id, import.path) {
+                        Resolution::One(target_id) => {
+                            resolutions.seed(container_id, name, target_id);
+                        }
+                        _ => {
+                            // don't care about invalid or incomplete
+                            // paths right now, but we do want to
+                            // insert a placeholder so globs don't
+                            // take this name later
+                            resolutions.placeholder(container_id, name);
+                        }
+                    }
+                }
+
+                ItemId::MacroDef(macro_def_id) => {
+                    let macro_def = &krate.macro_defs[macro_def_id.0];
+                    resolutions.seed(container_id, macro_def.name, item_id);
+                }
+
+                ItemId::Glob(_) |
+                ItemId::MacroRef(_) |
+                ItemId::MacroHusk(_) |
+                ItemId::Code(_) => {
+                }
+            }
+        }
+    }
+}
+
+fn glob_names(krate: &Krate, resolutions: &mut ModuleContentSets) {
+    let mut ticker = 0;
+    while resolutions.changed_since(&mut ticker) {
+        debug!("glob_names() ticker={:?} resolutions.tick={:?}", ticker, resolutions.ticker);
+        for container_id in krate.module_ids() {
+            let module = &krate.modules[container_id.0];
+            let fully_expanded = resolutions.fully_expanded.contains(&container_id);
+            debug!("glob_names: container_id={:?}, module.name={:?}, fully_expanded={:?}",
+                   container_id, module.name, fully_expanded);
+
+            for &item_id in &module.items {
+                match item_id {
+                    ItemId::Glob(glob_id) => {
+                        let glob = &krate.globs[glob_id.0];
+                        let glob_members = resolutions.resolve_glob(&krate.paths,
+                                                                    container_id,
+                                                                    glob.path);
+                        for (name, resolution) in glob_members {
+                            match resolution {
+                                NameResolution::Seed(target_id @ ItemId::MacroDef(_)) |
+                                NameResolution::Glob(target_id @ ItemId::MacroDef(_)) => {
+                                    // for macros, glob rules do not apply
+                                    resolutions.seed(container_id, name, target_id);
+                                }
+                                NameResolution::Seed(target_id) |
+                                NameResolution::Glob(target_id) => {
+                                    if fully_expanded {
+                                        resolutions.glob(container_id, name, target_id);
+                                    }
+                                }
+                                NameResolution::Placeholder => {
+                                }
+                            }
+                        }
+                    }
+
+                    ItemId::Module(_) |
+                    ItemId::Structure(_) |
+                    ItemId::Import(_) |
+                    ItemId::MacroDef(_) |
+                    ItemId::MacroRef(_) |
+                    ItemId::MacroHusk(_) |
+                    ItemId::Code(_) => {
+                        // Nothing to do here but verify the paths at the end.
+                    }
+                }
+            }
+        }
+    }
 }
 
 fn check_path(krate: &Krate,
@@ -327,7 +339,23 @@ impl ModuleContentSets {
     fn new() -> ModuleContentSets {
         ModuleContentSets {
             module_contents: HashMap::new(),
-            module_exclusions: HashMap::new(),
+            fully_expanded: HashSet::new(),
+            ticker: 1,
+        }
+    }
+
+    fn changed_since(&self, ticker: &mut usize) -> bool {
+        let t = mem::replace(ticker, self.ticker);
+        self.ticker > t
+    }
+
+    fn tick(&mut self) {
+        self.ticker += 1;
+    }
+
+    fn mark_fully_expanded(&mut self, module_id: ModuleId) {
+        if self.fully_expanded.insert(module_id) {
+            self.tick();
         }
     }
 
@@ -336,37 +364,110 @@ impl ModuleContentSets {
                             .or_insert_with(|| ModuleContents::new())
     }
 
-    fn module_state(&self, module_id: ModuleId) -> ModuleState {
-        self.module_states.get(&module_id).unwrap_or_default()
-    }
+    fn seed(&mut self,
+            module_id: ModuleId,
+            member_name: InternedString,
+            target_id: ItemId) {
+        debug!("seed(in {:?}, {:?} => {:?})", module_id, member_name, target_id);
+        let changed = {
+            let contents = self.module_contents(module_id);
+            let members = contents.members.entry(member_name).or_insert_with(|| HashSet::new());
 
-    fn bump_module_state(&mut self, module_id: ModuleId, state: ModuleState) {
-        let old_state = self.module_state(module_id);
-        let max_state = ord::max(old_state, state);
-        self.module_states.insert(module_id, max_state);
-    }
+            // if we are seeding with this name, we can't have added a glob name yet
+            assert!(!members.iter().any(|m| match *m {
+                NameResolution::Glob(_) => true,
+                _ => false
+            }));
 
-    fn add(&mut self,
-           module_id: ModuleId,
-           member_name: InternedString,
-           member_id: ItemId,
-           source_id: ItemId)
-           -> bool {
-        debug!("add({:?}, {:?}, {:?}, {:?})", module_id, member_name, member_id, source_id);
-        let contents = self.module_contents(module_id);
-        let members = contents.members.entry(member_name).or_insert_with(|| vec![]);
+            members.insert(NameResolution::Seed(target_id))
+        };
 
-        // retain names with equal or greater precedence only
-        members.retain(|m| m.source.precedence() >= source_precedence);
-
-        // already have this name, ignore it
-        if members.iter().any(|m| m.target == member_id) {
-            return false;
+        if changed {
+            self.tick();
         }
+    }
 
-        // otherwise, add it
-        members.push(NameResolution { target: member_id, source: source_id });
-        true
+    fn placeholder(&mut self,
+                   module_id: ModuleId,
+                   member_name: InternedString) {
+        debug!("placeholder(in {:?}, {:?})", module_id, member_name);
+        let changed = {
+            let contents = self.module_contents(module_id);
+            let members = contents.members.entry(member_name).or_insert_with(|| HashSet::new());
+
+            // if we are seeding with a placeholder, we can't have added a glob name yet
+            assert!(!members.iter().any(|m| match *m {
+                NameResolution::Glob(_) => true,
+                _ => false
+            }));
+
+            if members.is_empty() {
+                members.insert(NameResolution::Placeholder)
+            } else {
+                false
+            }
+        };
+
+        if changed {
+            self.tick();
+        }
+    }
+
+
+    fn glob(&mut self,
+            module_id: ModuleId,
+            member_name: InternedString,
+            target_id: ItemId) {
+        debug!("glob(in {:?}, {:?} => {:?})", module_id, member_name, target_id);
+        let changed = {
+            let contents = self.module_contents(module_id);
+            let members = contents.members.entry(member_name).or_insert_with(|| HashSet::new());
+
+            // if we have only added globs (i.e., nothing was added during
+            // seed phase), we can add more globs
+            if members.iter().all(|m| match *m { NameResolution::Glob(_) => true, _ => false }) {
+                if members.insert(NameResolution::Glob(target_id)) {
+                    true
+                } else {
+                    false
+                }
+            } else {
+                false
+            }
+        };
+
+        if changed {
+            self.tick();
+        }
+    }
+
+    /// Given that `use a::b::c::*` occurs in some module `M`, returns
+    /// the pairs `(name, resolution)` that appear in `a::b::c`.
+    ///
+    /// - `paths`: the list of paths from the krate
+    /// - `container_id`: the module M
+    /// - `globbed_path`; the path `a::b::c`
+    fn resolve_glob(&mut self,
+                    paths: &[Path],
+                    container_id: ModuleId,
+                    globbed_path: PathId)
+                    -> Vec<(InternedString, NameResolution)> {
+        match self.resolve_path(paths, container_id, globbed_path) {
+            Resolution::One(ItemId::Module(target_id)) => {
+                self.module_contents(target_id)
+                    .members
+                    .iter()
+                    .flat_map(|(&name, resolutions)| {
+                        resolutions.iter()
+                                   .cloned()
+                                   .map(move |r| (name, r))
+                    })
+                    .collect()
+            }
+            _ => {
+                vec![]
+            }
+        }
     }
 
     fn resolve_path(&self, paths: &[Path], context: ModuleId, path: PathId) -> Resolution {
@@ -393,37 +494,21 @@ impl ModuleContentSets {
     }
 
     fn resolve_name(&self, module: ModuleId, name: InternedString) -> Resolution {
-        if self.module_state(module) != ModuleState::Expanded {
-            // if we have not yet finished expanding macros, then there are
-            // still unexpanded macros, so we can't resolve names
-            // against this module yet
-            Resolution::Zero
-        } else {
-            match self.module_contents.get(&module) {
+        match self.module_contents.get(&module) {
+            None => Resolution::Zero,
+            Some(rs) => match rs.members.get(&name) {
                 None => Resolution::Zero,
-                Some(rs) => match rs.members.get(&name) {
-                    None => Resolution::Zero,
-                    Some(nrs) => if nrs.len() == 1 {
-                        Resolution::One(nrs[0].target)
-                    } else {
-                        Resolution::Many
+                Some(nrs) => if nrs.len() == 1 {
+                    match nrs.iter().cloned().next().unwrap() {
+                        NameResolution::Seed(target_id) | NameResolution::Glob(target_id) =>
+                            Resolution::One(target_id),
+                        NameResolution::Placeholder =>
+                            Resolution::Zero,
                     }
+                } else {
+                    Resolution::Many
                 }
             }
-        }
-    }
-}
-
-#[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd)]
-enum Precedence {
-    Glob, Explicit
-}
-
-impl ItemId {
-    fn precedence(&self) -> Precedence {
-        match self.source {
-            ItemId::Glob(_) => Precedence::Glob,
-            _ => Precedence::Explicit,
         }
     }
 }

@@ -14,7 +14,7 @@ pub struct Krate {
     pub codes: Vec<Code>,
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub enum ItemId {
     Module(ModuleId),
     Structure(StructureId),
@@ -127,7 +127,7 @@ pub struct Module {
 
 ///////////////////////////////////////////////////////////////////////////
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub struct StructureId(pub usize);
 
 #[derive(Debug)]
@@ -138,7 +138,7 @@ pub struct Structure {
 
 ///////////////////////////////////////////////////////////////////////////
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub struct ImportId(pub usize);
 
 pub struct Import {
@@ -149,7 +149,7 @@ pub struct Import {
 
 ///////////////////////////////////////////////////////////////////////////
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub struct GlobId(pub usize);
 
 pub struct Glob {
@@ -159,7 +159,7 @@ pub struct Glob {
 
 ///////////////////////////////////////////////////////////////////////////
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub struct MacroDefId(pub usize);
 
 pub struct MacroDef {
@@ -170,7 +170,7 @@ pub struct MacroDef {
 
 ///////////////////////////////////////////////////////////////////////////
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub struct MacroRefId(pub usize);
 
 pub struct MacroRef {
@@ -179,7 +179,7 @@ pub struct MacroRef {
 
 ///////////////////////////////////////////////////////////////////////////
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub struct MacroHuskId(pub usize);
 
 pub struct MacroHusk {
@@ -188,7 +188,7 @@ pub struct MacroHusk {
 
 ///////////////////////////////////////////////////////////////////////////
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub struct CodeId(pub usize);
 
 pub struct Code {
@@ -197,7 +197,7 @@ pub struct Code {
 
 ///////////////////////////////////////////////////////////////////////////
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub struct PathId(pub usize);
 
 #[derive(Clone)]
