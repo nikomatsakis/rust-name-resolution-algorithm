@@ -374,15 +374,17 @@ module `b`, we see that in fact this module generates a
 higher-precedence module that should have taken precedence over the
 glob. So we are stuck in that we cannot freely expand macros in any
 order. (Note: this is the test case
-`banning_macro_globs_is_not_enough`.)
+`banning_macro_globs_is_not_enough`; it results in a compilation error
+with the current system.)
 
-#### This seems too good to be true. What's the catch?
+#### Does the user ever have to care about this algorithm?
 
-There are some scenarios that fail, where the user is sort of exposed
-to the limitations of the algorithm. In particular, if you have a glob
-that brings in a module, but that module is needed to resolve a macro
-reference somewhere else, than the expansion algorithm gets "stuck".
-Here is an example:
+There are one scenario where the user is sort of exposed to the
+limitations of the algorithm, in a sense -- that is, where there is a
+fully-expanded form that has no conflicts or errors, but the algorithm
+fails to find it. If you have a glob that brings in a module, but that
+module is needed to resolve a macro reference somewhere else, than the
+expansion algorithm gets "stuck".  Here is an example:
 
 ```
 mod a {
@@ -405,4 +407,10 @@ the code and informs the user "please add `pub use b::c` to allow name
 expansion to proceed. But I have to think about it a bit. It also
 seems like "well, if you can write that, can we incorporate it into
 the algorithm?"
+
+My rough intution for how this would work is that once a fixed point
+is reached, we would start expanding globs, but if a macro should
+shadow one of those globs, we'd report the error to the user as a kind
+of "causality violation". Have to think about how to handle that.
+
 
