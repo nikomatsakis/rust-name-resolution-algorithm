@@ -64,7 +64,7 @@ resolving macros, use statements, and globs until we reach a stable
 state. We then check that the final result was self-consistent and
 free of duplicate names and so forth.
 
-#### Output of the algorithm and intermediate state
+#### Output of the algorithm
 
 The output of the algorithm is a either an error or, upon success, a
 new AST tree (actually, the implementation mutates the existing one in
@@ -84,12 +84,16 @@ so the id of `Bar` would be something like `ItemId::Struct(22)`. This
 is defined in [`ast.rs`][ast], which is also a kind of experimental
 playground for other ways to struct rustc's own internal AST.
 
+#### Intermediate state
+
 The computation itself is a fixed-point computation that incrementally
-builds up these binding sets. It also carries along a set called
-"fully expanded". This is just a set of modules whose contents are
-fully expanded, meaning that they contain no macro references. It is
-important to know this because it affects when we can start processing
-globs (read on).
+builds up these binding sets. During this process, the binding sets
+include tuples with slightly more information: `(Name, Precedence,
+ItemId)`, where `Precedence` is either high (explicit declarations) or
+low (glob). It also carries along a set called "fully expanded". This
+is just a set of modules whose contents are fully expanded, meaning
+that they contain no macro references. It is important to know this
+because it affects when we can start processing globs (read on).
 
 #### Algorithm pseudo-code
 
@@ -110,61 +114,88 @@ To see how the algorithm works, let's consider this example:
 
 ```rust
 mod foo {
-    use a::b::c::*;
+    use bar::*;
     use std::collections::HashMap;
     
     some_macro! { ... };
     
     struct MyStruct { }
-}    
+}
+mod bar {
+    macro_rules! some_macro {
+        ...
+    }
+}
 ```
 
-
-Let's look at each piece:
+Now let's go over each of the steps above. However, I'm going to go
+over them in a slightly 
 
 **Expand macros where possible.** The first we do is to try and expand
 macros. For every macro reference, e.g. `some_macro! { .. }` in our
-example above, we try to resolve the path (here, `some_macro`). As
-with globs in the previous step, if that fails for any reason, we just
-ignore it. But if it succeeds, and we find a macro, then we can expand
-the macro here.
+example above, we try to resolve the path (here, `some_macro`,
+resolved relative to the current module). This may or may not
+succeed. If it fails, it could be for a variety of reasons: there
+might be no binding for `some_macro` (yet); there might be *multiple*
+bindings for `b` (which indicates an error); or, the path might not
+lead to a macro. Whatever the cause, if path resolution fails, we
+don't report any errors just now, we just ignore it.
 
-However, and this is important, when we expand the macro, we don't
-just replace the macro reference completely. Instead, we leave behind
-a "husk" that contains the path of the expanded macro. You can think
-of this as being similar to the "expansion trace" that rustc tracks:
-for each bit of code that resulted from macro expansion, we also
-remember the name of the macro that was used to create it. We'll need
-this path in a later step. (Note that in an actual implementation, you
-might choose to just remember a set of paths for expanded macros,
-rather than leaving a marker in the AST itself.)
+If however we *can* resolve the path, and it leads to a macro, then we
+can do macro expansion here. However, and this is important, when we
+expand the macro, we don't just replace the macro reference
+completely. Instead, we leave behind a "husk" that contains the path
+of the expanded macro. You can think of this as being similar to the
+"expansion trace" that rustc tracks: for each bit of code that
+resulted from macro expansion, we also remember the name of the macro
+that was used to create it. We'll need this path in a later
+step. (Note that in an actual implementation, you might choose to just
+remember a set of paths for expanded macros, rather than leaving a
+marker in the AST itself.)
+
+This path also updates the `fully_expanded` set.
 
 In [the code], this is the function `expand_macros`.
 
+**Seed names for all modules.** The seed step walk creates bindings
+for everything except globs. It works by traversing all the modules.
+For declarations, it will add a simple binding from the declared name
+to the declaration.  So, in our example above, if the `struct
+MyStruct` declaration has id `X`, then we would add `(MyStruct, High,
+StructId(X))` to the binding set for the module `foo`. Similarly, in
+the module `bar`, we would also add `(some_macro, High, ModuleId(Y))`,
+where `Y` is the id of the macro rules declaration for `some_macro`.
 
-**Seed names for all modules.** The seed step walk
+Explicit import statements deserve special mention. If we see a
+non-glob `use`, such as `std::collections::HashMap`, then we first try
+to resolve the path. If that succeeds, it will yield an item id `Z`,
+and we can add an entry like `(HashMap, High, Z)`. However, if path
+resolution *fails* for whatever reason, then we still add a
+binding. But because we don't know the target id, this is a special
+"placeholder" binding `(HashMap, High, 0)`, where `0` is a special
+placeholder id. This placeholder binding doesn't count as a normal
+binding and will be ignored for path resolution: it's purpose is to
+ensure that we don't add glob bindings for `HashMap` in the next step.
 
-**Propagate module bindings.** The algorithm computes, for each
-module, a set of bindings `{Name -> ItemId}`, where `ItemId` names
-some item in the AST unambiguously. This propoagation step adds
-bindings to that set. To continue with the previous example, suppose
-that `struct MyStruct` had the id `X`. Then we would add `MyStruct ->
-X` to the binding set for `foo`.
+In [the code], this is the function `seed_names`.
 
-We will also attempt to resolve globs at this time. So to process `use
-a::b::c::*`, we would first try to resolve the path `a::b::c` to a
-single, unambigious item. This may or may not succeed. If it fails, it
-could be for a variety of reasons: there might be no binding for `a`,
-`b`, or `c` yet (perhaps the fixed point hasn't gotten that far);
-there might be *multiple* bindings for `b` (which indicates an error);
-or, the path might not lead to a module. Whatever the cause, we don't
-report any errors just now, we just ignore it. If however we *can*
-resolve to a single module, then we load the bindings that are
-currently computed for that module and start adding them to the
-current module, except for those names that are in the list of
-exclusions we computed before.
+**Process globs.** Finally, we process globs. In the example, we see
+the module `foo` that contains a glob `use bar::*`. To process this
+glob, we would first try to resolve the path `bar` to a single,
+unambigious item (ignoring errors, as usual). Presuming this succeeds,
+and resolves to a module with id `M`, we then go over the bindings `{N
+-> ID}` found within this module `M` as follows:
 
-In [the code], this is the function `propagate_names`.
+- *Macro definitions.* If `ID` refers to a macro definition, then we
+  will add it to the containing module (e.g., `foo`) as a
+  high-priority binding.
+- *Non-macros.* For all other kinds of bindings, we add the binding
+  to the importing module as a low-priority binding, but only if the
+  following conditions are met:
+  - The macro `M` that we are importing from has no unexpanded macros.
+  - There is no high-priority binding for `N` within the importing module.
+  
+In [the code], this is the function `glob_names`.
 
 **Verify all paths.** Ok, once we've fully completed expanding macros
 and propagating names, we proceed to the last step, which is verifying
@@ -243,16 +274,10 @@ one thing, it MUST be the thing we want. But it'd be nice to prove
 that (or at least argue it in a somewhat formal fashion).
 
 It would also be nice to make an argument that the "inference" step
-preserves the user's *intent*. I am not sure how to *formalize* that,
-but I believe that it is true nonetheless. The reason is that, if you
-inspect the algorithm, you will see that we never take anything away
-from the program, we only add new bindings and new information. So if
-the paths remain unambiguous at the end, when all the new information
-is added, then I think it is doing what the user expected. (Note that
-this only argues about what happens the program successfully compiles;
-it may well be that we get errors in cases where the user expected
-success. I discuss this a touch more below, when talking about globs
-and macros.)
+preserves the user's intent. For example, we'd like to show that if a
+solution is found, there is no other possible solution. Ideally, we'd
+also show that if an error results, then there is no possible solution
+to be found that respects the criteria.
 
 #### Why do explicit items shadow globs?
 
@@ -280,7 +305,7 @@ and, in that case, they will get an error if `crate_x` later adds a
 `Foo` binding. (Note though that if they were not referencing `Foo`,
 there would be no problem.)
 
-#### Why do explicit items created by macros NOT shadow globs?
+#### Why don't explicit macros take precedence over globs?
 
 This is to avoid time-travel-like paradoxes that can otherwise occur
 when expanding macros. The problem case is when we have a macro found
@@ -310,22 +335,6 @@ in the question about correctness: a mutable view means that the
 "correctness" property of this expanded form would be a lot more
 complex, because we would have to reason not about all the bindings we
 see, but the bindings that were visible at the time of expansion.
-
-Another way to go about this would be to define some more complex
-notion of what bindings are visible. For example, perhaps the bindings
-declared by macros are not visible to each other. But this seems bound to lead
-to problems.
-
-That said, the current rule I implemented strikes me as a mild
-refactoring hazard as well. For example, if I have some explicit
-items, and I refactor them into a macro, I may find I now get
-conflicts with globs that were working fine before. To help resolve
-this, it might be nice to support the ability to explicitly exclude
-names from globs by writing something like `use crate_x::{* - Foo -
-Bar}` (this might be nice in any case. But that's for another day.
-Another option might be including annotations on macros to help make
-it clear what names they will define, but this seems likely to be
-quite a burden, particularly if names are defined programmatically.
 
 #### Can we just remove macros from globs instead?
 
@@ -369,54 +378,6 @@ order. (Note: this is the test case
 
 #### This seems too good to be true. What's the catch?
 
-I am nervous about the glob precedence rules, particularly as they
-interact with attributes and decorators. I would like it if attributes
-and decorators were a kind of "alternate form" of macros, so that
-something like:
+Not sure yet. I haven't really found any scenarios that fail, but I also
+haven't tried the algorithm at scale.
 
-```rust
-#[my_decorator]
-struct Bar { .. }
-```
-
-was kind of equivalent to:
-
-```rust
-my_decorator! {
-    struct Bar { .. }
-}
-```
-
-There are lots of details to work out, but let's assume that somehow,
-in some way, attributes and decorators can act in this fashion.  In
-that case, what happens to the name `Bar` in the decorated struct? Is
-it added to the glob exclusion list or not? I think it must be, because
-otherwise the glob exclusion list will be really confusing and quite
-incomplete, since most every struct includes a `#[derive]` annotation
-or something.
-
-But if we do add it to the list, that is also suboptimal, since the
-decorator may change the name or remove the item. Changing the name
-seems relatively unlikely, though of course not impossible, but
-removing the item seems very common: after all, consider `#[cfg]`. In
-other words, examples like this could be quite surprising:
-
-```rust
-#[cfg(unix)] use something::*;
-#[cfg(windows)] struct Foo { }
-```
-
-Now I would find that, on unix, the `*` glob does not bring in `Foo`,
-because there is an explicit declaration (albeit one that is cfg'd
-out). It seems like we could explain this rule readily enough, but
-still, it's suboptimal. (I am assuming that we resolve and process
-`#[cfg]` like any other macro here.)
-
-This also affects another question that has been kicking about. If
-decorators are shorthand for attributes, can we accept arbitrary token
-trees? It might be plausible to have a rule like "`#[foo]` can be
-followed by arbitrary text until either a `;` or `{...}` section". But
-that wouldn't work well with the exclusion list; I think we would want
-to ensure that attributes were only applied to legal items.  This
-seems ok though: particularly given that attributes can be applied to
-expressions, and inner attributes, and all the other things.
