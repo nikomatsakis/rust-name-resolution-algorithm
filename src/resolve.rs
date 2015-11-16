@@ -1,7 +1,6 @@
 use ast::*;
 use intern::InternedString;
 use std::collections::{HashMap, HashSet};
-use std::default::Default;
 use std::mem;
 
 #[derive(Debug)]
@@ -9,19 +8,6 @@ struct ModuleContentSets {
     ticker: usize,
     module_contents: HashMap<ModuleId, ModuleContents>,
     fully_expanded: HashSet<ModuleId>,
-}
-
-#[derive(Debug, Eq, PartialEq, Ord, PartialOrd)]
-enum ModuleState {
-    Start,
-    Imported,
-    Expanded,
-}
-
-impl Default for ModuleState {
-    fn default() -> ModuleState {
-        ModuleState::Start
-    }
 }
 
 #[derive(Clone, Debug)]
@@ -246,7 +232,7 @@ fn check_path(krate: &Krate,
     }
 }
 
-fn check_decl(krate: &Krate,
+fn check_decl(_krate: &Krate,
               resolutions: &ModuleContentSets,
               module_id: ModuleId,
               source: ItemId,
@@ -498,15 +484,20 @@ impl ModuleContentSets {
             None => Resolution::Zero,
             Some(rs) => match rs.members.get(&name) {
                 None => Resolution::Zero,
-                Some(nrs) => if nrs.len() == 1 {
-                    match nrs.iter().cloned().next().unwrap() {
-                        NameResolution::Seed(target_id) | NameResolution::Glob(target_id) =>
-                            Resolution::One(target_id),
+                Some(nrs) => {
+                    let mut target_ids = nrs.iter().filter_map(|nr| match *nr {
                         NameResolution::Placeholder =>
-                            Resolution::Zero,
+                            None,
+                        NameResolution::Seed(target_id) | NameResolution::Glob(target_id) =>
+                            Some(target_id),
+                    });
+                    match target_ids.next() {
+                        None => Resolution::Zero,
+                        Some(target_id) => match target_ids.next() {
+                            None => Resolution::One(target_id),
+                            Some(_) => Resolution::Many,
+                        }
                     }
-                } else {
-                    Resolution::Many
                 }
             }
         }

@@ -1,3 +1,5 @@
+#![cfg_attr(not(test), allow(dead_code, unused_imports))]
+
 extern crate lalrpop_intern as intern;
 
 macro_rules! debug {
@@ -307,14 +309,21 @@ fn cyclic_macro_defs() {
 mod a {
     use b::*;
     pub macro_rules! n {
+        struct B {  }
     }
     self::m!;
 }
 mod b {
     use a::*;
     pub macro_rules! m {
+        struct A {  }
     }
     self::n!;
+}
+mod c {
+    use b::B;
+    use a::A;
+    { self::B; self::A; }
 }
 "#).unwrap();
     let result = resolve::resolve_and_expand(&mut krate);
