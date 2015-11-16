@@ -378,6 +378,31 @@ order. (Note: this is the test case
 
 #### This seems too good to be true. What's the catch?
 
-Not sure yet. I haven't really found any scenarios that fail, but I also
-haven't tried the algorithm at scale.
+There are some scenarios that fail, where the user is sort of exposed
+to the limitations of the algorithm. In particular, if you have a glob
+that brings in a module, but that module is needed to resolve a macro
+reference somewhere else, than the expansion algorithm gets "stuck".
+Here is an example:
+
+```
+mod a {
+    pub use b::*; // (2) ...requires expanding this glob
+    c::m! { } // (1) resolving this path...
+}
+mod b {
+    mod c {
+        pub macro_rules! m { }
+    }
+}
+```
+
+This is the test case `unexpandable_macro`. (The fear of course is
+that the macro `m` may define a module `c` that would invalidate the
+path we committed to.)
+
+I think it should be possible to write a kind of diagnostic that walks
+the code and informs the user "please add `pub use b::c` to allow name
+expansion to proceed. But I have to think about it a bit. It also
+seems like "well, if you can write that, can we incorporate it into
+the algorithm?"
 
