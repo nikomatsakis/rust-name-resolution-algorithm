@@ -17,7 +17,7 @@ Item: ItemId = {
     Code => ItemId::Code(<>),
 };
 
-Module: ModuleId = {
+pub Module: ModuleId = {
     <privacy:Privacy> "mod" <name:Id> "{" <items:Item*> "}" =>
         krate.add_module(Module { privacy: privacy, name: name, items: items }),
 };
@@ -52,7 +52,7 @@ Code: CodeId = {
         krate.add_code(Code { paths: paths }),
 };
 
-Path: PathId = {
+pub Path: PathId = {
     "self" "::" <Id> => krate.add_path(Path::Cons(THIS_PATH, <>)),
     "::" <Id> => krate.add_path(Path::Cons(ROOT_PATH, <>)),
     Id => krate.add_path(Path::Cons(ROOT_PATH, <>)),
