@@ -481,3 +481,32 @@ mod c {
     debug!("result = {:?}", result);
     assert!(result.is_ok());
 }
+
+
+#[test]
+fn macro_can_expand_to_change_how_path_is_resolved() {
+    let mut krate = ast::Krate::new();
+
+    // In phase 1, self::b::m resolves through the glob,
+    // but after that the `b` is different, but the `m`
+    // is the same.
+
+    parse_Krate(&mut krate, r#"
+mod a {
+    use c::*;
+    self::b::m!;
+}
+mod c {
+    mod b {
+        macro_rules! m {
+            mod b {
+                pub use c::b::m;
+            }
+        }
+    }
+}
+"#).unwrap();
+    let result = resolve::resolve_and_expand(&mut krate);
+    debug!("result = {:?}", result);
+    assert!(result.is_ok());
+}
