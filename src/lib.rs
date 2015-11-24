@@ -349,3 +349,133 @@ mod b {
     debug!("result = {:?}", result);
     assert!(result.is_ok());
 }
+
+#[test]
+fn named_import_takes_prec_over_glob_even_if_we_cannot_yet_resolve() {
+    let mut krate = ast::Krate::new();
+
+    // Here the `use b::c` cannot be resolved in round 1, but it still
+    // tells us not to bring in `d::c` from the `d::*` glob.
+
+    parse_Krate(&mut krate, r#"
+mod a {
+    use b::c;
+    use d::*;
+    self::c::m!;
+}
+mod b {
+    macro_rules! make_c {
+        mod c { pub macro_rules! m { } }
+    }
+    self::make_c!;
+}
+mod d {
+    mod c { }
+}
+"#).unwrap();
+    let result = resolve::resolve_and_expand(&mut krate);
+    debug!("result = {:?}", result);
+    assert!(result.is_ok());
+}
+
+#[test]
+fn macro_can_expand_to_fix_errors_observed_earlier() {
+    let mut krate = ast::Krate::new();
+
+    // The globs are in conflict, and hence resolving `self::b::m!`
+    // would be an error. We ignore this error during macro resolution
+    // and instead expand `self::make_b`. This creates the `mod b`
+    // that overrides the globs and hence we are happy. This is kind
+    // of odd though because it's a sort of time-travel, but one in
+    // which the error we observed was resolved happily.
+
+    parse_Krate(&mut krate, r#"
+mod a {
+    use c::*;
+    use d::*;
+    use e::*;
+
+    self::b::m!;
+
+    macro_rules! make_b {
+        mod b {
+            macro_rules! m { }
+        }
+    }
+
+    self::make_b!;
+}
+mod c {
+    mod b { }
+}
+mod d {
+    mod b { }
+}
+mod e {
+    mod b { }
+}
+"#).unwrap();
+    let result = resolve::resolve_and_expand(&mut krate);
+    debug!("result = {:?}", result);
+    assert!(result.is_ok());
+}
+
+#[test]
+fn using_self_import_to_fix_time_travel() {
+    let mut krate = ast::Krate::new();
+
+    // This is a time-travel violation.
+
+    parse_Krate(&mut krate, r#"
+mod a {
+    use c::*;
+
+    self::b::m!;
+
+    macro_rules! make_b {
+        mod b {
+            macro_rules! m { }
+        }
+    }
+
+    self::make_b!;
+}
+mod c {
+    mod b {
+        macro_rules! m { }
+    }
+}
+"#).unwrap();
+    let result = resolve::resolve_and_expand(&mut krate);
+    debug!("result = {:?}", result);
+    assert!(result.is_err());
+
+    // This is not because the `use self::b` takes precedence over the
+    // glob. This is maybe a bit odd?
+
+    let mut krate = Krate::new();
+    parse_Krate(&mut krate, r#"
+mod a {
+    use c::*;
+    use self::b;
+
+    self::b::m!;
+
+    macro_rules! make_b {
+        mod b {
+            macro_rules! m { }
+        }
+    }
+
+    self::make_b!;
+}
+mod c {
+    mod b {
+        macro_rules! m { }
+    }
+}
+"#).unwrap();
+    let result = resolve::resolve_and_expand(&mut krate);
+    debug!("result = {:?}", result);
+    assert!(result.is_ok());
+}
