@@ -184,6 +184,7 @@ pub struct MacroHuskId(pub usize);
 
 pub struct MacroHusk {
     pub path: PathId,
+    pub macro_def_id: MacroDefId,
 }
 
 ///////////////////////////////////////////////////////////////////////////

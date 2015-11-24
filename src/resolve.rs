@@ -7,7 +7,6 @@ use std::mem;
 struct ModuleContentSets {
     ticker: usize,
     module_contents: HashMap<ModuleId, ModuleContents>,
-    fully_expanded: HashSet<ModuleId>,
 }
 
 #[derive(Clone, Debug)]
@@ -40,30 +39,37 @@ pub enum ResolutionError {
         path: PathId,
         source: ItemId,
     },
+
+    TimeTravel {
+        path: PathId,
+        was_macro: MacroDefId,
+        now_item: ItemId,
+    }
 }
 
 pub fn resolve_and_expand(krate: &mut Krate) -> Result<HashMap<ModuleId, ModuleContents>, ResolutionError> {
-    let mut resolutions = ModuleContentSets::new();
-    let mut ticker = 0;
-    while resolutions.changed_since(&mut ticker) {
-        expand_macros(krate, &mut resolutions);
-        seed_names(krate, &mut resolutions);
-        glob_names(krate, &mut resolutions);
+    let mut resolutions;
+    loop {
+        let mut ticker = 0;
+        resolutions = ModuleContentSets::new();
+        while resolutions.changed_since(&mut ticker) {
+            seed_names(krate, &mut resolutions);
+            glob_names(krate, &mut resolutions);
+        }
+
+        if !expand_macros(krate, &mut resolutions) {
+            break;
+        }
     }
     try!(verify_paths(krate, &resolutions));
     Ok(resolutions.module_contents)
 }
 
-fn expand_macros(krate: &mut Krate, resolutions: &mut ModuleContentSets) {
+fn expand_macros(krate: &mut Krate, resolutions: &ModuleContentSets) -> bool {
     debug!("expand_macros()");
     let module_ids = krate.module_ids();
+    let mut expanded = false;
     for container_id in module_ids {
-        // no point if fully expanded
-        if resolutions.fully_expanded.contains(&container_id) {
-            debug!("expand_macros: {:?} is fully expanded", container_id);
-            continue;
-        }
-
         debug!("expand_macros: container_id={:?}", container_id);
         let mut new_items = vec![];
         for &item_id in &krate.modules[container_id.0].items {
@@ -73,10 +79,11 @@ fn expand_macros(krate: &mut Krate, resolutions: &mut ModuleContentSets) {
                     match resolutions.resolve_path(&krate.paths, container_id, macro_path) {
                         Resolution::One(ItemId::MacroDef(macro_def_id)) => {
                             debug!("expand_macros: macro traced to {:?}", macro_def_id);
-                            resolutions.tick();
                             let macro_def = &krate.macro_defs[macro_def_id.0];
-                            krate.macro_husks.push(MacroHusk { path: macro_path });
+                            krate.macro_husks.push(MacroHusk { path: macro_path,
+                                                               macro_def_id: macro_def_id });
                             let macro_husk_id = MacroHuskId(krate.macro_husks.len() - 1);
+                            expanded = true;
                             new_items.extend(
                                 macro_def.items.iter()
                                                .cloned()
@@ -95,20 +102,10 @@ fn expand_macros(krate: &mut Krate, resolutions: &mut ModuleContentSets) {
             }
         }
 
-        // check whether any unexpanded macro references remain
-        let fully_expanded =
-            new_items.iter()
-                     .all(|item_id| match *item_id {
-                         ItemId::MacroRef(_) => false,
-                         _ => true,
-                     });
-
         krate.modules[container_id.0].items = new_items;
-
-        if fully_expanded {
-            resolutions.mark_fully_expanded(container_id);
-        }
     }
+
+    expanded
 }
 
 fn seed_names(krate: &Krate, resolutions: &mut ModuleContentSets) {
@@ -166,9 +163,8 @@ fn glob_names(krate: &Krate, resolutions: &mut ModuleContentSets) {
         debug!("glob_names() ticker={:?} resolutions.tick={:?}", ticker, resolutions.ticker);
         for container_id in krate.module_ids() {
             let module = &krate.modules[container_id.0];
-            let fully_expanded = resolutions.fully_expanded.contains(&container_id);
-            debug!("glob_names: container_id={:?}, module.name={:?}, fully_expanded={:?}",
-                   container_id, module.name, fully_expanded);
+            debug!("glob_names: container_id={:?}, module.name={:?}",
+                   container_id, module.name);
 
             for &item_id in &module.items {
                 match item_id {
@@ -179,16 +175,9 @@ fn glob_names(krate: &Krate, resolutions: &mut ModuleContentSets) {
                                                                     glob.path);
                         for (name, resolution) in glob_members {
                             match resolution {
-                                NameResolution::Seed(target_id @ ItemId::MacroDef(_)) |
-                                NameResolution::Glob(target_id @ ItemId::MacroDef(_)) => {
-                                    // for macros, glob rules do not apply
-                                    resolutions.seed(container_id, name, target_id);
-                                }
                                 NameResolution::Seed(target_id) |
                                 NameResolution::Glob(target_id) => {
-                                    if fully_expanded {
-                                        resolutions.glob(container_id, name, target_id);
-                                    }
+                                    resolutions.glob(container_id, name, target_id);
                                 }
                                 NameResolution::Placeholder => {
                                 }
@@ -216,11 +205,11 @@ fn check_path(krate: &Krate,
               module_id: ModuleId,
               source: ItemId,
               path: PathId)
-              -> Result<(), ResolutionError> {
+              -> Result<ItemId, ResolutionError> {
     match resolutions.resolve_path(&krate.paths, module_id, path) {
-        Resolution::One(_) => {
+        Resolution::One(item_id) => {
             // path can be successfully resolved
-            Ok(())
+            Ok(item_id)
         }
         _ => {
             // invalid or incomplete path
@@ -290,7 +279,18 @@ fn verify_paths(krate: &Krate, resolutions: &ModuleContentSets) -> Result<(), Re
 
                 ItemId::MacroHusk(macro_husk_id) => {
                     let macro_husk = &krate.macro_husks[macro_husk_id.0];
-                    try!(check_path(krate, resolutions, container_id, item_id, macro_husk.path));
+                    let target = try!(check_path(krate,
+                                                 resolutions,
+                                                 container_id,
+                                                 item_id,
+                                                 macro_husk.path));
+                    if target != ItemId::MacroDef(macro_husk.macro_def_id) {
+                        return Err(ResolutionError::TimeTravel {
+                            path: macro_husk.path,
+                            was_macro: macro_husk.macro_def_id,
+                            now_item: target
+                        });
+                    }
                 }
 
                 ItemId::MacroRef(macro_ref_id) => {
@@ -325,7 +325,6 @@ impl ModuleContentSets {
     fn new() -> ModuleContentSets {
         ModuleContentSets {
             module_contents: HashMap::new(),
-            fully_expanded: HashSet::new(),
             ticker: 1,
         }
     }
@@ -337,12 +336,6 @@ impl ModuleContentSets {
 
     fn tick(&mut self) {
         self.ticker += 1;
-    }
-
-    fn mark_fully_expanded(&mut self, module_id: ModuleId) {
-        if self.fully_expanded.insert(module_id) {
-            self.tick();
-        }
     }
 
     fn module_contents(&mut self, module_id: ModuleId) -> &mut ModuleContents {

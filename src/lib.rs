@@ -332,12 +332,8 @@ mod c {
 }
 
 #[test]
-fn unexpandable_macro() {
+fn glob_brings_module_which_has_macro() {
     let mut krate = ast::Krate::new();
-
-    // Unfortunate case where resolution of `self::c::m!`
-    // is blocked on the `use b::*` glob expansion.
-
     parse_Krate(&mut krate, r#"
 mod a {
     use b::*;
@@ -351,5 +347,5 @@ mod b {
 "#).unwrap();
     let result = resolve::resolve_and_expand(&mut krate);
     debug!("result = {:?}", result);
-    assert!(result.is_err());
+    assert!(result.is_ok());
 }
