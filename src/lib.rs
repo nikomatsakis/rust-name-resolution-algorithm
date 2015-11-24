@@ -450,8 +450,10 @@ mod c {
     debug!("result = {:?}", result);
     assert!(result.is_err());
 
-    // This is not because the `use self::b` takes precedence over the
-    // glob. This is maybe a bit odd?
+    // This is not, because the `use self::b` takes precedence over
+    // the glob, even though it can't be resolved right away (until
+    // after first round of macro expansion, in fact). This is handy,
+    // if maybe a bit odd.
 
     let mut krate = Krate::new();
     parse_Krate(&mut krate, r#"
