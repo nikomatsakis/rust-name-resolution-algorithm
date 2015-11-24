@@ -22,9 +22,19 @@ Here are the basic guidelines, ignoring macros for a moment:
    
 When we add macros into the mix, things get interesting. This is
 because macro expansion generates new items, which can in turn affect
-how paths are resolved.
+how paths are resolved. The current algorithm takes a kind of greedy
+expansion strategy: we repeatedly iterate and expand, in any given
+round, all macros whose names we can successfully resolve.
 
-XXX not up to date
+When we expand macros, we remember the path that we expanded the macro
+definition that we used, and then at the end we double check that the
+path still leads to the same macro definition. If not, an error is
+reported. The goal of this check is to avoid "time travel" violations,
+where expanding a macro created a new item which shadowed a name found
+via a glob, causing the macro expansion path to point at the wrong
+place.
+
+**CAVEAT:** The following text is out of date.
 
 ### Compatibility with Rust
    
