@@ -6,15 +6,12 @@ have to come "after" the definition of the macro in any sense; macros
 can define items (even other macro definitions) that can then be
 imported and used (even via globs).
 
-Here are some of the interesting characteristics:
+Here are the basic guidelines, ignoring macros for a moment:
 
 1. Explicit imports and structs take precedence over globs.
     - So if I have `use foo::*;` and `use bar::X;`, then the name `X`
       always resolves to `bar::X`, even if `foo` contains a member
       named `X`.
-    - **However,** macro names can never conflict, even with a macro
-      imported by a glob. So in the previous example, if `X` should be
-      a macro, an error results.
 2. It is always legal to import the same item through multiple paths
    (e.g., `use foo::X` and `use bar::X` are legal, so long as they
    both ultimately refer to the same `X`).
@@ -22,6 +19,14 @@ Here are some of the interesting characteristics:
    item is not referenced (e.g., a module can have both `use foo::*`
    and `use bar::*` even if both `foo` and `bar` define a struct `X`,
    so long as the module never refers to `X`).
+   
+When we add macros into the mix, things get interesting. This is
+because macro expansion generates new items, which can in turn affect
+how paths are resolved.
+
+XXX not up to date
+
+### Compatibility with Rust
    
 The core algorithm is (I think) backwards compatible with Rust today
 (modulo bugs in today's code that accept things they should not). But
